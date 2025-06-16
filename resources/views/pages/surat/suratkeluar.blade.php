@@ -1,0 +1,1640 @@
+@extends('home')
+
+@section('title', 'Surat Keluar - SISM Azra')
+
+@section('content')
+    <div class="bg-white rounded-lg shadow-sm">
+        <!-- Header -->
+        <div class="px-8 py-6 border-b border-gray-100 bg-white flex justify-between items-center">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-800">Form Surat Keluar</h2>
+                <p class="text-xs text-gray-500 mt-1">Silakan isi data surat keluar dengan lengkap</p>
+            </div>
+            <div class="flex items-center space-x-2 text-sm text-gray-500">
+                <i class="ri-time-line"></i>
+                <span>{{ date('d M Y') }}</span>
+            </div>
+        </div>
+
+        <!-- Form -->
+        <form action="{{ route('suratkeluar.store') }}" method="POST" enctype="multipart/form-data" class="p-8">
+            @csrf
+            <!-- Tambahkan hidden input di dalam form -->
+            <input type="hidden" name="perusahaan" value="RSAZRA">
+
+            <!-- Hidden input untuk pengirim_id - selalu gunakan user yang login -->
+            <input type="hidden" name="pengirim_id" id="pengirim_id" value="{{ auth()->id() }}">
+
+            <!-- Perusahaan Input - Hidden by default for internal surat -->
+            <input type="hidden" id="perusahaan_hidden" name="perusahaan" value="RSAZRA">
+
+            <!-- Toggle untuk Sekretaris sebagai Dirut -->
+            @if (auth()->user()->role === 1)
+                <div class="mb-6 bg-indigo-50 p-4 rounded-lg border border-indigo-100">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="ri-user-settings-line text-indigo-600 text-lg mr-2"></i>
+                            <div>
+                                <h4 class="text-sm font-medium text-indigo-800">Opsi Pengirim</h4>
+                                <p class="text-xs text-indigo-600 mt-0.5">Anda dapat membuat surat atas nama direktur</p>
+                            </div>
+                        </div>
+                        <label class="flex items-center cursor-pointer">
+                            <div class="relative">
+                                <input type="checkbox" id="toggle-as-dirut" name="as_dirut" class="sr-only">
+                                <div class="block bg-gray-200 w-10 h-5 rounded-full"></div>
+                                <div class="dot absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition"></div>
+                            </div>
+                            <span class="ml-2 text-sm font-medium text-indigo-800">Kirim sebagai Direktur</span>
+                        </label>
+                    </div>
+                </div>
+            @endif
+
+            <!-- Card untuk Informasi Surat -->
+            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div class="p-6 border-b border-gray-200 bg-gray-50">
+                    <h3 class="text-sm font-semibold text-gray-800">
+                        <i class="ri-mail-line mr-2 text-gray-600"></i>
+                        Informasi Surat
+                    </h3>
+                </div>
+
+                <div class="p-6 space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Nomor Surat -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <label class="text-sm font-semibold text-gray-800">Nomor Surat</label>
+                                <div class="relative flex gap-2">
+                                    <button type="button" id="generateNomorBtn"
+                                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 group">
+                                        <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                                        Generate Nomor
+                                    </button>
+                                    <button type="button" id="generateNomorAspBtn"
+                                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 group">
+                                        <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                                        Generate Nomor ASP
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="relative">
+                                <input type="text" name="nomor_surat" 
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200"
+                                    placeholder="Nomor surat akan digenerate otomatis">
+                            </div>
+                            <p class="text-xs text-gray-500 leading-relaxed">
+                                <i class="ri-information-line mr-1"></i>
+                                Gunakan tanda strip (-) jika ingin menggunakan nomor surat yang sama dengan surat lain.
+                            </p>
+                        </div>
+
+                        <!-- Tanggal Surat -->
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-gray-800">Tanggal Surat</label>
+                            <div class="relative">
+                                <input type="date" name="tanggal_surat" required
+                                    value="{{ old('tanggal_surat', date('Y-m-d')) }}"
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200">
+                            </div>
+                            @error('tanggal_surat')
+                                <p class="text-red-500 text-xs">
+                                    <i class="ri-error-warning-line mr-1"></i>
+                                    {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+
+                        <!-- Jenis Surat -->
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-gray-800">Jenis Surat</label>
+                            <div class="relative">
+                                <select name="jenis_surat" id="jenis_surat" required
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200 appearance-none bg-white">
+                                    <option value="internal" {{ old('jenis_surat') == 'internal' ? 'selected' : '' }}>
+                                        Internal
+                                    </option>
+                                    <option value="eksternal" {{ old('jenis_surat') == 'eksternal' ? 'selected' : '' }}>
+                                        Eksternal
+                                    </option>
+                                </select>
+                                <div
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                                    <i class="ri-arrow-down-s-line"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sifat Surat -->
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-gray-800">Sifat Surat</label>
+                            <div class="relative">
+                                <select name="sifat_surat" required
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200 appearance-none bg-white">
+                                    <option value="normal" {{ old('sifat_surat') == 'normal' ? 'selected' : '' }}>
+                                        Normal
+                                    </option>
+                                    <option value="urgent" {{ old('sifat_surat') == 'urgent' ? 'selected' : '' }}>
+                                        Urgent
+                                    </option>
+                                </select>
+                                <div
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                                    <i class="ri-arrow-down-s-line"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Placeholder agar grid tetap rapi -->
+                        <div></div>
+                    </div>
+
+                    <!-- Perusahaan -->
+                    <div class="space-y-2 perusahaan-container" id="perusahaan-container" style="min-height: 120px; display: none;">
+                        <label class="text-sm font-semibold text-gray-800">Perusahaan</label>
+                        <div class="suggestions-wrapper">
+                            <input type="text" 
+                                id="perusahaan_search" 
+                                name="perusahaan_search"
+                                class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200"
+                                placeholder="Cari atau tambah perusahaan baru..."
+                                autocomplete="off">
+                            <input type="hidden" name="perusahaan" id="perusahaan_id">
+                            <div id="perusahaan-suggestions" class="suggestions-list">
+                                <!-- Suggestions will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Perihal -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-800">Perihal</label>
+                        <textarea name="perihal" required
+                            class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200"
+                            rows="3" placeholder="Masukkan perihal surat">{{ old('perihal') }}</textarea>
+                        @error('perihal')
+                            <p class="text-red-500 text-xs">
+                                <i class="ri-error-warning-line mr-1"></i>
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card untuk Upload File -->
+            <div class="mt-6 bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div class="p-6 border-b border-gray-200 bg-gray-50">
+                    <h3 class="text-sm font-semibold text-gray-800">
+                        <i class="ri-file-upload-line mr-2 text-gray-600"></i>
+                        Upload File Surat
+                    </h3>
+                </div>
+
+                <div class="p-6">
+                    <div class="space-y-4">
+                        <!-- File Upload Area -->
+                        <div class="w-full">
+                            <input type="file" name="file[]" id="file-input" class="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" multiple>
+                            <label for="file-input" class="w-full">
+                                <div
+                                    class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-200 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-all duration-200">
+                                    <!-- Upload Text -->
+                                    <div id="upload-text" class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <i class="ri-upload-cloud-line text-3xl text-gray-400 mb-3"></i>
+                                        <p class="text-sm text-gray-600 font-medium">Klik untuk upload atau drag and drop file</p>
+                                        <p class="text-xs text-gray-500 mt-1">PDF, DOC, DOCX, JPG, JPEG, PNG (Maks. 2MB per file, bisa lebih dari satu file)</p>
+                                    </div>
+                                    <!-- Selected File Info (Multiple Preview) -->
+                                    <div id="file-selected" class="hidden flex-col items-center justify-center pt-5 pb-6 w-full">
+                                        <div id="selected-files-list" class="w-full space-y-2"></div>
+                                        <button type="button" id="remove-all-files"
+                                            class="mt-3 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-100 rounded-lg hover:bg-red-200 transition-colors duration-200">
+                                            <i class="ri-delete-bin-line mr-1"></i>
+                                            Hapus semua file
+                                        </button>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        @error('file')
+                            <p class="text-red-500 text-xs">
+                                <i class="ri-error-warning-line mr-1"></i>
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card untuk Disposisi -->
+            <div class="mt-6 bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div class="p-6 border-b border-gray-200 bg-gray-50">
+                    <h3 class="text-sm font-semibold text-gray-800">
+                        <i class="ri-share-forward-line mr-2 text-gray-600"></i>
+                        Disposisi Surat
+                    </h3>
+                </div>
+
+                <div class="p-6 space-y-6">
+                    <!-- Debug field to track disposisi data -->
+                    <input type="hidden" id="debug_disposisi_field" name="debug_disposisi_field" value="disposisi_data_tracking">
+                    
+                    <!-- Tujuan Disposisi (Multiple Select dengan Search) -->
+                    @if (false)
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-gray-800">Tujuan Disposisi</label>
+                            <div class="relative">
+                                <!-- Search Input -->
+                                <div class="mb-2 relative">
+                                    <input type="text" id="tujuan-search"
+                                        class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200"
+                                        placeholder="Cari nama atau jabatan...">
+                                    <div
+                                        class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                                        <i class="ri-search-line"></i>
+                                    </div>
+                                </div>
+
+                                <!-- Selection Box -->
+                                <div class="relative">
+                                    <div class="flex justify-between mb-2 items-center">
+                                        <div class="text-xs text-gray-500" id="selection-counter">0 dipilih</div>
+                                        <div class="space-x-2">
+                                            <button type="button" id="select-all-btn"
+                                                class="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors duration-200">
+                                                Pilih Semua
+                                            </button>
+                                            <button type="button" id="clear-all-btn"
+                                                class="px-2 py-1 text-xs bg-gray-50 text-gray-600 rounded hover:bg-gray-100 transition-colors duration-200">
+                                                Hapus Semua
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div id="tujuan-selection-container"
+                                        class="border border-gray-200 rounded-lg p-3 max-h-60 overflow-y-auto">
+                                        <div class="space-y-2">
+                                            @foreach ($users as $user)
+                                                <div
+                                                    class="flex items-center py-1.5 px-2 hover:bg-gray-50 rounded-md user-selection-item">
+                                                    <input type="checkbox" id="user-{{ $user->id }}"
+                                                        name="tujuan_disposisi[]" value="{{ $user->id }}"
+                                                        class="tujuan-checkbox h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                                                    <label for="user-{{ $user->id }}"
+                                                        class="ml-3 block text-sm text-gray-700 cursor-pointer truncate">
+                                                        {{ $user->name }}
+                                                        @if ($user->name == 'Direktur Utama' || strpos(strtolower($user->name), 'direktur') !== false)
+                                                            <span class="text-gray-500">({{ $user->name }})</span>
+                                                        @elseif ($user->jabatan)
+                                                            <span
+                                                                class="text-gray-500">({{ $user->jabatan->nama_jabatan }})</span>
+                                                        @else
+                                                            <span class="text-gray-500">(Tidak ada jabatan)</span>
+                                                        @endif
+                                                    </label>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                    
+                    <!-- Hidden input untuk tujuan disposisi default ke Direktur (untuk semua role) -->
+                        @php
+                            // Cari ID direktur dari database
+                            $direktur = App\Models\User::where('name', 'like', '%Direktur Utama%')
+                                ->orWhere('role', 2)
+                                ->first();
+                            $direktur_id = $direktur ? $direktur->id : null;
+                        @endphp
+                        <input type="hidden" name="tujuan_disposisi[]" value="{{ $direktur_id }}">
+
+                    <!-- Keterangan Pengirim -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-800">Keterangan Pengirim</label>
+                        <textarea name="keterangan_pengirim"
+                            class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200"
+                            rows="3" placeholder="Tambahkan keterangan untuk penerima disposisi">{{ old('keterangan_pengirim') }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-6 flex justify-end space-x-4">
+                <a href="{{ route('suratkeluar.index') }}"
+                    class="inline-flex items-center px-6 py-3 text-sm font-medium text-gray-700 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200">
+                    <i class="ri-arrow-left-line mr-2"></i>
+                    Kembali
+                </a>
+                <button type="submit"
+                    class="inline-flex items-center px-6 py-3 text-sm font-medium text-white bg-green-600 border border-transparent rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200">
+                    <i class="ri-save-line mr-2"></i>
+                    Simpan Surat
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal Preview File -->
+    <div id="file-preview-modal" class="fixed inset-0 z-50 hidden overflow-hidden">
+        <div class="flex items-center justify-center min-h-screen p-0 text-center">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-900 opacity-90"></div>
+            </div>
+            <div class="inline-block align-middle bg-white rounded-lg text-left overflow-hidden shadow-2xl transform transition-all my-0 max-w-[50%] sm:max-w-[50%] md:max-w-[50%] lg:max-w-[50%] xl:max-w-[50%] w-full h-[98vh]">
+                <div class="bg-white px-3 py-3 flex justify-between items-center border-b border-gray-200">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 truncate max-w-[70%]" id="preview-modal-title">
+                        Preview File Surat
+                    </h3>
+                    <div class="flex space-x-2">
+                        <a href="#" id="preview-download-link"
+                            class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            <i class="ri-download-line mr-1"></i> Download
+                        </a>
+                        <button type="button" id="close-preview-modal"
+                            class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            <i class="ri-close-line mr-1"></i> Tutup
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-hidden h-full w-full bg-gray-100">
+                    <div id="loading-preview" class="flex flex-col justify-center items-center h-full w-full">
+                        <i class="ri-loader-4-line animate-spin text-5xl text-green-600"></i>
+                        <p class="mt-4 text-gray-600">Memuat file...</p>
+                    </div>
+                    <iframe id="pdf-preview" class="w-full h-full hidden border-0" src="" style="min-height: 700px;"></iframe>
+                    <div id="error-preview" class="flex flex-col justify-center items-center h-full w-full hidden">
+                        <i class="ri-error-warning-line text-5xl text-red-600"></i>
+                        <p class="mt-4 text-gray-600 font-medium">File tidak dapat ditampilkan</p>
+                        <p class="mt-1 text-gray-500">Silahkan download file untuk melihatnya</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get DOM elements - declare all variables just once
+        const fileInput = document.getElementById('file-input');
+        const uploadText = document.getElementById('upload-text');
+        const fileSelected = document.getElementById('file-selected');
+        const selectedFilename = document.getElementById('selected-filename');
+        const selectedFilesize = document.getElementById('selected-filesize');
+        const removeFileBtn = document.getElementById('remove-file');
+        const generateNomorBtn = document.getElementById('generateNomorBtn');
+        const jenisSuratSelect = document.getElementById('jenis_surat');
+        const nomorSuratInput = document.querySelector('input[name="nomor_surat"]');
+        const asDirutToggle = document.getElementById('toggle-as-dirut');
+        const pengirimIdInput = document.getElementById('pengirim_id');
+        const tujuanDisposisiContainer = document.querySelector('#tujuan-selection-container');
+        const tujuanCheckboxes = document.querySelectorAll('.tujuan-checkbox');
+        const perusahaanContainer = document.getElementById('perusahaan-container');
+        const perusahaanHidden = document.getElementById('perusahaan_hidden');
+        const perusahaanSelect = document.getElementById('perusahaan_select');
+        const tujuanSearch = document.getElementById('tujuan-search');
+        const selectAllBtn = document.getElementById('select-all-btn');
+        const clearAllBtn = document.getElementById('clear-all-btn');
+        const selectionCounter = document.getElementById('selection-counter');
+        const userItems = document.querySelectorAll('.user-selection-item');
+        const form = document.querySelector('form');
+        
+        // Cek role pengguna
+        const userRole = {{ auth()->user()->role ?? 'null' }};
+        
+        // Log role untuk debugging
+        console.log("User role:", userRole);
+
+        // Handle perusahaan container visibility based on jenis_surat
+        if (jenisSuratSelect) {
+            jenisSuratSelect.addEventListener('change', function() {
+                console.log("Jenis surat changed to:", this.value);
+                const generateNomorBtn = document.getElementById('generateNomorBtn');
+                const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
+                
+                if (this.value === 'eksternal' && userRole === 1) {
+                    console.log("Conditions met for External (AZRA/ASP) generate buttons.");
+                    if (generateNomorBtn) {
+                        generateNomorBtn.style.display = 'inline-flex';
+                        generateNomorBtn.innerHTML = `
+                            <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                            Generate Nomor AZRA
+                        `;
+                        generateNomorBtn.onclick = generateNomorAzra;
+                    }
+                    if (generateNomorAspBtn) {
+                        generateNomorAspBtn.style.display = 'inline-flex';
+                    }
+                    nomorSuratInput.readOnly = false;
+                    nomorSuratInput.placeholder = "Masukkan nomor surat eksternal";
+                    nomorSuratInput.classList.remove('bg-gray-50');
+                    nomorSuratInput.classList.add('bg-white');
+                    // Info text
+                    const nomorSuratContainer = nomorSuratInput.closest('.space-y-2');
+                    let infoText = nomorSuratContainer?.querySelector('.text-xs.text-gray-500');
+                    if (infoText) {
+                        infoText.innerHTML = `
+                            <i class="ri-information-line mr-1"></i>
+                            Jangan menekan Generate Nomor Azra jika Perusahaan Bukan RS AZRA
+                        `;
+                    }
+                } else if (this.value === 'internal' && userRole === 1) {
+                    console.log("Conditions met for Internal generate button.");
+                    if (generateNomorBtn) {
+                        generateNomorBtn.style.display = 'inline-flex';
+                        generateNomorBtn.innerHTML = `
+                            <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                            Generate Nomor
+                        `;
+                        generateNomorBtn.onclick = generateNomorSurat;
+                    }
+                    if (generateNomorAspBtn) {
+                        generateNomorAspBtn.style.display = 'none';
+                    }
+                    nomorSuratInput.readOnly = false;
+                    nomorSuratInput.placeholder = "Nomor surat akan digenerate otomatis";
+                    nomorSuratInput.value = "";
+                    nomorSuratInput.classList.remove('bg-gray-50');
+                    nomorSuratInput.classList.add('bg-white');
+                    // Info text
+                    const nomorSuratContainer = nomorSuratInput.closest('.space-y-2');
+                    let infoText = nomorSuratContainer?.querySelector('.text-xs.text-gray-500');
+                    if (infoText) {
+                        infoText.innerHTML = `
+                            <i class="ri-information-line mr-1"></i>
+                            Gunakan tanda strip (-) jika ingin menggunakan nomor surat yang sama dengan surat lain.
+                        `;
+                    }
+                } else {
+                    if (generateNomorBtn) {
+                        generateNomorBtn.style.display = 'none';
+                    }
+                    if (generateNomorAspBtn) {
+                        generateNomorAspBtn.style.display = 'none';
+                    }
+                    nomorSuratInput.readOnly = false;
+                    nomorSuratInput.placeholder = "Masukkan nomor surat eksternal";
+                    nomorSuratInput.value = "";
+                    nomorSuratInput.classList.remove('bg-gray-50');
+                    nomorSuratInput.classList.add('bg-white');
+                }
+            });
+            // Trigger change event on load to set the initial state
+            jenisSuratSelect.dispatchEvent(new Event('change'));
+        }
+
+        if (asDirutToggle) {
+            asDirutToggle.addEventListener('change', function() {
+                const isChecked = this.checked;
+                const dotElement = document.querySelector('.dot');
+                const tujuanDisposisiContainer = document.querySelector('#tujuan-selection-container')
+                    ?.closest('.space-y-2');
+
+                console.group('Toggle As Dirut State Change');
+                console.log('Toggle checked:', isChecked);
+
+                if (dotElement) {
+                    dotElement.classList.toggle('translate-x-5', isChecked);
+                }
+
+                // Visual feedback when toggled
+                const toggleContainer = this.closest('div.bg-indigo-50');
+                if (toggleContainer) {
+                    if (isChecked) {
+                        console.log('Toggle activated - Setting up for Direktur mode');
+
+                        toggleContainer.classList.remove('bg-indigo-50', 'border-indigo-100');
+                        toggleContainer.classList.add('bg-green-50', 'border-green-100');
+
+                                    // Tampilkan SweetAlert sukses
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Mode Surat Direktur',
+                                        text: 'Surat akan dikirim atas nama direktur dan didisposisikan ke Direktur Utama',
+                                        toast: true,
+                                        position: 'top-end',
+                                        showConfirmButton: false,
+                                        timer: 3000,
+                                        timerProgressBar: true
+                                    });
+                    } else {
+                        console.log('Toggle deactivated - Reverting to normal mode');
+
+                        toggleContainer.classList.remove('bg-green-50', 'border-green-100');
+                        toggleContainer.classList.add('bg-indigo-50', 'border-indigo-100');
+                    }
+                }
+                console.groupEnd();
+
+                // Reset dan generate ulang nomor surat saat toggle berubah
+                if (nomorSuratInput && nomorSuratInput.value) {
+                    // Reset nomor surat and generate again
+                    nomorSuratInput.value = '';
+                    generateNomorSurat();
+                }
+            });
+        }
+
+        // Function to update selection counter
+        function updateSelectionCounter() {
+            const selectionCounterElem = document.getElementById('selection-counter');
+            if (!selectionCounterElem) {
+                // If selection counter element doesn't exist, exit function
+                console.log('Selection counter element not found');
+                return;
+            }
+
+            const totalSelected = document.querySelectorAll('.tujuan-checkbox:checked').length;
+            const totalItems = document.querySelectorAll('.tujuan-checkbox').length;
+            selectionCounterElem.textContent = `${totalSelected} dipilih dari ${totalItems} tersedia`;
+        }
+
+        // Initialize counter
+        updateSelectionCounter();
+
+        // Search functionality
+        if (tujuanSearch) {
+            tujuanSearch.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+
+                userItems.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // Select all button
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', function() {
+                const visibleCheckboxes = document.querySelectorAll(
+                    '.user-selection-item:not([style*="display: none"]) .tujuan-checkbox');
+                visibleCheckboxes.forEach(checkbox => {
+                    checkbox.checked = true;
+                });
+                updateSelectionCounter();
+            });
+        }
+
+        // Clear all button
+        if (clearAllBtn) {
+            clearAllBtn.addEventListener('click', function() {
+                const visibleCheckboxes = document.querySelectorAll(
+                    '.user-selection-item:not([style*="display: none"]) .tujuan-checkbox');
+                visibleCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                updateSelectionCounter();
+            });
+        }
+
+        // Add event listeners to checkboxes
+        document.querySelectorAll('.tujuan-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', updateSelectionCounter);
+        });
+
+        // Function to generate nomor surat
+        async function generateNomorSurat() {
+            try {
+                const tanggalSurat = document.querySelector('input[name="tanggal_surat"]').value;
+                const jenisSurat = jenisSuratSelect?.value || 'internal';
+                const isAsDirut = asDirutToggle?.checked || false;
+
+                console.group('Generate Nomor Surat');
+                console.log('Tanggal Surat:', tanggalSurat);
+                console.log('Jenis Surat:', jenisSurat);
+                console.log('As Dirut:', isAsDirut);
+                console.log('User Role:', userRole);
+
+                // If external letter and role is 1, don't need to generate number
+                if (userRole === 1 && jenisSurat === 'eksternal') {
+                    console.log('Nomor surat eksternal, input manual');
+                    console.groupEnd();
+                    return;
+                }
+
+                if (!tanggalSurat) {
+                    console.log('Tanggal surat tidak diisi');
+                    console.groupEnd();
+
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Perhatian',
+                        text: 'Silakan pilih tanggal surat terlebih dahulu',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#10B981'
+                    });
+                    return;
+                }
+
+                // Show loading state
+                if (generateNomorBtn) {
+                    generateNomorBtn.disabled = true;
+                    generateNomorBtn.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Generating...
+                `;
+                }
+
+                // Get current job title
+                let namaJabatan = isAsDirut ? "DIRUT" : "{{ auth()->user()->jabatan->nama_jabatan ?? 'UMUM' }}";
+
+                console.log('Generate nomor surat untuk jabatan:', namaJabatan);
+
+                // Create FormData object for request
+                const formData = new FormData();
+                formData.append('nama_jabatan', namaJabatan);
+                formData.append('is_as_dirut', isAsDirut ? '1' : '0');
+                formData.append('_token', '{{ csrf_token() }}');
+
+                // Send request using fetch API
+                const response = await fetch("{{ route('suratkeluar.getLastNumber') }}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log("Response data:", data);
+
+                // Reset button state
+                if (generateNomorBtn) {
+                    generateNomorBtn.disabled = false;
+                    generateNomorBtn.innerHTML = `
+                    <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                    Generate Nomor
+                `;
+                }
+
+                // Show Sweet Alert for confirmation
+                const result = await Swal.fire({
+                    title: 'Generate Nomor Surat',
+                    html: `
+                        <div class="text-left">
+                            <p class="mb-2">Informasi nomor surat:</p>
+                            <ul class="list-disc list-inside space-y-1">
+                                <li>Jabatan: <span class="font-semibold">${namaJabatan}</span></li>
+                                <li>Nomor urut terakhir: <span class="font-semibold">${data.last_number}</span></li>
+                                <li>Nomor urut berikutnya: <span class="font-semibold">${String(parseInt(data.last_number) + 1).padStart(3, '0')}</span></li>
+                            </ul>
+                            <p class="mt-4">Apakah Anda ingin menggunakan nomor surat ini?</p>
+                        </div>
+                    `,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Gunakan',
+                    cancelButtonText: 'Tidak',
+                    confirmButtonColor: '#10B981',
+                    cancelButtonColor: '#6B7280'
+                });
+
+                if (result.isConfirmed) {
+                    // Create letter number
+                    const nextNumber = String(parseInt(data.last_number) + 1).padStart(3, '0');
+
+                    // Get month and year from letter date
+                    const date = new Date(tanggalSurat);
+                    const bulan = date.getMonth() + 1;
+                    const tahun = date.getFullYear();
+
+                    // Generate nomor surat with desired format
+                    const nomorSurat = `${nextNumber}/${namaJabatan}/AZRA/${convertToRoman(bulan)}/${tahun}`;
+
+                    // Set value to nomor surat input
+                    if (nomorSuratInput) {
+                    nomorSuratInput.value = nomorSurat;
+                    }
+
+                    // Success notification
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: 'Nomor surat berhasil digenerate',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#10B981',
+                        timer: 2000,
+                        timerProgressBar: true,
+                        showConfirmButton: false
+                    });
+                }
+                console.groupEnd();
+            } catch (error) {
+                console.error('Error lengkap:', error);
+                console.groupEnd();
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: 'Gagal menggenerate nomor surat. Silakan coba lagi.',
+                    footer: 'Detail error: ' + error.message,
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#10B981'
+                });
+                
+                // Reset button state in case of error
+                if (generateNomorBtn) {
+                    generateNomorBtn.disabled = false;
+                    generateNomorBtn.innerHTML = `
+                    <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                    Generate Nomor
+                    `;
+                }
+            }
+        }
+
+        // Event listener for generate button
+        if (generateNomorBtn) {
+            generateNomorBtn.addEventListener('click', generateNomorSurat);
+            console.log("Event listener attached to Generate Nomor AZRA button.");
+        }
+
+        // Tambahkan event listener untuk tombol Generate Nomor ASP
+        const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
+        if (generateNomorAspBtn) {
+            generateNomorAspBtn.addEventListener('click', generateNomorAsp);
+            console.log("Event listener attached to Generate Nomor ASP button.");
+        }
+
+        // Event listener for date change
+        const tanggalSuratInput = document.querySelector('input[name="tanggal_surat"]');
+        if (tanggalSuratInput && nomorSuratInput) {
+            tanggalSuratInput.addEventListener('change', () => {
+                if (!nomorSuratInput.value) {
+                    generateNomorSurat();
+                }
+            });
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Show file preview
+        function showFilePreview(file) {
+            selectedFilename.textContent = file.name;
+            selectedFilesize.textContent = formatFileSize(file.size);
+            uploadText.classList.add('hidden');
+            fileSelected.classList.remove('hidden');
+        }
+
+        // Reset file input
+        function resetFileInput() {
+            fileInput.value = '';
+            uploadText.classList.remove('hidden');
+            fileSelected.classList.add('hidden');
+        }
+
+        // File input change event
+        if (fileInput) {
+            fileInput.addEventListener('change', function(e) {
+                const files = Array.from(this.files);
+                const filesList = document.getElementById('selected-files-list');
+                if (files.length > 0) {
+                    uploadText.classList.add('hidden');
+                    fileSelected.classList.remove('hidden');
+                    filesList.innerHTML = '';
+                    files.forEach((file, idx) => {
+                        const fileDiv = document.createElement('div');
+                        fileDiv.className = 'flex items-center justify-between bg-gray-50 rounded p-2 border border-gray-200';
+                        fileDiv.innerHTML = `
+                            <div class="flex items-center">
+                                <i class="ri-file-text-line text-xl text-green-500 mr-2"></i>
+                                <span class="text-sm font-medium text-gray-700">${file.name}</span>
+                                <span class="text-xs text-gray-500 ml-2">(${formatFileSize(file.size)})</span>
+                            </div>
+                            <button type="button" class="remove-file-btn text-xs text-red-500 hover:underline ml-4" data-idx="${idx}">Hapus</button>
+                        `;
+                        filesList.appendChild(fileDiv);
+                    });
+                } else {
+                    resetFileInput();
+                }
+            });
+        }
+
+        // Remove all files
+        const removeAllBtn = document.getElementById('remove-all-files');
+        if (removeAllBtn) {
+            removeAllBtn.addEventListener('click', function() {
+                fileInput.value = '';
+                uploadText.classList.remove('hidden');
+                fileSelected.classList.add('hidden');
+                document.getElementById('selected-files-list').innerHTML = '';
+            });
+        }
+
+        // Remove individual file
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-file-btn')) {
+                fileInput.value = '';
+                uploadText.classList.remove('hidden');
+                fileSelected.classList.add('hidden');
+                document.getElementById('selected-files-list').innerHTML = '';
+            }
+        });
+
+        // Drag and drop functionality
+        const dropZone = document.querySelector('label[for="file-input"]');
+        if (dropZone) {
+        dropZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('bg-gray-100');
+        });
+
+        dropZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.classList.remove('bg-gray-100');
+        });
+
+        dropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('bg-gray-100');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && (files[0].type === 'application/pdf' ||
+                    files[0].type === 'application/msword' ||
+                    files[0].type ===
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document') && fileInput) {
+                fileInput.files = files;
+                showFilePreview(files[0]);
+            }
+        });
+        }
+
+        // Function to convert number to Roman numeral
+        function convertToRoman(num) {
+            const romanNumerals = {
+                1: 'I',
+                2: 'II',
+                3: 'III',
+                4: 'IV',
+                5: 'V',
+                6: 'VI',
+                7: 'VII',
+                8: 'VIII',
+                9: 'IX',
+                10: 'X',
+                11: 'XI',
+                12: 'XII'
+            };
+            return romanNumerals[num];
+        }
+
+        // Setup for staff role (0)
+        if (userRole === 0 || userRole === 3) {
+            try {
+                console.log('Setting up UI for Staff/Admin role');
+
+                // Hide jenis surat input if exists
+                const jenisSuratContainer = document.querySelector('select[name="jenis_surat"]')?.closest(
+                    '.space-y-2');
+                if (jenisSuratContainer) {
+                    console.log('Hiding jenis surat container');
+                    jenisSuratContainer.style.display = 'none';
+                    } else {
+                    console.log('Jenis surat container not found');
+                }
+
+                // Set default value to "internal"
+                if (jenisSuratSelect) {
+                    console.log('Setting jenis surat value to internal');
+                    jenisSuratSelect.value = 'internal';
+                }
+            } catch (error) {
+                console.error('Error setting up Staff/Admin UI:', error);
+            }
+        }
+
+        // Basic validation for form submission
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                console.log('Form is being submitted');
+
+                // Log form data
+                const formData = new FormData(this);
+                for (let [key, value] of formData.entries()) {
+                    console.log(`${key}:`, value);
+                }
+
+                // Check for tujuan_disposisi
+                    const hasTujuanDisposisi = formData.has('tujuan_disposisi[]');
+                console.log('Has tujuan_disposisi data:', hasTujuanDisposisi);
+                
+                // Update debug field
+                const debugField = document.getElementById('debug_disposisi_field');
+                if (debugField) {
+                    debugField.value = `Submission at ${new Date().toISOString()} - tujuan_disposisi: ${hasTujuanDisposisi}`;
+                }
+
+                // Validate form
+                let isValid = true;
+                const requiredFields = form.querySelectorAll('[required]');
+                const errorMessages = [];
+
+                requiredFields.forEach(field => {
+                    if (!field.value) {
+                        isValid = false;
+                        field.classList.add('border-red-500');
+                        errorMessages.push(`Field ${field.name} harus diisi`);
+                    } else {
+                        field.classList.remove('border-red-500');
+                    }
+                });
+
+                // Check for nomor surat for internal letters
+                if (formData.get('jenis_surat') === 'internal' && !formData.get('nomor_surat')) {
+                        isValid = false;
+                    errorMessages.push('Nomor surat harus digenerate untuk surat internal');
+                }
+
+                if (!isValid) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        html: errorMessages.join('<br>'),
+                        confirmButtonColor: '#10B981'
+                    });
+                    return;
+                }
+
+                // Show loading indicator
+                Swal.fire({
+                    title: 'Menyimpan...',
+                    text: 'Mohon tunggu sebentar',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    allowEnterKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Submit form using fetch API
+                fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => {
+                        console.log('Response status:', response.status);
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Response data:', data);
+
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: 'Surat berhasil disimpan',
+                                confirmButtonColor: '#10B981'
+                            }).then((result) => {
+                            // Redirect to index page using the URL from the response
+                            if (data.redirect_url) {
+                                window.location.href = data.redirect_url;
+                            } else {
+                                window.location.href = '{{ route('suratkeluar.index') }}';
+                                }
+                            });
+                        } else {
+                        throw new Error(data.message || 'Terjadi kesalahan saat menyimpan surat');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error submitting form:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: error.message || 'Terjadi kesalahan saat menyimpan surat',
+                            confirmButtonColor: '#10B981'
+                        });
+                    });
+            });
+        }
+
+        // SweetAlert for success message
+        @if (session('success'))
+        Swal.fire({
+            icon: 'success',
+            title: 'Berhasil!',
+            text: '{{ session('success') }}',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#10B981'
+        });
+        @endif
+
+        // Perusahaan Autocomplete
+        const perusahaanSearch = document.getElementById('perusahaan_search');
+        const perusahaanId = document.getElementById('perusahaan_id');
+        const suggestionsContainer = document.getElementById('perusahaan-suggestions');
+        let searchTimeout;
+
+        if (perusahaanSearch) {
+            perusahaanSearch.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                const query = this.value.trim();
+                
+                if (query.length < 2) {
+                    suggestionsContainer.style.display = 'none';
+                    return;
+                }
+
+                searchTimeout = setTimeout(() => {
+                    fetch(`/api/perusahaan/search?query=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.data.length > 0) {
+                                suggestionsContainer.innerHTML = data.data.map(perusahaan => `
+                                    <div class="suggestion-item p-2 hover:bg-gray-100 cursor-pointer" 
+                                         data-kode="${perusahaan.kode}"
+                                         data-nama="${perusahaan.nama_perusahaan}">
+                                        ${perusahaan.nama_perusahaan}
+                        </div>
+                                `).join('');
+                                suggestionsContainer.style.display = 'block';
+                            } else {
+                                suggestionsContainer.innerHTML = `
+                                    <div class="suggestion-item p-2 hover:bg-gray-100 cursor-pointer text-green-600" id="add-new-company">
+                                        <i class="ri-add-line mr-2"></i>Tambah "${query}" sebagai perusahaan baru
+                        </div>
+                    `;
+                                suggestionsContainer.style.display = 'block';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                        });
+                }, 300);
+            });
+        }
+
+        // Handle suggestion click dengan delegasi event yang lebih baik
+        if (suggestionsContainer) {
+            suggestionsContainer.addEventListener('click', function(e) {
+                const target = e.target.closest('.suggestion-item');
+                if (!target) return;
+
+                if (target.id === 'add-new-company') {
+                    const newCompanyName = perusahaanSearch.value.trim();
+                    if (newCompanyName) {
+                        fetch('/api/perusahaan/quick-store', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({ nama_perusahaan: newCompanyName })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                perusahaanSearch.value = data.data.nama_perusahaan;
+                                perusahaanId.value = data.data.kode;
+                                suggestionsContainer.style.display = 'none';
+                                
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil',
+                                    text: 'Perusahaan baru berhasil ditambahkan',
+                                    showConfirmButton: false,
+                                    timer: 1500
+                                });
+                        } else {
+                                throw new Error(data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: 'Gagal menambahkan perusahaan baru'
+                            });
+                        });
+                    }
+                } else {
+                    const kode = target.dataset.kode;
+                    const nama = target.dataset.nama;
+                    perusahaanSearch.value = nama;
+                    perusahaanId.value = kode;
+                    suggestionsContainer.style.display = 'none';
+                }
+            });
+        }
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (suggestionsContainer && !perusahaanSearch?.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+                suggestionsContainer.style.display = 'none';
+            }
+        });
+
+        function togglePerusahaanInput() {
+            if (jenisSuratSelect.value === 'eksternal') {
+                perusahaanContainer.style.display = 'block';
+                } else {
+                perusahaanContainer.style.display = 'none';
+            }
+        }
+
+        if (jenisSuratSelect && perusahaanContainer) {
+            togglePerusahaanInput();
+            jenisSuratSelect.addEventListener('change', togglePerusahaanInput);
+        }
+
+        // Function to generate nomor surat for external AZRA
+        async function generateNomorAzra() {
+            console.log("generateNomorAzra function called.");
+            try {
+                const tanggalSurat = document.querySelector('input[name="tanggal_surat"]').value;
+                
+                if (!tanggalSurat) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Perhatian',
+                        text: 'Silakan pilih tanggal surat terlebih dahulu',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#10B981'
+                    });
+                    return;
+                }
+
+                // Show loading state
+                const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
+                if (generateNomorAspBtn) {
+                    console.log("Showing loading state for Generate Nomor ASP button.");
+                    generateNomorAspBtn.disabled = true;
+                    generateNomorAspBtn.innerHTML = `
+                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Generating...
+                    `;
+                }
+
+                // Create FormData object for request
+                const formData = new FormData();
+                formData.append('is_eksternal_azra', '1');
+                formData.append('tanggal_surat', tanggalSurat);
+                formData.append('_token', '{{ csrf_token() }}');
+
+                // Send request using fetch API
+                const response = await fetch("{{ route('suratkeluar.getLastNumber') }}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    console.error("Fetch failed with status:", response.status);
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log("Response data from getLastNumber:", data);
+
+                // Reset button state
+                if (generateNomorAspBtn) {
+                    generateNomorAspBtn.disabled = false;
+                    generateNomorAspBtn.innerHTML = `
+                        <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                        Generate Nomor AZRA
+                    `;
+                }
+
+                // Show Sweet Alert for confirmation
+                const result = await Swal.fire({
+                    title: 'Generate Nomor Surat AZRA',
+                    html: `
+                        <div class="text-left">
+                            <p class="mb-2">Informasi nomor surat:</p>
+                            <ul class="list-disc list-inside space-y-1">
+                                <li>Perusahaan: <span class="font-semibold">RSAZRA</span></li>
+                                <li>Nomor urut terakhir: <span class="font-semibold">${data.last_number}</span></li>
+                                <li>Nomor urut berikutnya: <span class="font-semibold">${String(parseInt(data.last_number) + 1).padStart(3, '0')}</span></li>
+                            </ul>
+                            <p class="mt-4">Apakah Anda ingin menggunakan nomor surat ini?</p>
+                        </div>
+                    `,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Gunakan',
+                    cancelButtonText: 'Tidak',
+                    confirmButtonColor: '#10B981',
+                    cancelButtonColor: '#6B7280'
+                });
+
+                if (result.isConfirmed) {
+                    // Create letter number
+                    const nextNumber = String(parseInt(data.last_number) + 1).padStart(3, '0');
+
+                    // Get month and year from letter date
+                    const date = new Date(tanggalSurat);
+                    const bulan = date.getMonth() + 1;
+                    const tahun = date.getFullYear();
+
+                    // Generate nomor surat with desired format
+                    const nomorSurat = `${nextNumber}/RSAZRA/${convertToRoman(bulan)}/${tahun}`;
+
+                    // Set value to nomor surat input
+                    if (nomorSuratInput) {
+                        nomorSuratInput.value = nomorSurat;
+                    }
+
+                    // Success notification
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: 'Nomor surat berhasil digenerate',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#10B981',
+                        timer: 2000,
+                        timerProgressBar: true,
+                        showConfirmButton: false
+                    });
+                }
+            } catch (error) {
+                console.error('Error in generateNomorAzra:', error);
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: 'Gagal menggenerate nomor surat. Silakan coba lagi.',
+                    footer: 'Detail error: ' + error.message,
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#10B981'
+                });
+                
+                // Reset button state in case of error
+                const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
+                if (generateNomorAspBtn) {
+                    generateNomorAspBtn.disabled = false;
+                    generateNomorAspBtn.innerHTML = `
+                        <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                        Generate Nomor AZRA
+                    `;
+                }
+            }
+        }
+
+        // Function to generate nomor surat ASP
+        async function generateNomorAsp() {
+            console.log("generateNomorAsp function called.");
+            try {
+                const tanggalSurat = document.querySelector('input[name="tanggal_surat"]').value;
+                
+                if (!tanggalSurat) {
+                    console.log("Tanggal surat is empty.");
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Perhatian',
+                        text: 'Silakan pilih tanggal surat terlebih dahulu',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#10B981'
+                    });
+                    return;
+                }
+
+                // Show loading state
+                const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
+                if (generateNomorAspBtn) {
+                    console.log("Showing loading state for Generate Nomor ASP button.");
+                    generateNomorAspBtn.disabled = true;
+                    generateNomorAspBtn.innerHTML = `
+                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Generating...
+                    `;
+                }
+
+                // Create FormData object for request
+                const formData = new FormData();
+                formData.append('is_asp', '1');
+                formData.append('tanggal_surat', tanggalSurat);
+                formData.append('_token', '{{ csrf_token() }}');
+
+                // Send request using fetch API
+                const response = await fetch("{{ route('suratkeluar.getLastNumber') }}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    console.error("Fetch failed with status:", response.status);
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log("Response data from getLastNumber:", data);
+
+                // Reset button state
+                if (generateNomorAspBtn) {
+                    generateNomorAspBtn.disabled = false;
+                    generateNomorAspBtn.innerHTML = `
+                        <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                        Generate Nomor ASP
+                    `;
+                }
+
+                if (!data.success) {
+                    throw new Error(data.message || 'Gagal mendapatkan nomor surat');
+                }
+
+                // Parse last number and ensure it's a number
+                const lastNumber = parseInt(data.last_number) || 0;
+                const nextNumber = lastNumber + 1;
+                console.log("Last number:", lastNumber, "Next number:", nextNumber);
+
+                // Show Sweet Alert for confirmation
+                const result = await Swal.fire({
+                    title: 'Generate Nomor Surat ASP',
+                    html: `
+                        <div class="text-left">
+                            <p class="mb-2">Informasi nomor surat:</p>
+                            <ul class="list-disc list-inside space-y-1">
+                                <li>Perusahaan: <span class="font-semibold">ASP</span></li>
+                                <li>Nomor urut terakhir: <span class="font-semibold">${lastNumber}</span></li>
+                                <li>Nomor urut berikutnya: <span class="font-semibold">${nextNumber}</span></li>
+                            </ul>
+                            <p class="mt-4">Apakah Anda ingin menggunakan nomor surat ini?</p>
+                        </div>
+                    `,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Gunakan',
+                    cancelButtonText: 'Tidak',
+                    confirmButtonColor: '#10B981',
+                    cancelButtonColor: '#6B7280'
+                });
+
+                if (result.isConfirmed) {
+                    // Get month and year from letter date
+                    const date = new Date(tanggalSurat);
+                    const bulan = date.getMonth() + 1;
+                    const tahun = date.getFullYear();
+
+                    // Generate nomor surat dengan format baru
+                    const nomorSurat = `${String(nextNumber).padStart(3, '0')}/ASP/${convertToRoman(bulan)}/${tahun}`;
+                    console.log("Generated nomor surat:", nomorSurat);
+
+                    // Set value to nomor surat input
+                    if (nomorSuratInput) {
+                        nomorSuratInput.value = nomorSurat;
+                    }
+
+                    // Success notification
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: 'Nomor surat berhasil digenerate',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#10B981',
+                        timer: 2000,
+                        timerProgressBar: true,
+                        showConfirmButton: false
+                    });
+                }
+            } catch (error) {
+                console.error('Error in generateNomorAsp:', error);
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: error.message || 'Gagal menggenerate nomor surat. Silakan coba lagi.',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#10B981'
+                });
+                
+                // Reset button state in case of error
+                const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
+                if (generateNomorAspBtn) {
+                    generateNomorAspBtn.disabled = false;
+                    generateNomorAspBtn.innerHTML = `
+                        <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                        Generate Nomor ASP
+                    `;
+                }
+            }
+        }
+    });
+</script>
+
+<style>
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .animate-spin {
+        animation: spin 1s linear infinite;
+    }
+
+    /* Efek hover untuk generate button */
+    #generateNomorBtn:hover i {
+        transform: rotate(180deg);
+    }
+
+    /* Efek highlight untuk nomor surat */
+    .highlight-input {
+        animation: highlight 1s ease-in-out;
+    }
+
+    @keyframes highlight {
+        0% {
+            background-color: #ecfdf5;
+            border-color: #10B981;
+        }
+
+        100% {
+            background-color: #F9FAFB;
+            border-color: #E5E7EB;
+        }
+    }
+
+    /* Custom styling untuk date input */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        opacity: 0;
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+    }
+
+    /* Custom styling untuk select/combobox */
+    select {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.5rem center;
+        background-repeat: no-repeat;
+        background-size: 1.5em 1.5em;
+        padding-right: 2.5rem;
+    }
+
+    select:focus {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2310B981' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    }
+
+    /* Toggle Switch Styling */
+    .dot {
+        transition: transform 0.3s ease-in-out;
+    }
+
+    input:checked~.dot {
+        transform: translateX(100%);
+    }
+
+    input:checked~.block {
+        background-color: #10B981;
+    }
+
+    /* Custom scrollbar for selection container */
+    #tujuan-selection-container::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    #tujuan-selection-container::-webkit-scrollbar-track {
+        background-color: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    #tujuan-selection-container::-webkit-scrollbar-thumb {
+        background-color: #d1d5db;
+        border-radius: 10px;
+    }
+
+    #tujuan-selection-container::-webkit-scrollbar-thumb:hover {
+        background-color: #9ca3af;
+    }
+
+    /* Smooth transitions */
+    .transition-all {
+        transition-property: all;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 200ms;
+
+        /* Card hover effects */
+        .hover-card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transform: translateY(-1px);
+        }
+    }
+
+    /* Input focus styles */
+    .focus-within\:ring:focus-within {
+        --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+        --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+        box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+    }
+
+    /* User selection item hover effect */
+    .user-selection-item {
+        transition: all 0.2s ease;
+    }
+
+    .user-selection-item:hover {
+        background-color: #f3f4f6;
+    }
+
+    .user-selection-item label {
+        width: 100%;
+    }
+
+    /* Styling untuk suggestions container */
+    #perusahaan-suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 99999;
+        margin-top: 4px;
+        display: none;
+    }
+
+    #perusahaan-suggestions div {
+        padding: 8px 12px;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    #perusahaan-suggestions div:hover {
+        background-color: #f3f4f6;
+    }
+
+    .perusahaan-container {
+        position: relative;
+        z-index: 50;
+    }
+
+    .suggestions-wrapper {
+        position: relative;
+    }
+
+    /* Pastikan parent container cukup tinggi */
+    .space-y-6 > div {
+        min-height: 100px; /* Tambahkan minimum height */
+        position: relative;
+    }
+
+    /* Override untuk container form */
+    form .p-6.space-y-6 {
+        overflow: visible !important;
+    }
+
+    /* Override untuk card container */
+    .bg-white.rounded-xl.border.border-gray.200.overflow-hidden {
+        overflow: visible !important;
+    }
+
+    #perusahaan-container { display: none; }
+</style>
