@@ -34,7 +34,7 @@
             </a>
 
             <!-- Manage User (Hanya Super Admin) -->
-            @if (Auth::user()->role === 3 || Auth::user()->role === 0 || Auth::user()->role === 1)
+            @if (Auth::user()->role === 1 || Auth::user()->role === 3)
                 <div class="relative" x-data="{ open: {{ Request::is('manageuser*', 'managejabatan*', 'manageperusahaan*') ? 'true' : 'false' }} }">
                     <button @click="open = !open"
                         class="w-full flex items-center py-3 px-4 rounded-xl transition-all duration-200 group text-gray-600 hover:bg-gray-50">
@@ -67,6 +67,7 @@
                         </a>
                         @endif
 
+                        @if (Auth::user()->role === 1 || Auth::user()->role === 3)
                         <a href="{{ route('manageperusahaan.index') }}"
                             class="flex items-center py-2 px-4 rounded-lg transition-all duration-200 {{ Request::routeIs('manageperusahaan.*') ? 'text-green-600 bg-green-50' : 'text-gray-600 hover:bg-gray-50' }}">
                             <i class="ri-building-line text-lg mr-3"></i>
@@ -75,6 +76,7 @@
                                 <div class="ml-auto h-2 w-2 rounded-full bg-green-600"></div>
                             @endif
                         </a>
+                        @endif
                     </div>
                 </div>
             @endif
@@ -85,7 +87,7 @@
                     <button @click="open = !open"
                         class="w-full flex items-center py-3 px-4 rounded-xl transition-all duration-200 group text-gray-600 hover:bg-gray-50">
                         <i class="ri-folder-line text-xl text-gray-400 group-hover:text-gray-600"></i>
-                        <span class="ml-3 font-medium">Transaksi</span>
+                        <span class="ml-3 font-medium">Surat Menyurat</span>
                         <i class="ri-arrow-down-s-line ml-auto transition-transform"
                             :class="{ 'rotate-180': open }"></i>
                     </button>

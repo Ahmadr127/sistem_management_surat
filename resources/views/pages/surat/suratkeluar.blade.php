@@ -417,9 +417,9 @@
                 console.log("Jenis surat changed to:", this.value);
                 const generateNomorBtn = document.getElementById('generateNomorBtn');
                 const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
-                
-                if (this.value === 'eksternal' && userRole === 1) {
-                    console.log("Conditions met for External (AZRA/ASP) generate buttons.");
+                // Untuk role sekretaris (1)
+                if (userRole === 1) {
+                    if (this.value === 'eksternal') {
                     if (generateNomorBtn) {
                         generateNomorBtn.style.display = 'inline-flex';
                         generateNomorBtn.innerHTML = `
@@ -444,8 +444,35 @@
                             Jangan menekan Generate Nomor Azra jika Perusahaan Bukan RS AZRA
                         `;
                     }
-                } else if (this.value === 'internal' && userRole === 1) {
-                    console.log("Conditions met for Internal generate button.");
+                    } else if (this.value === 'internal') {
+                        if (generateNomorBtn) {
+                            generateNomorBtn.style.display = 'inline-flex';
+                            generateNomorBtn.innerHTML = `
+                                <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                                Generate Nomor
+                            `;
+                            generateNomorBtn.onclick = generateNomorSurat;
+                        }
+                        if (generateNomorAspBtn) {
+                            generateNomorAspBtn.style.display = 'none';
+                        }
+                        nomorSuratInput.readOnly = false;
+                        nomorSuratInput.placeholder = "Nomor surat akan digenerate otomatis";
+                        nomorSuratInput.value = "";
+                        nomorSuratInput.classList.remove('bg-gray-50');
+                        nomorSuratInput.classList.add('bg-white');
+                        // Info text
+                        const nomorSuratContainer = nomorSuratInput.closest('.space-y-2');
+                        let infoText = nomorSuratContainer?.querySelector('.text-xs.text-gray-500');
+                        if (infoText) {
+                            infoText.innerHTML = `
+                                <i class="ri-information-line mr-1"></i>
+                                Gunakan tanda strip (-) jika ingin menggunakan nomor surat yang sama dengan surat lain.
+                            `;
+                        }
+                    }
+                } else if (userRole === 0) { // Staff/unit
+                    if (this.value === 'internal') {
                     if (generateNomorBtn) {
                         generateNomorBtn.style.display = 'inline-flex';
                         generateNomorBtn.innerHTML = `
@@ -472,6 +499,20 @@
                         `;
                     }
                 } else {
+                        if (generateNomorBtn) {
+                            generateNomorBtn.style.display = 'none';
+                        }
+                        if (generateNomorAspBtn) {
+                            generateNomorAspBtn.style.display = 'none';
+                        }
+                        nomorSuratInput.readOnly = false;
+                        nomorSuratInput.placeholder = "Masukkan nomor surat eksternal";
+                        nomorSuratInput.value = "";
+                        nomorSuratInput.classList.remove('bg-gray-50');
+                        nomorSuratInput.classList.add('bg-white');
+                    }
+                } else {
+                    // Untuk role lain, hide tombol
                     if (generateNomorBtn) {
                         generateNomorBtn.style.display = 'none';
                     }
@@ -718,7 +759,7 @@
                     const tahun = date.getFullYear();
 
                     // Generate nomor surat with desired format
-                    const nomorSurat = `${nextNumber}/${namaJabatan}/AZRA/${convertToRoman(bulan)}/${tahun}`;
+                    const nomorSurat = `${nextNumber}/${namaJabatan}/RSAZRA/${convertToRoman(bulan)}/${tahun}`;
 
                     // Set value to nomor surat input
                     if (nomorSuratInput) {
@@ -909,20 +950,8 @@
         if (userRole === 0 || userRole === 3) {
             try {
                 console.log('Setting up UI for Staff/Admin role');
-
-                // Hide jenis surat input if exists
-                const jenisSuratContainer = document.querySelector('select[name="jenis_surat"]')?.closest(
-                    '.space-y-2');
-                if (jenisSuratContainer) {
-                    console.log('Hiding jenis surat container');
-                    jenisSuratContainer.style.display = 'none';
-                    } else {
-                    console.log('Jenis surat container not found');
-                }
-
-                // Set default value to "internal"
+                // Jangan hide jenis surat, hanya set default value saja
                 if (jenisSuratSelect) {
-                    console.log('Setting jenis surat value to internal');
                     jenisSuratSelect.value = 'internal';
                 }
             } catch (error) {
@@ -1242,7 +1271,7 @@
                         <div class="text-left">
                             <p class="mb-2">Informasi nomor surat:</p>
                             <ul class="list-disc list-inside space-y-1">
-                                <li>Perusahaan: <span class="font-semibold">RSAZRA</span></li>
+                                <li>Perusahaan: <span class="font-semibold">AZRA</span></li>
                                 <li>Nomor urut terakhir: <span class="font-semibold">${data.last_number}</span></li>
                                 <li>Nomor urut berikutnya: <span class="font-semibold">${String(parseInt(data.last_number) + 1).padStart(3, '0')}</span></li>
                             </ul>
@@ -1393,7 +1422,7 @@
                             <ul class="list-disc list-inside space-y-1">
                                 <li>Perusahaan: <span class="font-semibold">ASP</span></li>
                                 <li>Nomor urut terakhir: <span class="font-semibold">${lastNumber}</span></li>
-                                <li>Nomor urut berikutnya: <span class="font-semibold">${nextNumber}</span></li>
+                                <li>Nomor urut berikutnya: <span class="font-semibold">${String(nextNumber).padStart(3, '0')}</span></li>
                             </ul>
                             <p class="mt-4">Apakah Anda ingin menggunakan nomor surat ini?</p>
                         </div>

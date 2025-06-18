@@ -268,10 +268,9 @@
                             <div class="flex items-center justify-between mb-2">
                                 <p class="text-sm font-medium text-gray-500">File Surat</p>
                                 <div class="flex space-x-2">
-                                    <button id="detail-preview-button" class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 transition-colors duration-200">
-                                        <i class="ri-file-search-line mr-1.5"></i>
-                                        Preview
-                                    </button>
+                                    <a id="detail-preview-link" href="#" target="_blank" class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 transition-colors duration-200">
+                                        <i class="ri-file-search-line mr-1.5"></i> Preview
+                                    </a>
                                     <a href="#" id="detail-file-link" class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 transition-colors duration-200">
                                         <i class="ri-download-line mr-1.5"></i>
                                         Download
@@ -292,50 +291,6 @@
                         onclick="document.getElementById('detail-modal').classList.add('hidden')">
                         Tutup
                     </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Preview File -->
-    <div id="file-preview-modal" class="fixed inset-0 z-50 hidden overflow-hidden">
-        <div class="flex items-center justify-center min-h-screen p-0 text-center">
-            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-                <div class="absolute inset-0 bg-gray-900 opacity-90"></div>
-            </div>
-            <div
-                class="inline-block align-middle bg-white rounded-lg text-left overflow-hidden shadow-2xl transform transition-all my-0 w-full max-w-full sm:max-w-full md:max-w-full lg:max-w-full xl:max-w-full h-screen">
-                <div class="bg-white px-3 py-3 flex justify-between items-center border-b border-gray-200">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900 truncate max-w-[70%]" id="preview-modal-title">
-                        Preview File Surat
-                    </h3>
-                    <div class="flex space-x-2">
-                        <a href="#" id="preview-download-link"
-                            class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                            <i class="ri-download-line mr-1"></i> Download
-                        </a>
-                        <button type="button" id="close-preview-modal"
-                            class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                            <i class="ri-close-line mr-1"></i> Tutup
-                        </button>
-                    </div>
-                </div>
-                <div style="height: calc(100vh - 49px);" class="bg-gray-100">
-                    <div id="file-preview-container" class="w-full h-full">
-                        <iframe id="pdf-preview" class="w-full h-full hidden border-0" style="display: none;"></iframe>
-                        <img id="img-preview" class="max-h-full max-w-full mx-auto hidden" style="object-fit: contain; padding: 20px; height: calc(100vh - 89px); display: none; margin: 0 auto;" />
-                        <div id="loading-preview" class="flex flex-col justify-center items-center h-full w-full">
-                            <i class="ri-loader-4-line animate-spin text-5xl text-green-600"></i>
-                            <p class="mt-4 text-gray-600">Memuat file...</p>
-                        </div>
-                        <div id="error-preview" class="hidden">
-                            <div class="flex flex-col justify-center items-center h-full w-full">
-                                <i class="ri-error-warning-line text-5xl text-red-600"></i>
-                                <p class="mt-4 text-gray-600 font-medium">File tidak dapat ditampilkan</p>
-                                <p class="mt-1 text-gray-500">Silahkan download file untuk melihatnya</p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -1612,7 +1567,7 @@
             }
 
             // Set download link and preview button visibility
-            const previewButton = document.getElementById('detail-preview-button');
+            const previewButton = document.getElementById('detail-preview-link');
             const downloadLink = document.getElementById('detail-file-link');
             
             if (surat.file_path) {
@@ -1685,8 +1640,22 @@
         }
 
             // Tambahkan event listener untuk tombol preview pada detail surat
-            document.getElementById('detail-preview-button').addEventListener('click', function() {
-                previewFileInDetail();
+            document.getElementById('detail-preview-link').addEventListener('click', function(e) {
+                e.preventDefault();
+                // Ambil data surat
+                if (!currentSuratId) return;
+                const surat = suratData.find(s => s.id === currentSuratId);
+                if (!surat) return;
+                let previewUrl = '';
+                if (surat.files && surat.files.length > 0) {
+                    previewUrl = '/' + surat.files[0].file_path;
+                } else if (surat.file_path) {
+                    previewUrl = `/suratkeluar/${currentSuratId}/preview`;
+                } else {
+                    alert('File tidak tersedia');
+                    return;
+                }
+                window.open(previewUrl, '_blank');
             });
 
             // Tambahkan event listener untuk tombol close preview
@@ -1806,7 +1775,7 @@
             });
             
             // Add event listener for detail preview button
-            document.getElementById('detail-preview-button').addEventListener('click', function() {
+            document.getElementById('detail-preview-link').addEventListener('click', function() {
                 previewFileInDetail();
             });
             
@@ -1830,8 +1799,8 @@
                     const ext = file.file_path.split('.').pop().toLowerCase();
                     let previewBtn = '';
                     
-                    if(['pdf','jpg','jpeg','png'].includes(ext)) {
-                        previewBtn = `<button type="button" class="ml-2 text-xs text-blue-600 underline preview-file-btn" data-url="/${file.file_path}" data-ext="${ext}" data-name="${file.original_name || file.file_path.split('/').pop()}">Preview</button>`;
+                    if(['pdf','jpg','jpeg','png','doc','docx','xls','xlsx','ppt','pptx','txt','zip','rar'].includes(ext)) {
+                        previewBtn = `<a href="/${file.file_path}" target="_blank" class="ml-2 text-xs text-blue-600 underline">Preview</a>`;
                     }
                     
                     filesList.innerHTML += `
@@ -1842,58 +1811,6 @@
                             ${previewBtn}
                         </div>
                     `;
-                });
-
-                // Tambahkan event listeners untuk tombol preview
-                document.querySelectorAll('.preview-file-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const url = this.getAttribute('data-url');
-                        const ext = this.getAttribute('data-ext');
-                        const name = this.getAttribute('data-name');
-                        
-                        // Show fullscreen preview
-                        const previewModal = document.getElementById('file-preview-modal');
-                        const pdfPreview = document.getElementById('pdf-preview');
-                        const imgPreview = document.getElementById('img-preview');
-                        const loadingPreview = document.getElementById('loading-preview');
-                        const errorPreview = document.getElementById('error-preview');
-                        
-                        // Reset tampilan awal
-                        previewModal.classList.remove('hidden');
-                        document.getElementById('preview-modal-title').textContent = 'Preview: ' + name;
-                        document.getElementById('preview-download-link').href = url;
-                        
-                        // Sembunyikan semua, tampilkan loading
-                        pdfPreview.classList.add('hidden');
-                        imgPreview.classList.add('hidden');
-                        errorPreview.classList.add('hidden');
-                        loadingPreview.classList.remove('hidden');
-                        
-                        if (ext === 'pdf') {
-                            // Preview PDF
-                            pdfPreview.src = url;
-                            pdfPreview.classList.remove('hidden');
-                            pdfPreview.style.display = 'block';
-                            loadingPreview.classList.add('hidden');
-                        } else if (['jpg', 'jpeg', 'png'].includes(ext)) {
-                            // Preview gambar
-                            imgPreview.src = url;
-                            imgPreview.onload = function() {
-                                // Setelah gambar loaded, sembunyikan loading dan tampilkan gambar
-                                loadingPreview.classList.add('hidden');
-                                imgPreview.classList.remove('hidden');
-                                imgPreview.style.display = 'block';
-                            };
-                            imgPreview.onerror = function() {
-                                loadingPreview.classList.add('hidden');
-                                errorPreview.classList.remove('hidden');
-                            };
-            } else {
-                            // Format tidak didukung
-                            loadingPreview.classList.add('hidden');
-                            errorPreview.classList.remove('hidden');
-                        }
-                    });
                 });
             } else {
                 noFileText.style.display = 'inline';

@@ -1294,9 +1294,7 @@
                         </div>
                         <div class="flex items-center gap-2">
                             ${['pdf', 'jpg', 'jpeg', 'png'].includes(ext) ? 
-                                `<button type="button" class="inline-preview-file-btn px-2 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded hover:bg-blue-200" data-file-idx="${idx}">
-                                    <i class="ri-eye-line mr-1"></i> Preview
-                                </button>` : ''}
+                                `<a href="/${file.file_path}" target="_blank" class="ml-2 text-xs text-blue-600 underline">Preview</a>` : ''}
                             <a href="/${file.file_path}" download class="px-2 py-1 text-xs font-medium text-green-600 bg-green-100 rounded hover:bg-green-200">
                                 <i class="ri-download-line mr-1"></i> Download
                             </a>
@@ -1998,8 +1996,8 @@
                     files.forEach((file, idx) => {
                         const ext = file.file_path.split('.').pop().toLowerCase();
                         let previewBtn = '';
-                        if(['pdf','jpg','jpeg','png'].includes(ext)) {
-                            previewBtn = `<button type=\"button\" class=\"ml-2 text-xs text-blue-600 underline modal-preview-btn\" data-file-idx=\"${idx}\">Preview</button>`;
+                        if(['pdf','jpg','jpeg','png','doc','docx','xls','xlsx','ppt','pptx','txt','zip','rar'].includes(ext)) {
+                            previewBtn = `<a href="/${file.file_path}" target="_blank" class="ml-2 text-xs text-blue-600 underline">Preview</a>`;
                         }
                         filesList.innerHTML += `
                             <div class=\"flex items-center space-x-2\">

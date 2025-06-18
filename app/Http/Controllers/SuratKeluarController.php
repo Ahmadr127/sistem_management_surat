@@ -640,8 +640,8 @@ class SuratKeluarController extends Controller
                           ->orWhereRaw('perihal ILIKE ?', ["%{$searchTerm}%"])
                           ->orWhereRaw('perusahaan ILIKE ?', ["%{$searchTerm}%"]);
                     } else {
-                        $q->where('nomor_surat', 'like', "%{$searchTerm}%")
-                          ->orWhere('perihal', 'like', "%{$searchTerm}%")
+                    $q->where('nomor_surat', 'like', "%{$searchTerm}%")
+                      ->orWhere('perihal', 'like', "%{$searchTerm}%")
                           ->orWhere('perusahaan', 'like', "%{$searchTerm}%");
                     }
                     // Relasi perusahaanData
@@ -649,7 +649,7 @@ class SuratKeluarController extends Controller
                         if ($isPgsql) {
                             $subquery->whereRaw('nama_perusahaan ILIKE ?', ["%{$searchTerm}%"]);
                         } else {
-                            $subquery->where('nama_perusahaan', 'like', "%{$searchTerm}%");
+                          $subquery->where('nama_perusahaan', 'like', "%{$searchTerm}%");
                         }
                     });
                     // Relasi creator
@@ -660,10 +660,10 @@ class SuratKeluarController extends Controller
                                          $q2->whereRaw('nama_jabatan ILIKE ?', ["%{$searchTerm}%"]);
                                      });
                         } else {
-                            $subquery->where('name', 'like', "%{$searchTerm}%")
-                                     ->orWhereHas('jabatan', function($q2) use ($searchTerm) {
-                                         $q2->where('nama_jabatan', 'like', "%{$searchTerm}%");
-                                     });
+                          $subquery->where('name', 'like', "%{$searchTerm}%")
+                                   ->orWhereHas('jabatan', function($q2) use ($searchTerm) {
+                                       $q2->where('nama_jabatan', 'like', "%{$searchTerm}%");
+                                   });
                         }
                     });
                     // Relasi disposisi
@@ -675,13 +675,13 @@ class SuratKeluarController extends Controller
                                          $q2->whereRaw('name ILIKE ?', ["%{$searchTerm}%"]);
                                      });
                         } else {
-                            $subquery->where('status_sekretaris', 'like', "%{$searchTerm}%")
-                                     ->orWhere('status_dirut', 'like', "%{$searchTerm}%")
-                                     ->orWhereHas('tujuan', function($q2) use ($searchTerm) {
-                                         $q2->where('name', 'like', "%{$searchTerm}%");
-                                     });
+                          $subquery->where('status_sekretaris', 'like', "%{$searchTerm}%")
+                                   ->orWhere('status_dirut', 'like', "%{$searchTerm}%")
+                                   ->orWhereHas('tujuan', function($q2) use ($searchTerm) {
+                                       $q2->where('name', 'like', "%{$searchTerm}%");
+                                   });
                         }
-                    });
+                      });
                 });
             }
 
