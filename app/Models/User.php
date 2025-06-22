@@ -29,6 +29,7 @@ class User extends Authenticatable
         'password',
         'role',
         'jabatan_id',
+        'manager_id',
         'status_akun',
         'foto_profile',
     ];
@@ -71,6 +72,22 @@ class User extends Authenticatable
         return $this->belongsTo(Jabatan::class, 'jabatan_id', 'id');
     }
 
+    /**
+     * Relasi ke manager (self-referencing)
+     */
+    public function manager()
+    {
+        return $this->belongsTo(User::class, 'manager_id');
+    }
+
+    /**
+     * Relasi ke staff yang dibawahi (self-referencing)
+     */
+    public function staff()
+    {
+        return $this->hasMany(User::class, 'manager_id');
+    }
+
     // Tambahkan accessor untuk memudahkan pengambilan nama jabatan
     public function getJabatanNameAttribute()
     {
@@ -80,9 +97,64 @@ class User extends Authenticatable
     public function getFotoUrlAttribute()
     {
         if ($this->foto_profile) {
-            return url('uploads/' . $this->foto_profile);
+            return Storage::url($this->foto_profile);
         }
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color=7F9CF5&background=EBF4FF';
+        return asset('assets/images/default-avatar.png');
+    }
+
+    /**
+     * Check if user is manager
+     */
+    public function isManager()
+    {
+        return $this->role === 4;
+    }
+
+    /**
+     * Check if user is staff
+     */
+    public function isStaff()
+    {
+        return $this->role === 0;
+    }
+
+    /**
+     * Check if user is secretary
+     */
+    public function isSecretary()
+    {
+        return $this->role === 1;
+    }
+
+    /**
+     * Check if user is director
+     */
+    public function isDirector()
+    {
+        return $this->role === 2;
+    }
+
+    /**
+     * Check if user is admin
+     */
+    public function isAdmin()
+    {
+        return $this->role === 3;
+    }
+
+    /**
+     * Get role name
+     */
+    public function getRoleNameAttribute()
+    {
+        $roles = [
+            0 => 'Staff',
+            1 => 'Sekretaris',
+            2 => 'Direktur',
+            3 => 'Admin',
+            4 => 'Manager'
+        ];
+        return $roles[$this->role] ?? 'Unknown';
     }
 
     // Tambahkan relasi untuk surat keluar yang ditujukan ke user ini

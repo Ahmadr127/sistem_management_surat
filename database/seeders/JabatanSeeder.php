@@ -19,6 +19,10 @@ class JabatanSeeder extends Seeder
                 'status' => 'aktif'
             ],
             [
+                'nama_jabatan' => 'MANAGER',
+                'status' => 'aktif'
+            ],
+            [
                 'nama_jabatan' => 'DIREKTUR UTAMA',
                 'status' => 'aktif'
             ],
@@ -33,7 +37,7 @@ class JabatanSeeder extends Seeder
         ];
 
         foreach ($jabatan as $jab) {
-            Jabatan::create($jab);
+            Jabatan::firstOrCreate(['nama_jabatan' => $jab['nama_jabatan']], $jab);
         }
     }
 }

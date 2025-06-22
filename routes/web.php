@@ -13,6 +13,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\SuratMasukController;
 use App\Http\Controllers\PerusahaanController;
+use App\Http\Controllers\SuratUnitManagerController;
+use App\Http\Controllers\SuratUnitManagerApprovalController;
 
 // Redirect root ke login jika belum login
 Route::get('/', function () {
@@ -25,7 +27,7 @@ Route::get('/', function () {
 // Route untuk tamu (belum login)
 Route::middleware('guest')->group(function () {
     Route::get('login', [AuthController::class, 'index'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 });
 
 // Route untuk semua user yang sudah login
@@ -88,6 +90,19 @@ Route::middleware(['auth', 'checkRole:0,1,2,3'])->group(function () {
         Route::delete('/{id}/force', [SuratKeluarController::class, 'forceDelete'])->name('forceDelete');
     });
 
+    // Surat Unit Manager - Hanya untuk Staff (role 0)
+    Route::prefix('surat-unit-manager')->name('surat-unit-manager.')->group(function () {
+        Route::get('/', [SuratUnitManagerController::class, 'index'])->name('index');
+        Route::get('/create', [SuratUnitManagerController::class, 'create'])->name('create');
+        Route::post('/', [SuratUnitManagerController::class, 'store'])->name('store');
+        Route::get('/{suratUnitManager}', [SuratUnitManagerController::class, 'show'])->name('show');
+        Route::get('/{suratUnitManager}/edit', [SuratUnitManagerController::class, 'edit'])->name('edit');
+        Route::put('/{suratUnitManager}', [SuratUnitManagerController::class, 'update'])->name('update');
+        Route::delete('/{suratUnitManager}', [SuratUnitManagerController::class, 'destroy'])->name('destroy');
+        Route::get('/{suratUnitManager}/download', [SuratUnitManagerController::class, 'download'])->name('download');
+        Route::get('/{suratUnitManager}/preview', [SuratUnitManagerController::class, 'preview'])->name('preview');
+    });
+
     // Pengaturan & Jadwal
     Route::view('/pengaturan', 'pages.pengaturan')->name('pengaturan');
     Route::view('/jadwal', 'pages.jadwal')->name('jadwal');
@@ -114,6 +129,27 @@ Route::middleware(['auth', 'checkRole:1,2'])->group(function () {
         Route::post('/{disposisi}/comments', [DisposisiCommentController::class, 'store'])->name('comments.store');
         Route::get('/{disposisi}/comments', [DisposisiCommentController::class, 'index'])->name('comments.index');
     });
+
+    // Persetujuan Surat Unit Manager - Manager (role 4)
+    Route::prefix('surat-unit-manager/manager')->name('surat-unit-manager.manager.')->group(function () {
+        Route::get('/', [SuratUnitManagerApprovalController::class, 'managerIndex'])->name('index');
+        Route::get('/{suratUnitManager}', [SuratUnitManagerApprovalController::class, 'managerShow'])->name('show');
+        Route::post('/{suratUnitManager}/approval', [SuratUnitManagerApprovalController::class, 'managerApproval'])->name('approval');
+    });
+
+    // Persetujuan Surat Unit Manager - Sekretaris (role 1)
+    Route::prefix('surat-unit-manager/sekretaris')->name('surat-unit-manager.sekretaris.')->group(function () {
+        Route::get('/', [SuratUnitManagerApprovalController::class, 'sekretarisIndex'])->name('index');
+        Route::get('/{suratUnitManager}', [SuratUnitManagerApprovalController::class, 'sekretarisShow'])->name('show');
+        Route::post('/{suratUnitManager}/approval', [SuratUnitManagerApprovalController::class, 'sekretarisApproval'])->name('approval');
+    });
+
+    // Persetujuan Surat Unit Manager - Direktur (role 2)
+    Route::prefix('surat-unit-manager/dirut')->name('surat-unit-manager.dirut.')->group(function () {
+        Route::get('/', [SuratUnitManagerApprovalController::class, 'dirutIndex'])->name('index');
+        Route::get('/{suratUnitManager}', [SuratUnitManagerApprovalController::class, 'dirutShow'])->name('show');
+        Route::post('/{suratUnitManager}/approval', [SuratUnitManagerApprovalController::class, 'dirutApproval'])->name('approval');
+    });
 });
 
 // Route khusus untuk super admin
@@ -122,13 +158,8 @@ Route::middleware(['auth', 'checkRole:3'])->group(function () {
         return view('home');
     })->name('app');
     
-    // User Management
+    // User Management - View
     Route::get('/manageuser', [UserController::class, 'index'])->name('manageuser.index');
-    Route::get('/users', [UserController::class, 'getUsers'])->name('users.get');
-    Route::post('/users', [UserController::class, 'store'])->name('users.store');
-    Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
-    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.delete');
-    Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
     
     // Manage Jabatan
     Route::get('/managejabatan', [JabatanController::class, 'index'])->name('managejabatan.index');
@@ -172,8 +203,11 @@ Route::middleware('auth')->prefix('api')->name('api.')->group(function () {
     Route::get('/disposisi/{id}', [DisposisiController::class, 'show'])->name('disposisi.show');
     Route::post('/disposisi/{id}/update', [DisposisiController::class, 'update'])->name('disposisi.update');
     
-    // User routes
-    Route::get('/users', function () {
+    // User routes untuk disposisi (tidak untuk management)
+    Route::get('/users/disposisi', [UserController::class, 'getForDisposisi'])->name('users.disposisi');
+    
+    // Route untuk users yang digunakan di disposisi (semua role)
+    Route::get('/users/disposisi-list', function () {
         return User::with('jabatan')
                 ->where('status_akun', 'aktif')
                 ->where('id', '!=', auth()->id())
@@ -188,9 +222,7 @@ Route::middleware('auth')->prefix('api')->name('api.')->group(function () {
                 })
                 ->sortBy('name')
                 ->values();
-    })->name('users');
-    
-    Route::get('/users/disposisi', [UserController::class, 'getForDisposisi'])->name('users.disposisi');
+    })->name('users.disposisi-list');
     
     // Dashboard routes
     Route::prefix('dashboard')->group(function () {
@@ -207,6 +239,16 @@ Route::middleware('auth')->prefix('api')->name('api.')->group(function () {
     
     // Get Direktur ID
     Route::get('/get-direktur-id', [SuratKeluarController::class, 'getDirekturId'])->name('get-direktur-id');
+});
+
+// User Management API Routes (khusus super admin) - HARUS SETELAH route umum
+Route::middleware(['auth', 'checkRole:3'])->prefix('api')->name('api.')->group(function () {
+    Route::get('/users', [UserController::class, 'getUsers'])->name('users.get');
+    Route::get('/users/managers', [UserController::class, 'getManagers'])->name('users.managers');
+    Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.delete');
+    Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
 });
 
 Route::put('/api/surat-keluar/{id}', [SuratKeluarController::class, 'update'])->name('surat-keluar.update');
@@ -265,5 +307,14 @@ Route::middleware(['auth'])->group(function() {
 });
 
 Route::delete('/suratkeluar/{surat}/file/{file}', [App\Http\Controllers\SuratKeluarController::class, 'deleteFile'])->name('suratkeluar.file.delete');
+
+// Route khusus untuk manager (role 4)
+Route::middleware(['auth', 'checkRole:4'])->group(function () {
+    Route::prefix('surat-unit-manager/manager')->name('surat-unit-manager.manager.')->group(function () {
+        Route::get('/', [SuratUnitManagerApprovalController::class, 'managerIndex'])->name('index');
+        Route::get('/{suratUnitManager}', [SuratUnitManagerApprovalController::class, 'managerShow'])->name('show');
+        Route::post('/{suratUnitManager}/approval', [SuratUnitManagerApprovalController::class, 'managerApproval'])->name('approval');
+    });
+});
 
 

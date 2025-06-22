@@ -81,8 +81,8 @@
                 </div>
             @endif
 
-            <!-- Transaksi Dropdown (Untuk Staff, Admin, Direktur, dan Super Admin) -->
-            @if (Auth::user()->role === 0 || Auth::user()->role === 1 || Auth::user()->role === 2 || Auth::user()->role === 3)
+            <!-- Transaksi Dropdown (Untuk Staff, Admin, Direktur, Super Admin, dan Manager) -->
+            @if (in_array(Auth::user()->role, [0,1,2,3,4]))
                 <div class="relative" x-data="{ open: {{ Request::is('disposisi*', 'suratkeluar*', 'jadwal*') ? 'true' : 'false' }} }">
                     <button @click="open = !open"
                         class="w-full flex items-center py-3 px-4 rounded-xl transition-all duration-200 group text-gray-600 hover:bg-gray-50">
@@ -96,7 +96,7 @@
                         x-transition:enter-start="opacity-0 -translate-y-2"
                         x-transition:enter-end="opacity-100 translate-y-0" class="pl-10 pr-4 space-y-1 mt-1">
 
-                        <!-- Surat Masuk untuk Staff, Admin, Direktur, dan Super Admin -->
+                        <!-- Surat Masuk untuk semua role -->
                         <a href="{{ url('/suratmasuk') }}"
                             class="flex items-center py-2 px-4 rounded-lg transition-all duration-200 {{ Request::is('suratmasuk*') ? 'text-green-600 bg-green-50' : 'text-gray-600 hover:bg-gray-50' }}">
                             <i class="ri-mail-download-line text-lg mr-3"></i>
@@ -106,13 +106,34 @@
                             @endif
                         </a>
 
-                        <!-- Surat Keluar untuk Staff, Admin, dan Super Admin (bukan Direktur) -->
-                        @if (Auth::user()->role === 0 || Auth::user()->role === 1 || Auth::user()->role === 3)
+                        <!-- Surat Keluar untuk Staff, Admin, dan Super Admin (bukan Direktur/Manager) -->
+                        @if (in_array(Auth::user()->role, [0,1,3]))
                             <a href="{{ route('suratkeluar.index') }}"
                                 class="flex items-center py-2 px-4 rounded-lg transition-all duration-200 {{ Request::is('suratkeluar*') ? 'text-green-600 bg-green-50' : 'text-gray-600 hover:bg-gray-50' }}">
                                 <i class="ri-send-plane-line text-lg mr-3"></i>
                                 <span class="font-medium">Surat Keluar</span>
                                 @if (Request::is('suratkeluar*'))
+                                    <div class="ml-auto h-2 w-2 rounded-full bg-green-600"></div>
+                                @endif
+                            </a>
+                        @endif
+
+                        <!-- Surat Unit Manager untuk Unit dan Manager -->
+                        @if (Auth::user()->role === 0)
+                            <a href="{{ route('surat-unit-manager.index') }}"
+                                class="flex items-center py-3 px-4 rounded-xl transition-all duration-200 group {{ Request::is('surat-unit-manager*') && !Request::is('surat-unit-manager/manager*') ? 'bg-green-50 text-green-600' : 'text-gray-600 hover:bg-gray-50' }}">
+                                <i class="ri-briefcase-4-line text-xl {{ Request::is('surat-unit-manager*') && !Request::is('surat-unit-manager/manager*') ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-600' }}"></i>
+                                <span class="ml-3 font-medium">Surat Unit Manager</span>
+                                @if (Request::is('surat-unit-manager*') && !Request::is('surat-unit-manager/manager*'))
+                                    <div class="ml-auto h-2 w-2 rounded-full bg-green-600"></div>
+                                @endif
+                            </a>
+                        @elseif (Auth::user()->role === 4)
+                            <a href="{{ route('surat-unit-manager.manager.index') }}"
+                                class="flex items-center py-3 px-4 rounded-xl transition-all duration-200 group {{ Request::is('surat-unit-manager/manager*') ? 'bg-green-50 text-green-600' : 'text-gray-600 hover:bg-gray-50' }}">
+                                <i class="ri-briefcase-4-line text-xl {{ Request::is('surat-unit-manager/manager*') ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-600' }}"></i>
+                                <span class="ml-3 font-medium">Surat Unit Manager</span>
+                                @if (Request::is('surat-unit-manager/manager*'))
                                     <div class="ml-auto h-2 w-2 rounded-full bg-green-600"></div>
                                 @endif
                             </a>
@@ -126,7 +147,7 @@
         </div>
 
         <!-- Menu Lainnya (untuk semua role) -->
-        @if (Auth::user()->role === 0 || Auth::user()->role === 1 || Auth::user()->role === 2 || Auth::user()->role === 3)
+        @if (in_array(Auth::user()->role, [0,1,2,3,4]))
             <div class="px-4 mb-4 mt-8">
                 <p class="text-xs font-bold text-green-600 uppercase tracking-wider">Lainnya</p>
             </div>
