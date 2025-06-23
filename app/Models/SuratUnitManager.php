@@ -120,6 +120,14 @@ class SuratUnitManager extends Model
     }
 
     /**
+     * Relasi dengan file surat unit manager
+     */
+    public function files()
+    {
+        return $this->hasMany(SuratUnitManagerFile::class, 'surat_unit_manager_id');
+    }
+
+    /**
      * Accessor untuk mendapatkan nama perusahaan
      */
     public function getNamaPerusahaanAttribute()

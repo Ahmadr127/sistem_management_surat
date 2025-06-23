@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SuratUnitManager;
 use App\Models\User;
 use App\Models\Perusahaan;
+use App\Models\SuratUnitManagerFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -26,7 +27,8 @@ class SuratUnitManagerController extends Controller
                 'manager.jabatan',
                 'sekretaris.jabatan',
                 'dirut.jabatan',
-                'perusahaanData'
+                'perusahaanData',
+                'files'
             ]);
 
             // Filter berdasarkan role user yang login
@@ -175,7 +177,17 @@ class SuratUnitManagerController extends Controller
                 'isi_surat' => 'required',
                 'jenis_surat' => 'required|in:internal,eksternal',
                 'sifat_surat' => 'required|in:normal,urgent',
-                'file' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
+                'files.*' => [
+                    'nullable',
+                    'file',
+                    'mimes:pdf,doc,docx,jpg,jpeg,png,xls,xlsx,ppt,pptx,zip,rar',
+                    'max:5120', // 5MB per file
+                    function ($attribute, $value, $fail) {
+                        if ($value && !$value->isValid()) {
+                            $fail('File tidak valid atau rusak.');
+                        }
+                    }
+                ],
                 'perusahaan' => 'required|in:' . implode(',', $activeCodes),
                 'keterangan_unit' => 'nullable|string'
             ]);
@@ -208,19 +220,59 @@ class SuratUnitManagerController extends Controller
                 $suratUnitManager->status_sekretaris = 'pending';
                 $suratUnitManager->status_dirut = 'pending';
 
-                // Proses file jika ada
-                if ($request->hasFile('file')) {
-                    $file = $request->file('file');
-                    $fileName = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
-                    $uploadDir = public_path('uploads/surat_unit_manager');
-                    if (!file_exists($uploadDir)) {
-                        mkdir($uploadDir, 0755, true);
-                    }
-                    $file->move($uploadDir, $fileName);
-                    $suratUnitManager->file_path = 'uploads/surat_unit_manager/' . $fileName;
-                }
-
                 $suratUnitManager->save();
+
+                // Proses file jika ada
+                if ($request->hasFile('files')) {
+                    $files = $request->file('files');
+                    
+                    // Validasi files array
+                    if (!is_array($files)) {
+                        $files = [$files];
+                    }
+                    
+                    foreach ($files as $file) {
+                        // Validasi file
+                        if (!$file || !$file->isValid()) {
+                            continue;
+                        }
+                        
+                        try {
+                            $fileName = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                            $uploadDir = public_path('uploads/surat_unit_manager');
+                            
+                            // Buat direktori jika belum ada
+                            if (!file_exists($uploadDir)) {
+                                if (!mkdir($uploadDir, 0755, true)) {
+                                    throw new \Exception('Gagal membuat direktori upload');
+                                }
+                            }
+                            
+                            // Cek apakah direktori dapat ditulis
+                            if (!is_writable($uploadDir)) {
+                                throw new \Exception('Direktori upload tidak dapat ditulis');
+                            }
+                            
+                            // Pindahkan file
+                            if (!$file->move($uploadDir, $fileName)) {
+                                throw new \Exception('Gagal memindahkan file');
+                            }
+                            
+                            // Simpan informasi file ke tabel terpisah
+                            SuratUnitManagerFile::create([
+                                'surat_unit_manager_id' => $suratUnitManager->id,
+                                'file_path' => 'uploads/surat_unit_manager/' . $fileName,
+                                'original_name' => $file->getClientOriginalName(),
+                                'file_type' => $file->getMimeType(),
+                                'file_size' => $file->getSize()
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::error('Error uploading file: ' . $e->getMessage());
+                            // Lanjutkan dengan file berikutnya jika ada error
+                            continue;
+                        }
+                    }
+                }
 
                 DB::commit();
 
@@ -244,15 +296,22 @@ class SuratUnitManagerController extends Controller
         } catch (\Exception $e) {
             Log::error('Error in SuratUnitManagerController@store: ' . $e->getMessage());
             
+            // Check if it's a file upload error
+            if (strpos($e->getMessage(), 'SplFileInfo::getSize') !== false) {
+                $errorMessage = 'Terjadi kesalahan saat memproses file. Pastikan file yang dipilih valid dan tidak rusak.';
+            } else {
+                $errorMessage = 'Terjadi kesalahan saat menyimpan surat: ' . $e->getMessage();
+            }
+            
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Terjadi kesalahan saat menyimpan surat: ' . $e->getMessage()
+                    'message' => $errorMessage
                 ], 500);
             }
 
             return redirect()->back()
-                ->with('error', 'Terjadi kesalahan saat menyimpan surat: ' . $e->getMessage())
+                ->with('error', $errorMessage)
                 ->withInput();
         }
     }
@@ -272,6 +331,9 @@ class SuratUnitManagerController extends Controller
                 return redirect()->back()->with('error', 'Anda tidak memiliki akses ke surat ini');
             }
 
+            // Load files relationship
+            $suratUnitManager->load('files');
+
             return view('pages.surat_unit_manager.show', compact('suratUnitManager'));
         } catch (\Exception $e) {
             Log::error('Error in SuratUnitManagerController@show: ' . $e->getMessage());
@@ -286,14 +348,15 @@ class SuratUnitManagerController extends Controller
     {
         try {
             $user = auth()->user();
-            
-            // Hanya unit yang membuat surat yang bisa edit, dan hanya jika belum disetujui manager
-            if ($user->role !== 0 || $suratUnitManager->unit_id !== $user->id) {
-                return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk mengedit surat ini');
+
+            // Cek kepemilikan
+            if ($suratUnitManager->unit_id !== $user->id) {
+                return redirect()->route('surat-unit-manager.index')->with('error', 'Anda tidak memiliki hak untuk mengedit surat ini.');
             }
 
-            if ($suratUnitManager->status_manager !== 'pending') {
-                return redirect()->back()->with('error', 'Surat tidak dapat diedit karena sudah diproses');
+            // Cek apakah statusnya bisa diedit
+            if (!in_array($suratUnitManager->status_manager, ['pending', 'rejected'])) {
+                return redirect()->route('surat-unit-manager.index')->with('error', 'Surat ini tidak dapat diedit karena sudah diproses atau disetujui.');
             }
 
             // Get manager untuk staff ini
@@ -307,33 +370,38 @@ class SuratUnitManagerController extends Controller
                                      ->orderBy('nama_perusahaan')
                                      ->get();
 
+            // Load files relationship
+            $suratUnitManager->load('files');
+
             return view('pages.surat_unit_manager.edit', compact('suratUnitManager', 'manager', 'perusahaans'));
+
         } catch (\Exception $e) {
             Log::error('Error in SuratUnitManagerController@edit: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat form edit');
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat halaman edit.');
         }
     }
 
     /**
-     * Update surat unit manager
+     * Mengupdate surat unit manager di database
      */
     public function update(Request $request, SuratUnitManager $suratUnitManager)
     {
         try {
             $user = auth()->user();
-            
-            // Hanya unit yang membuat surat yang bisa edit, dan hanya jika belum disetujui manager
-            if ($user->role !== 0 || $suratUnitManager->unit_id !== $user->id) {
+
+            // Cek kepemilikan
+            if ($suratUnitManager->unit_id !== $user->id) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Anda tidak memiliki akses untuk mengedit surat ini'
+                    'message' => 'Anda tidak memiliki hak untuk mengupdate surat ini'
                 ], 403);
             }
 
-            if ($suratUnitManager->status_manager !== 'pending') {
+            // Cek apakah statusnya bisa diupdate
+            if (!in_array($suratUnitManager->status_manager, ['pending', 'rejected'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Surat tidak dapat diedit karena sudah diproses'
+                    'message' => 'Surat ini tidak dapat diupdate karena sudah diproses atau disetujui'
                 ], 422);
             }
 
@@ -358,16 +426,13 @@ class SuratUnitManagerController extends Controller
                     function ($attribute, $value, $fail) use ($suratUnitManager) {
                         // Jika nomor surat mengandung tanda strip (-), maka diperbolehkan
                         if (strpos($value, '-') !== false) {
-                            return true;
+                            return;
                         }
-                        
-                        // Cek apakah nomor surat sudah digunakan oleh surat lain
                         $exists = SuratUnitManager::where('nomor_surat', $value)
-                                  ->where('id', '!=', $suratUnitManager->id)
-                                  ->exists();
-                        
+                                         ->where('id', '!=', $suratUnitManager->id)
+                                         ->exists();
                         if ($exists) {
-                            $fail('Nomor surat sudah digunakan. Gunakan tanda strip (-) jika ingin menggunakan nomor yang sama.');
+                            $fail('Nomor surat sudah digunakan.');
                         }
                     }
                 ],
@@ -376,12 +441,23 @@ class SuratUnitManagerController extends Controller
                 'isi_surat' => 'required',
                 'jenis_surat' => 'required|in:internal,eksternal',
                 'sifat_surat' => 'required|in:normal,urgent',
-                'file' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
+                'files.*' => [
+                    'nullable',
+                    'file',
+                    'mimes:pdf,doc,docx,jpg,jpeg,png,xls,xlsx,ppt,pptx,zip,rar',
+                    'max:5120', // 5MB per file
+                    function ($attribute, $value, $fail) {
+                        if ($value && !$value->isValid()) {
+                            $fail('File tidak valid atau rusak.');
+                        }
+                    }
+                ],
                 'perusahaan' => 'required|in:' . implode(',', $activeCodes),
                 'keterangan_unit' => 'nullable|string'
             ]);
 
             if ($validator->fails()) {
+                Log::error('Validation failed.', ['errors' => $validator->errors()->toArray()]);
                 return response()->json([
                     'success' => false,
                     'message' => 'Validasi gagal',
@@ -392,7 +468,6 @@ class SuratUnitManagerController extends Controller
             DB::beginTransaction();
 
             try {
-                // Update surat
                 $suratUnitManager->nomor_surat = $request->nomor_surat;
                 $suratUnitManager->tanggal_surat = $request->tanggal_surat;
                 $suratUnitManager->perihal = $request->perihal;
@@ -401,25 +476,81 @@ class SuratUnitManagerController extends Controller
                 $suratUnitManager->jenis_surat = $request->jenis_surat;
                 $suratUnitManager->sifat_surat = $request->sifat_surat;
                 $suratUnitManager->keterangan_unit = $request->keterangan_unit;
+                
+                // Jika surat yang diupdate adalah surat yang ditolak, reset statusnya menjadi pending
+                if ($suratUnitManager->status_manager === 'rejected') {
+                    $suratUnitManager->status_manager = 'pending';
+                    $suratUnitManager->keterangan_manager = null; // Kosongkan keterangan dari manager
+                    $suratUnitManager->waktu_review_manager = null;
+                }
 
-                // Proses file baru jika ada
-                if ($request->hasFile('file')) {
+                // Proses file jika ada
+                if ($request->hasFile('files')) {
                     // Hapus file lama jika ada
-                    if ($suratUnitManager->file_path && file_exists(public_path($suratUnitManager->file_path))) {
-                        unlink(public_path($suratUnitManager->file_path));
+                    foreach ($suratUnitManager->files as $oldFile) {
+                        try {
+                            if (file_exists(public_path($oldFile->file_path))) {
+                                unlink(public_path($oldFile->file_path));
+                            }
+                            $oldFile->delete();
+                        } catch (\Exception $e) {
+                            Log::error('Error deleting old file: ' . $e->getMessage());
+                            continue;
+                        }
                     }
 
-                    $file = $request->file('file');
-                    $fileName = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
-                    $uploadDir = public_path('uploads/surat_unit_manager');
-                    if (!file_exists($uploadDir)) {
-                        mkdir($uploadDir, 0755, true);
+                    $files = $request->file('files');
+                    
+                    // Validasi files array
+                    if (!is_array($files)) {
+                        $files = [$files];
                     }
-                    $file->move($uploadDir, $fileName);
-                    $suratUnitManager->file_path = 'uploads/surat_unit_manager/' . $fileName;
+                    
+                    foreach ($files as $file) {
+                        // Validasi file
+                        if (!$file || !$file->isValid()) {
+                            continue;
+                        }
+                        
+                        try {
+                            $fileName = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                            $uploadDir = public_path('uploads/surat_unit_manager');
+                            
+                            // Buat direktori jika belum ada
+                            if (!file_exists($uploadDir)) {
+                                if (!mkdir($uploadDir, 0755, true)) {
+                                    throw new \Exception('Gagal membuat direktori upload');
+                                }
+                            }
+                            
+                            // Cek apakah direktori dapat ditulis
+                            if (!is_writable($uploadDir)) {
+                                throw new \Exception('Direktori upload tidak dapat ditulis');
+                            }
+                            
+                            // Pindahkan file
+                            if (!$file->move($uploadDir, $fileName)) {
+                                throw new \Exception('Gagal memindahkan file');
+                            }
+                            
+                            // Simpan informasi file ke tabel terpisah
+                            SuratUnitManagerFile::create([
+                                'surat_unit_manager_id' => $suratUnitManager->id,
+                                'file_path' => 'uploads/surat_unit_manager/' . $fileName,
+                                'original_name' => $file->getClientOriginalName(),
+                                'file_type' => $file->getMimeType(),
+                                'file_size' => $file->getSize()
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::error('Error uploading file: ' . $e->getMessage());
+                            // Lanjutkan dengan file berikutnya jika ada error
+                            continue;
+                        }
+                    }
                 }
 
                 $suratUnitManager->save();
+                Log::info('Surat has been saved successfully.');
 
                 DB::commit();
 
@@ -437,21 +568,29 @@ class SuratUnitManagerController extends Controller
 
             } catch (\Exception $e) {
                 DB::rollBack();
+                Log::error('Exception during database transaction.', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
                 throw $e;
             }
 
         } catch (\Exception $e) {
             Log::error('Error in SuratUnitManagerController@update: ' . $e->getMessage());
             
+            // Check if it's a file upload error
+            if (strpos($e->getMessage(), 'SplFileInfo::getSize') !== false) {
+                $errorMessage = 'Terjadi kesalahan saat memproses file. Pastikan file yang dipilih valid dan tidak rusak.';
+            } else {
+                $errorMessage = 'Terjadi kesalahan saat memperbarui surat: ' . $e->getMessage();
+            }
+            
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Terjadi kesalahan saat memperbarui surat: ' . $e->getMessage()
+                    'message' => $errorMessage
                 ], 500);
             }
 
             return redirect()->back()
-                ->with('error', 'Terjadi kesalahan saat memperbarui surat: ' . $e->getMessage())
+                ->with('error', $errorMessage)
                 ->withInput();
         }
     }
@@ -480,8 +619,11 @@ class SuratUnitManagerController extends Controller
             }
 
             // Hapus file jika ada
-            if ($suratUnitManager->file_path && file_exists(public_path($suratUnitManager->file_path))) {
-                unlink(public_path($suratUnitManager->file_path));
+            foreach ($suratUnitManager->files as $file) {
+                if (file_exists(public_path($file->file_path))) {
+                    unlink(public_path($file->file_path));
+                }
+                $file->delete();
             }
 
             // Soft delete
@@ -518,13 +660,62 @@ class SuratUnitManagerController extends Controller
     public function download(SuratUnitManager $suratUnitManager)
     {
         try {
-            if (!$suratUnitManager->file_path || !file_exists(public_path($suratUnitManager->file_path))) {
+            if (!$suratUnitManager->files->count()) {
+                return redirect()->back()->with('error', 'Tidak ada file yang tersedia');
+            }
+
+            // Jika hanya ada satu file, download langsung
+            if ($suratUnitManager->files->count() === 1) {
+                $file = $suratUnitManager->files->first();
+                if (!file_exists(public_path($file->file_path))) {
+                    return redirect()->back()->with('error', 'File tidak ditemukan');
+                }
+                return response()->download(public_path($file->file_path), $file->original_name);
+            }
+
+            // Jika ada multiple files, buat zip
+            $zip = new \ZipArchive();
+            $zipName = 'surat_' . $suratUnitManager->id . '_' . time() . '.zip';
+            $zipPath = public_path('uploads/temp/' . $zipName);
+            
+            if (!file_exists(public_path('uploads/temp'))) {
+                mkdir(public_path('uploads/temp'), 0755, true);
+            }
+
+            if ($zip->open($zipPath, \ZipArchive::CREATE) === TRUE) {
+                foreach ($suratUnitManager->files as $file) {
+                    if (file_exists(public_path($file->file_path))) {
+                        $zip->addFile(public_path($file->file_path), $file->original_name);
+                    }
+                }
+                $zip->close();
+                
+                return response()->download($zipPath)->deleteFileAfterSend();
+            }
+
+            return redirect()->back()->with('error', 'Gagal membuat file zip');
+
+        } catch (\Exception $e) {
+            Log::error('Error in SuratUnitManagerController@download: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat mengunduh file');
+        }
+    }
+
+    /**
+     * Download file individual
+     */
+    public function downloadFile(SuratUnitManager $suratUnitManager, $fileId)
+    {
+        try {
+            $file = $suratUnitManager->files()->findOrFail($fileId);
+            
+            if (!file_exists(public_path($file->file_path))) {
                 return redirect()->back()->with('error', 'File tidak ditemukan');
             }
 
-            return response()->download(public_path($suratUnitManager->file_path));
+            return response()->download(public_path($file->file_path), $file->original_name);
         } catch (\Exception $e) {
-            Log::error('Error in SuratUnitManagerController@download: ' . $e->getMessage());
+            Log::error('Error in SuratUnitManagerController@downloadFile: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Terjadi kesalahan saat mengunduh file');
         }
     }
@@ -535,11 +726,52 @@ class SuratUnitManagerController extends Controller
     public function preview(SuratUnitManager $suratUnitManager)
     {
         try {
-            if (!$suratUnitManager->file_path || !file_exists(public_path($suratUnitManager->file_path))) {
+            if (!$suratUnitManager->files->count()) {
+                return redirect()->back()->with('error', 'Tidak ada file yang tersedia');
+            }
+
+            // Jika hanya ada satu file, preview langsung
+            if ($suratUnitManager->files->count() === 1) {
+                $file = $suratUnitManager->files->first();
+                if (!file_exists(public_path($file->file_path))) {
+                    return redirect()->back()->with('error', 'File tidak ditemukan');
+                }
+
+                $filePath = public_path($file->file_path);
+                $fileType = mime_content_type($filePath);
+
+                if (strpos($fileType, 'image/') === 0) {
+                    return response()->file($filePath);
+                } elseif ($fileType === 'application/pdf') {
+                    return response()->file($filePath);
+                } else {
+                    return response()->download($filePath);
+                }
+            }
+
+            // Jika ada multiple files, redirect ke halaman detail
+            return redirect()->route('surat-unit-manager.show', $suratUnitManager)
+                           ->with('info', 'Surat memiliki multiple files. Silakan pilih file yang ingin di-preview.');
+
+        } catch (\Exception $e) {
+            Log::error('Error in SuratUnitManagerController@preview: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat preview file');
+        }
+    }
+
+    /**
+     * Preview file individual
+     */
+    public function previewFile(SuratUnitManager $suratUnitManager, $fileId)
+    {
+        try {
+            $file = $suratUnitManager->files()->findOrFail($fileId);
+            
+            if (!file_exists(public_path($file->file_path))) {
                 return redirect()->back()->with('error', 'File tidak ditemukan');
             }
 
-            $filePath = public_path($suratUnitManager->file_path);
+            $filePath = public_path($file->file_path);
             $fileType = mime_content_type($filePath);
 
             if (strpos($fileType, 'image/') === 0) {
@@ -547,10 +779,10 @@ class SuratUnitManagerController extends Controller
             } elseif ($fileType === 'application/pdf') {
                 return response()->file($filePath);
             } else {
-                return response()->download($filePath);
+                return response()->download($filePath, $file->original_name);
             }
         } catch (\Exception $e) {
-            Log::error('Error in SuratUnitManagerController@preview: ' . $e->getMessage());
+            Log::error('Error in SuratUnitManagerController@previewFile: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Terjadi kesalahan saat preview file');
         }
     }

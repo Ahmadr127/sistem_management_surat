@@ -29,7 +29,8 @@ class SuratUnitManagerApprovalController extends Controller
                 'manager.jabatan',
                 'sekretaris.jabatan',
                 'dirut.jabatan',
-                'perusahaanData'
+                'perusahaanData',
+                'files'
             ])->byManager($user->id);
 
             // Filter berdasarkan status
@@ -66,6 +67,9 @@ class SuratUnitManagerApprovalController extends Controller
             if ($user->role !== 4 || $suratUnitManager->manager_id !== $user->id) {
                 return redirect()->back()->with('error', 'Anda tidak memiliki akses ke surat ini');
             }
+
+            // Load files relationship
+            $suratUnitManager->load('files');
 
             return view('pages.surat_unit_manager.manager.show', compact('suratUnitManager'));
         } catch (\Exception $e) {
@@ -162,7 +166,8 @@ class SuratUnitManagerApprovalController extends Controller
                 'manager.jabatan',
                 'sekretaris.jabatan',
                 'dirut.jabatan',
-                'perusahaanData'
+                'perusahaanData',
+                'files'
             ])->where('status_manager', 'approved');
 
             // Filter berdasarkan status
@@ -204,6 +209,9 @@ class SuratUnitManagerApprovalController extends Controller
             if ($suratUnitManager->status_manager !== 'approved') {
                 return redirect()->back()->with('error', 'Surat belum disetujui manager');
             }
+
+            // Load files relationship
+            $suratUnitManager->load('files');
 
             return view('pages.surat_unit_manager.sekretaris.show', compact('suratUnitManager'));
         } catch (\Exception $e) {
@@ -309,7 +317,8 @@ class SuratUnitManagerApprovalController extends Controller
                 'manager.jabatan',
                 'sekretaris.jabatan',
                 'dirut.jabatan',
-                'perusahaanData'
+                'perusahaanData',
+                'files'
             ])->where('status_sekretaris', 'approved');
 
             // Filter berdasarkan status
@@ -351,6 +360,9 @@ class SuratUnitManagerApprovalController extends Controller
             if ($suratUnitManager->status_sekretaris !== 'approved') {
                 return redirect()->back()->with('error', 'Surat belum disetujui sekretaris');
             }
+
+            // Load files relationship
+            $suratUnitManager->load('files');
 
             return view('pages.surat_unit_manager.dirut.show', compact('suratUnitManager'));
         } catch (\Exception $e) {

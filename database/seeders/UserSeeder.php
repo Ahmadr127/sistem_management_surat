@@ -17,14 +17,13 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         try {
-            // Buat atau update jabatan terlebih dahulu
-            $jabatanData = [
-                'IT' => Jabatan::firstOrCreate(['nama_jabatan' => 'IT'], ['status' => 'aktif']),
-                'STAFF' => Jabatan::firstOrCreate(['nama_jabatan' => 'STAFF'], ['status' => 'aktif']),
-                'MANAGER' => Jabatan::firstOrCreate(['nama_jabatan' => 'MANAGER'], ['status' => 'aktif']),
-                'DIRUT' => Jabatan::firstOrCreate(['nama_jabatan' => 'DIRUT'], ['status' => 'aktif']),
-                'SEKERTARIS' => Jabatan::firstOrCreate(['nama_jabatan' => 'SEKERTARIS'], ['status' => 'aktif'])
-            ];
+            // Ambil data jabatan yang sudah ada dari database
+            // Pastikan JabatanSeeder sudah dijalankan sebelumnya
+            $jabatanDirut = Jabatan::where('kode_jabatan', 'DIRUT')->firstOrFail();
+            $jabatanSekre = Jabatan::where('kode_jabatan', 'SEKRE')->firstOrFail();
+            $jabatanMngr = Jabatan::where('kode_jabatan', 'MNGR')->firstOrFail();
+            $jabatanStaff = Jabatan::where('kode_jabatan', 'STAFF')->firstOrFail();
+            $jabatanIt = Jabatan::where('kode_jabatan', 'IT')->firstOrFail();
 
             $users = [
                 [
@@ -33,7 +32,7 @@ class UserSeeder extends Seeder
                     'email' => 'admin@gmail.com',
                     'password' => Hash::make('123'),
                     'role' => 3,
-                    'jabatan_id' => $jabatanData['IT']->id,
+                    'jabatan_id' => $jabatanIt->id,
                     'status_akun' => 'aktif',
                 ],
                 [
@@ -42,7 +41,7 @@ class UserSeeder extends Seeder
                     'email' => 'dirut@gmail.com',
                     'password' => Hash::make('123'),
                     'role' => 2,
-                    'jabatan_id' => $jabatanData['DIRUT']->id,
+                    'jabatan_id' => $jabatanDirut->id,
                     'status_akun' => 'aktif',
                 ],
                 [
@@ -51,7 +50,7 @@ class UserSeeder extends Seeder
                     'email' => 'sekretaris@gmail.com',
                     'password' => Hash::make('123'),
                     'role' => 1,
-                    'jabatan_id' => $jabatanData['SEKERTARIS']->id,
+                    'jabatan_id' => $jabatanSekre->id,
                     'status_akun' => 'aktif',
                 ],
                 [
@@ -60,7 +59,7 @@ class UserSeeder extends Seeder
                     'email' => 'manager_a@gmail.com',
                     'password' => Hash::make('123'),
                     'role' => 4, // Role manager
-                    'jabatan_id' => $jabatanData['MANAGER']->id,
+                    'jabatan_id' => $jabatanMngr->id,
                     'status_akun' => 'aktif',
                 ],
                 [
@@ -69,7 +68,7 @@ class UserSeeder extends Seeder
                     'email' => 'manager_b@gmail.com',
                     'password' => Hash::make('123'),
                     'role' => 4, // Role manager
-                    'jabatan_id' => $jabatanData['MANAGER']->id,
+                    'jabatan_id' => $jabatanMngr->id,
                     'status_akun' => 'aktif',
                 ],
                 [
@@ -78,7 +77,7 @@ class UserSeeder extends Seeder
                     'email' => 'staff_a@gmail.com',
                     'password' => Hash::make('123'),
                     'role' => 0,
-                    'jabatan_id' => $jabatanData['STAFF']->id,
+                    'jabatan_id' => $jabatanStaff->id,
                     'status_akun' => 'aktif',
                 ],
                 [
@@ -87,7 +86,7 @@ class UserSeeder extends Seeder
                     'email' => 'staff_b@gmail.com',
                     'password' => Hash::make('123'),
                     'role' => 0,
-                    'jabatan_id' => $jabatanData['STAFF']->id,
+                    'jabatan_id' => $jabatanStaff->id,
                     'status_akun' => 'aktif',
                 ]
             ];

@@ -97,53 +97,51 @@
             </div>
 
             <!-- Table -->
-            <div class="relative rounded-lg shadow-sm overflow-hidden m-4 border border-gray-100">
-                <div class="overflow-x-auto md:rounded-lg scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                    <div class="inline-block min-w-full align-middle">
-                        <table class="min-w-full divide-y divide-gray-200" id="suratMasukTable">
-                    <thead class="bg-green-600">
-                        <tr>
-                            <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                No. Disposisi
-                            </th>
-                            <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Tanggal Surat
-                            </th>
-                            <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                No. Surat
-                            </th>
-                            <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Nama Perusahaan
-                            </th>
-                            <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Perihal
-                            </th>
-                            <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Jenis
-                            </th>
-                            <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Pengirim
-                            </th>
-                            <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Status Sekretaris
-                            </th>
-                            <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Status Direktur
-                            </th>
-                            <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Aksi
-                            </th>
-                        </tr>
-                    </thead>
-                            <tbody id="surat-table-body" class="bg-white divide-y divide-gray-200">
-                        <!-- Data akan diisi melalui JavaScript -->
-                    </tbody>
-                </table>
+            <div class="p-4">
+                <div class="overflow-x-auto relative rounded-lg shadow-sm border border-gray-100 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                    <table class="min-w-full divide-y divide-gray-200" id="suratMasukTable">
+                        <thead class="bg-green-600">
+                            <tr>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    No. Disposisi
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Tanggal Surat
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    No. Surat
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Nama Perusahaan
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Perihal
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Jenis
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Pengirim
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Status Sekretaris
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Status Direktur
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Aksi
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="surat-table-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Data akan diisi melalui JavaScript -->
+                        </tbody>
+                    </table>
+                    <!-- Scroll indicator visible only on small screens -->
+                    <div class="md:hidden absolute bottom-0 right-6 bg-gradient-to-l from-white via-white to-transparent px-4 py-1 text-xs text-gray-500 flex items-center pointer-events-none">
+                        <span>Geser <i class="ri-arrow-right-line ml-1"></i></span>
                     </div>
-                </div>
-                <!-- Scroll indicator visible only on small screens -->
-                <div class="md:hidden absolute bottom-0 right-6 bg-gradient-to-l from-white via-white to-transparent px-4 py-1 text-xs text-gray-500 flex items-center">
-                    <span>Geser <i class="ri-arrow-right-line ml-1"></i></span>
                 </div>
             </div>
 

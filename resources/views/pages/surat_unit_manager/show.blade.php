@@ -94,29 +94,45 @@
                 </div>
 
                 <!-- File Attachment -->
-                @if($suratUnitManager->file_path)
+                @if($suratUnitManager->files->count() > 0)
                 <div class="bg-gray-50 rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                        <i class="ri-attachment-line mr-2 text-purple-600"></i>
-                        File Lampiran
+                        <i class="ri-attachment-2 mr-2 text-gray-600"></i>
+                        Lampiran ({{ $suratUnitManager->files->count() }} file)
                     </h3>
-                    <div class="flex items-center space-x-3 p-3 bg-white border border-gray-200 rounded-md">
-                        <i class="ri-file-line text-gray-500 text-xl"></i>
-                        <div class="flex-1">
-                            <p class="text-sm font-medium text-gray-900">{{ basename($suratUnitManager->file_path) }}</p>
-                            <p class="text-xs text-gray-500">File lampiran surat</p>
+                    <div class="space-y-3">
+                        @foreach($suratUnitManager->files as $file)
+                        <div class="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-md">
+                            <div class="flex items-center space-x-3">
+                                <i class="{{ $file->file_icon }} text-xl"></i>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">{{ $file->original_name }}</p>
+                                    <p class="text-xs text-gray-500">{{ $file->formatted_file_size }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <a href="{{ route('surat-unit-manager.preview-file', [$suratUnitManager->id, $file->id]) }}" 
+                                   class="text-blue-600 hover:text-blue-800 p-1 rounded-md hover:bg-blue-50" title="Preview" target="_blank">
+                                    <i class="ri-eye-line"></i>
+                                </a>
+                                <a href="{{ route('surat-unit-manager.download-file', [$suratUnitManager->id, $file->id]) }}" 
+                                   class="text-green-600 hover:text-green-800 p-1 rounded-md hover:bg-green-50" title="Download">
+                                    <i class="ri-download-line"></i>
+                                </a>
+                            </div>
                         </div>
-                        <div class="flex space-x-2">
-                            <a href="{{ route('surat-unit-manager.preview', $suratUnitManager->id) }}" 
-                               class="text-blue-600 hover:text-blue-800 text-sm" title="Preview">
-                                <i class="ri-eye-line"></i>
-                            </a>
-                            <a href="{{ route('surat-unit-manager.download', $suratUnitManager->id) }}" 
-                               class="text-green-600 hover:text-green-800 text-sm" title="Download">
-                                <i class="ri-download-line"></i>
-                            </a>
-                        </div>
+                        @endforeach
                     </div>
+                    
+                    @if($suratUnitManager->files->count() > 1)
+                    <div class="mt-4 pt-3 border-t border-gray-200">
+                        <a href="{{ route('surat-unit-manager.download', $suratUnitManager->id) }}" 
+                           class="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium">
+                            <i class="ri-download-2-line mr-1"></i>
+                            Download Semua File (ZIP)
+                        </a>
+                    </div>
+                    @endif
                 </div>
                 @endif
             </div>
@@ -299,11 +315,11 @@
             </a>
             @endif
             
-            @if($suratUnitManager->file_path)
+            @if($suratUnitManager->files->count() > 0)
             <a href="{{ route('surat-unit-manager.download', $suratUnitManager->id) }}" 
                class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 flex items-center gap-2">
                 <i class="ri-download-line"></i>
-                <span>Download File</span>
+                <span>{{ $suratUnitManager->files->count() > 1 ? 'Download ZIP' : 'Download File' }}</span>
             </a>
             @endif
         </div>

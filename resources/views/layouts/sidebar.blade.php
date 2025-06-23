@@ -106,8 +106,8 @@
                             @endif
                         </a>
 
-                        <!-- Surat Keluar untuk Staff, Admin, dan Super Admin (bukan Direktur/Manager) -->
-                        @if (in_array(Auth::user()->role, [0,1,3]))
+                        <!-- Surat Keluar untuk Staff, Admin, Super Admin, dan Manager (bukan Direktur) -->
+                        @if (in_array(Auth::user()->role, [0, 1, 3, 4]))
                             <a href="{{ route('suratkeluar.index') }}"
                                 class="flex items-center py-2 px-4 rounded-lg transition-all duration-200 {{ Request::is('suratkeluar*') ? 'text-green-600 bg-green-50' : 'text-gray-600 hover:bg-gray-50' }}">
                                 <i class="ri-send-plane-line text-lg mr-3"></i>

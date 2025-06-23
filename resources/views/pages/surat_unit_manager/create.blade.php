@@ -115,13 +115,19 @@
 
             <!-- File Upload -->
             <div class="md:col-span-2">
-                <label for="file" class="block text-sm font-medium text-gray-700 mb-2">
+                <label for="files" class="block text-sm font-medium text-gray-700 mb-2">
                     File Lampiran
                 </label>
-                <input type="file" id="file" name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                <input type="file" id="files" name="files[]" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.ppt,.pptx,.zip,.rar"
                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <p class="text-sm text-gray-500 mt-1">Format yang didukung: PDF, DOC, DOCX, JPG, JPEG, PNG (Max: 5MB)</p>
-                <div id="file_error" class="text-red-500 text-sm mt-1 hidden"></div>
+                <p class="text-sm text-gray-500 mt-1">Format yang didukung: PDF, DOC, DOCX, JPG, JPEG, PNG, XLS, XLSX, PPT, PPTX, ZIP, RAR (Max: 5MB per file)</p>
+                <div id="files_error" class="text-red-500 text-sm mt-1 hidden"></div>
+                
+                <!-- File Preview -->
+                <div id="filePreview" class="mt-3 space-y-2 hidden">
+                    <h4 class="text-sm font-medium text-gray-700">File yang dipilih:</h4>
+                    <div id="fileList" class="space-y-2"></div>
+                </div>
             </div>
 
             <!-- Keterangan Unit -->
@@ -175,6 +181,57 @@
 <script>
 document.getElementById('suratForm').addEventListener('submit', function(e) {
     e.preventDefault();
+    
+    // Validasi file sebelum submit
+    const fileInput = document.getElementById('files');
+    if (fileInput.files.length > 0) {
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        const allowedTypes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'image/jpeg',
+            'image/jpg',
+            'image/png',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'application/zip',
+            'application/x-rar-compressed'
+        ];
+        
+        for (let i = 0; i < fileInput.files.length; i++) {
+            const file = fileInput.files[i];
+            
+            if (!file || file.size === 0) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'File tidak valid!',
+                    text: `File "${file.name}" tidak valid atau kosong`
+                });
+                return;
+            }
+            
+            if (file.size > maxSize) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'File terlalu besar!',
+                    text: `File "${file.name}" melebihi ukuran maksimal 5MB`
+                });
+                return;
+            }
+            
+            if (!allowedTypes.includes(file.type)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Tipe file tidak didukung!',
+                    text: `File "${file.name}" memiliki tipe yang tidak didukung`
+                });
+                return;
+            }
+        }
+    }
     
     // Reset error messages
     document.querySelectorAll('[id$="_error"]').forEach(el => {
@@ -254,17 +311,128 @@ document.getElementById('jenis_surat').addEventListener('change', function() {
 });
 
 // File size validation
-document.getElementById('file').addEventListener('change', function() {
-    const file = this.files[0];
+document.getElementById('files').addEventListener('change', function() {
+    const files = this.files;
     const maxSize = 5 * 1024 * 1024; // 5MB
+    const filePreview = document.getElementById('filePreview');
+    const fileList = document.getElementById('fileList');
     
-    if (file && file.size > maxSize) {
-        Swal.fire({
-            icon: 'error',
-            title: 'File terlalu besar!',
-            text: 'Ukuran file maksimal 5MB'
-        });
-        this.value = '';
+    // Clear previous preview
+    fileList.innerHTML = '';
+    
+    if (files.length > 0) {
+        filePreview.classList.remove('hidden');
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            
+            // Validasi file
+            if (!file || file.size === 0) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'File tidak valid!',
+                    text: `File "${file.name}" tidak valid atau kosong`
+                });
+                this.value = '';
+                filePreview.classList.add('hidden');
+                return;
+            }
+            
+            // Check file size
+            if (file.size > maxSize) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'File terlalu besar!',
+                    text: `File "${file.name}" melebihi ukuran maksimal 5MB`
+                });
+                this.value = '';
+                filePreview.classList.add('hidden');
+                return;
+            }
+            
+            // Validasi tipe file
+            const allowedTypes = [
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'image/jpeg',
+                'image/jpg',
+                'image/png',
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-powerpoint',
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                'application/zip',
+                'application/x-rar-compressed'
+            ];
+            
+            if (!allowedTypes.includes(file.type)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Tipe file tidak didukung!',
+                    text: `File "${file.name}" memiliki tipe yang tidak didukung`
+                });
+                this.value = '';
+                filePreview.classList.add('hidden');
+                return;
+            }
+            
+            // Create file preview item
+            const fileItem = document.createElement('div');
+            fileItem.className = 'flex items-center justify-between p-2 bg-gray-50 rounded-md';
+            
+            const fileInfo = document.createElement('div');
+            fileInfo.className = 'flex items-center space-x-2';
+            
+            // File icon based on type
+            const icon = document.createElement('i');
+            const extension = file.name.split('.').pop().toLowerCase();
+            switch (extension) {
+                case 'pdf':
+                    icon.className = 'ri-file-pdf-line text-red-500';
+                    break;
+                case 'doc':
+                case 'docx':
+                    icon.className = 'ri-file-word-line text-blue-500';
+                    break;
+                case 'xls':
+                case 'xlsx':
+                    icon.className = 'ri-file-excel-line text-green-500';
+                    break;
+                case 'ppt':
+                case 'pptx':
+                    icon.className = 'ri-file-ppt-line text-orange-500';
+                    break;
+                case 'jpg':
+                case 'jpeg':
+                case 'png':
+                    icon.className = 'ri-image-line text-purple-500';
+                    break;
+                case 'zip':
+                case 'rar':
+                    icon.className = 'ri-file-zip-line text-yellow-500';
+                    break;
+                default:
+                    icon.className = 'ri-file-line text-gray-500';
+            }
+            
+            const fileName = document.createElement('span');
+            fileName.className = 'text-sm text-gray-700';
+            fileName.textContent = file.name;
+            
+            const fileSize = document.createElement('span');
+            fileSize.className = 'text-xs text-gray-500';
+            fileSize.textContent = `(${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            
+            fileInfo.appendChild(icon);
+            fileInfo.appendChild(fileName);
+            fileInfo.appendChild(fileSize);
+            
+            fileItem.appendChild(fileInfo);
+            fileList.appendChild(fileItem);
+        }
+    } else {
+        filePreview.classList.add('hidden');
     }
 });
 </script>

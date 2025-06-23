@@ -475,14 +475,10 @@
                             `;
                         }
                     }
-                } else if (userRole === 0) { // Staff/unit
+                } else if (userRole === 0 || userRole === 4) { // Staff/unit atau Manager
                     if (this.value === 'internal') {
                     if (generateNomorBtn) {
                         generateNomorBtn.style.display = 'inline-flex';
-                        generateNomorBtn.innerHTML = `
-                            <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
-                            Generate Nomor
-                        `;
                         generateNomorBtn.onclick = generateNomorSurat;
                     }
                     if (generateNomorAspBtn) {
@@ -694,14 +690,15 @@
                 `;
                 }
 
-                // Get current job title
-                let namaJabatan = isAsDirut ? "DIRUT" : "{{ auth()->user()->jabatan->nama_jabatan ?? 'UMUM' }}";
+                // Get current job title and code
+                let namaJabatan = isAsDirut ? "Direktur Utama" : "{{ auth()->user()->jabatan->nama_jabatan ?? 'UMUM' }}";
+                let kodeJabatan = isAsDirut ? "DIRUT" : "{{ auth()->user()->jabatan->kode_jabatan ?? 'UMUM' }}";
 
-                console.log('Generate nomor surat untuk jabatan:', namaJabatan);
+                console.log('Generate nomor surat untuk jabatan:', namaJabatan, 'dengan kode:', kodeJabatan);
 
                 // Create FormData object for request
                 const formData = new FormData();
-                formData.append('nama_jabatan', namaJabatan);
+                formData.append('kode_jabatan', kodeJabatan);
                 formData.append('is_as_dirut', isAsDirut ? '1' : '0');
                 formData.append('_token', '{{ csrf_token() }}');
 
@@ -763,7 +760,7 @@
                     const tahun = date.getFullYear();
 
                     // Generate nomor surat with desired format
-                    const nomorSurat = `${nextNumber}/${namaJabatan}/RSAZRA/${convertToRoman(bulan)}/${tahun}`;
+                    const nomorSurat = `${nextNumber}/${kodeJabatan}/RSAZRA/${convertToRoman(bulan)}/${tahun}`;
 
                     // Set value to nomor surat input
                     if (nomorSuratInput) {
@@ -808,10 +805,10 @@
         }
 
         // Event listener for generate button
-        if (generateNomorBtn) {
-            generateNomorBtn.addEventListener('click', generateNomorSurat);
-            console.log("Event listener attached to Generate Nomor AZRA button.");
-        }
+        // **REMOVED** - This block is removed as the logic is handled by the 'change' event listener on jenisSuratSelect
+        // if (generateNomorBtn) {
+        //     generateNomorBtn.addEventListener('click', generateNomorSurat);
+        // }
 
         // Tambahkan event listener untuk tombol Generate Nomor ASP
         const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');

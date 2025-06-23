@@ -24,15 +24,13 @@
         @include('layouts.sidebar')
 
         <!-- Main Content Wrapper -->
-        <div class="flex-1 ml-64 flex flex-col transition-all duration-300">
+        <div class="flex-1 ml-64 flex flex-col min-w-0 transition-all duration-300">
             <!-- Header -->
             @include('layouts.header')
 
             <!-- Main Content -->
-            <main class="p-6 flex-1 overflow-x-auto">
-                <div class="min-w-fit">
-                    @yield('content')
-                </div>
+            <main class="p-6 flex-1 overflow-y-auto">
+                @yield('content')
             </main>
         </div>
     </div>

@@ -1,321 +1,337 @@
 @extends('home')
 
-@section('title', 'Surat Unit Manager - SISM Azra')
+@section('title', 'Surat Unit Manager')
 
 @section('content')
-<div class="bg-white rounded-lg shadow-sm">
+<div x-data="suratUnitManager" x-init="init()" class="bg-white rounded-xl shadow-md">
     <!-- Header -->
-    <div class="px-8 py-6 border-b border-gray-100 bg-white flex justify-between items-center">
+    <div class="px-8 py-6 border-b border-gray-200 bg-white flex justify-between items-center">
         <div>
-            <h2 class="text-lg font-semibold text-gray-800">Surat Unit Manager</h2>
-            <p class="text-xs text-gray-500 mt-1">Kelola surat dari unit ke manager</p>
+            <h2 class="text-lg font-semibold text-gray-800">Surat Unit Anda</h2>
+            <p class="text-xs text-gray-500 mt-1">Kelola surat yang Anda kirim untuk persetujuan manajer</p>
         </div>
         <div class="flex items-center space-x-2">
-            <div class="text-sm text-gray-500">
-                <i class="ri-time-line"></i>
-                <span>{{ date('d M Y') }}</span>
-            </div>
-            @if(auth()->user()->role == 0)
             <a href="{{ route('surat-unit-manager.create') }}" 
-               class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 flex items-center gap-2">
-                <i class="ri-add-line"></i>
-                <span>Tambah Surat</span>
+               class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <i class="ri-add-line mr-1"></i> Buat Surat Baru
             </a>
-            @endif
         </div>
     </div>
 
     <!-- Filter Section -->
-    <div class="px-8 py-4 border-b border-gray-100 bg-gray-50">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="p-5 border-b border-gray-200 bg-white">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- Search -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Cari</label>
-                <input type="text" id="searchInput" placeholder="Cari nomor surat, perihal..." 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="text" x-model="searchQuery" placeholder="Cari nomor surat atau perihal..." 
+                       class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200">
             </div>
             
             <!-- Status Filter -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select id="statusFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status Persetujuan</label>
+                <select x-model="statusFilter" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200">
                     <option value="">Semua Status</option>
-                    <option value="pending">Pending</option>
+                    <option value="pending">Menunggu Persetujuan</option>
                     <option value="approved">Disetujui</option>
                     <option value="rejected">Ditolak</option>
                 </select>
-            </div>
-            
-            <!-- Date Range -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
-                <input type="date" id="startDate" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-            
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Akhir</label>
-                <input type="date" id="endDate" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
         </div>
     </div>
 
     <!-- Table -->
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        No. Surat
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Tanggal
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Perihal
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Unit
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Manager
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Aksi
-                    </th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200" id="suratTableBody">
-                @forelse($suratUnitManager as $surat)
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm font-medium text-gray-900">{{ $surat->nomor_surat }}</div>
-                        <div class="text-sm text-gray-500">{{ $surat->jenis_surat }} - {{ $surat->sifat_surat }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm text-gray-900">{{ $surat->tanggal_surat->format('d/m/Y') }}</div>
-                    </td>
-                    <td class="px-6 py-4">
-                        <div class="text-sm text-gray-900">{{ Str::limit($surat->perihal, 50) }}</div>
-                        <div class="text-sm text-gray-500">{{ Str::limit($surat->isi_surat, 30) }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm text-gray-900">{{ $surat->unit->name }}</div>
-                        <div class="text-sm text-gray-500">{{ optional($surat->unit->jabatan)->nama_jabatan }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm text-gray-900">{{ $surat->manager->name }}</div>
-                        <div class="text-sm text-gray-500">{{ optional($surat->manager->jabatan)->nama_jabatan }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        @php
-                            $statusColor = $surat->status_color;
-                            $statusText = $surat->current_status;
-                        @endphp
-                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
-                                     @if($statusColor == 'success') bg-green-100 text-green-800
-                                     @elseif($statusColor == 'warning') bg-yellow-100 text-yellow-800
-                                     @elseif($statusColor == 'danger') bg-red-100 text-red-800
-                                     @else bg-gray-100 text-gray-800 @endif">
-                            {{ $statusText }}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div class="flex items-center space-x-2">
-                            <a href="{{ route('surat-unit-manager.show', $surat->id) }}" 
-                               class="text-blue-600 hover:text-blue-900" title="Detail">
-                                <i class="ri-eye-line"></i>
-                            </a>
-                            
-                            @if(auth()->user()->role == 0 && $surat->unit_id == auth()->id() && $surat->status_manager == 'pending')
-                            <a href="{{ route('surat-unit-manager.edit', $surat->id) }}" 
-                               class="text-yellow-600 hover:text-yellow-900" title="Edit">
-                                <i class="ri-edit-line"></i>
-                            </a>
-                            
-                            <button onclick="deleteSurat({{ $surat->id }})" 
-                                    class="text-red-600 hover:text-red-900" title="Hapus">
-                                <i class="ri-delete-bin-line"></i>
-                            </button>
-                            @endif
-                            
-                            @if($surat->file_path)
-                            <a href="{{ route('surat-unit-manager.download', $surat->id) }}" 
-                               class="text-green-600 hover:text-green-900" title="Download">
-                                <i class="ri-download-line"></i>
-                            </a>
-                            @endif
-                        </div>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="7" class="px-6 py-4 text-center text-gray-500">
-                        Tidak ada data surat unit manager
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
+    <div class="p-4">
+        <div class="overflow-x-auto border border-gray-100 rounded-lg shadow-sm">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-green-600">
+                    <tr>
+                        <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">Detail Surat</th>
+                        <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">Tanggal Dibuat</th>
+                        <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">Status Persetujuan</th>
+                        <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <template x-for="surat in filteredSurat" :key="surat.id">
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-2 py-2">
+                                <div class="text-sm font-semibold text-gray-900" x-text="surat.nomor_surat"></div>
+                                <div class="text-xs text-gray-600 truncate max-w-xs" x-text="surat.perihal"></div>
+                            </td>
+                            <td class="px-2 py-2 text-sm text-gray-700" x-text="formatDate(surat.created_at)"></td>
+                            <td class="px-2 py-2">
+                                <span class="inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full"
+                                      :class="{
+                                          'bg-green-100 text-green-800': surat.status_manager === 'approved',
+                                          'bg-red-100 text-red-800': surat.status_manager === 'rejected',
+                                          'bg-yellow-100 text-yellow-800': surat.status_manager === 'pending'
+                                      }"
+                                      x-text="surat.status_manager">
+                                </span>
+                            </td>
+                            <td class="px-2 py-2">
+                                <div class="flex items-center space-x-2">
+                                    <button @click="openDetailModal(surat)" 
+                                            class="text-gray-600 hover:text-gray-900 px-2 py-1 rounded-md bg-gray-50 hover:bg-gray-100 transition-colors flex items-center" title="Lihat Detail">
+                                        <i class="ri-eye-line mr-1"></i> Detail
+                                    </button>
+                                    <a :href="`/surat-unit-manager/${surat.id}/edit`" 
+                                       x-show="surat.status_manager === 'pending' || surat.status_manager === 'rejected'"
+                                       class="text-yellow-600 hover:text-yellow-800 px-2 py-1 rounded-md bg-yellow-50 hover:bg-yellow-100 transition-colors flex items-center" title="Edit Surat">
+                                        <i class="ri-edit-line mr-1"></i> Edit
+                                    </a>
+                                    <button @click="confirmDelete(surat.id)" 
+                                            class="text-red-600 hover:text-red-900 px-2 py-1 rounded-md bg-red-50 hover:bg-red-100 transition-colors flex items-center" title="Hapus Surat">
+                                        <i class="ri-delete-bin-line mr-1"></i> Hapus
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                    <tr x-show="!filteredSurat.length">
+                        <td colspan="4" class="px-6 py-12 text-center text-gray-500">
+                            Tidak ada surat yang cocok dengan filter atau Anda belum membuat surat.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
 
-<!-- Delete Confirmation Modal -->
-<div id="deleteModal" class="fixed inset-0 z-50 overflow-y-auto hidden">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div class="sm:flex sm:items-start">
-                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                        <i class="ri-error-warning-line text-red-600"></i>
-                    </div>
-                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">Konfirmasi Hapus</h3>
-                        <div class="mt-2">
-                            <p class="text-sm text-gray-500">
-                                Apakah Anda yakin ingin menghapus surat ini? Tindakan ini tidak dapat dibatalkan.
-                            </p>
+    <!-- Detail Modal -->
+    <div x-show="showModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div x-show="showModal" class="fixed inset-0 transition-opacity" @click="showModal = false">
+                <div class="absolute inset-0 bg-gray-500 bg-opacity-75 backdrop-blur-sm"></div>
+            </div>
+            <div x-show="showModal" class="bg-white rounded-xl overflow-hidden shadow-xl transform transition-all sm:max-w-3xl sm:w-full">
+                <template x-if="selectedSurat">
+                    <div>
+                        <!-- Modal Header -->
+                        <div class="px-6 py-4 bg-white border-b border-gray-200 flex justify-between items-center">
+                            <h3 class="text-lg font-semibold text-gray-900">Detail Surat</h3>
+                            <button @click="showModal = false" class="text-gray-400 hover:text-gray-600"><i class="ri-close-line text-xl"></i></button>
+                        </div>
+
+                        <!-- Modal Content -->
+                        <div class="p-6 max-h-[70vh] overflow-y-auto space-y-6">
+                            <!-- Basic Info -->
+                            <div class="p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                <h4 class="text-base font-semibold text-gray-800 mb-3">
+                                    <i class="ri-information-line mr-1 text-gray-600"></i>
+                                    Informasi Umum
+                                </h4>
+                                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                                    <div class="sm:col-span-2"><dt class="text-sm font-medium text-gray-500">Nomor Surat</dt><dd class="mt-1 text-sm font-semibold text-gray-900" x-text="selectedSurat.nomor_surat"></dd></div>
+                                    <div><dt class="text-sm font-medium text-gray-500">Tanggal Surat</dt><dd class="mt-1 text-sm text-gray-900" x-text="formatDate(selectedSurat.tanggal_surat)"></dd></div>
+                                    <div><dt class="text-sm font-medium text-gray-500">Tanggal Dibuat</dt><dd class="mt-1 text-sm text-gray-900" x-text="formatDate(selectedSurat.created_at)"></dd></div>
+                                    <div class="sm:col-span-2"><dt class="text-sm font-medium text-gray-500">Perihal</dt><dd class="mt-1 text-sm text-gray-900" x-text="selectedSurat.perihal"></dd></div>
+                                    <div class="sm:col-span-2 whitespace-pre-wrap"><dt class="text-sm font-medium text-gray-500">Isi Surat</dt><dd class="mt-1 text-sm text-gray-900" x-text="selectedSurat.isi_surat"></dd></div>
+                                </dl>
+                            </div>
+
+                            <!-- Approval Info -->
+                            <div class="p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                <h4 class="text-base font-semibold text-gray-800 mb-3">
+                                    <i class="ri-shield-check-line mr-1 text-gray-600"></i>
+                                    Informasi Persetujuan Manajer
+                                </h4>
+                                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                                    <div>
+                                        <dt class="text-sm font-medium text-gray-500">Status</dt>
+                                        <dd>
+                                            <span class="inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full"
+                                                  :class="{
+                                                      'bg-green-100 text-green-800': selectedSurat.status_manager === 'approved',
+                                                      'bg-red-100 text-red-800': selectedSurat.status_manager === 'rejected',
+                                                      'bg-yellow-100 text-yellow-800': selectedSurat.status_manager === 'pending'
+                                                  }"
+                                                  x-text="selectedSurat.status_manager">
+                                            </span>
+                                        </dd>
+                                    </div>
+                                    <div><dt class="text-sm font-medium text-gray-500">Tanggal Review</dt><dd class="mt-1 text-sm text-gray-900" x-text="selectedSurat.waktu_review_manager ? formatDate(selectedSurat.waktu_review_manager) : '-'"></dd></div>
+                                    <div class="sm:col-span-2"><dt class="text-sm font-medium text-gray-500">Alasan/Keterangan</dt><dd class="mt-1 text-sm text-gray-900 bg-white p-2 rounded border" x-text="selectedSurat.keterangan_manager || '-'"></dd></div>
+                                </dl>
+                            </div>
+                            
+                            <!-- Attachment Info -->
+                            <div class="p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                <h4 class="text-base font-semibold text-gray-800 mb-3">
+                                    <i class="ri-attachment-2 mr-1 text-gray-600"></i>
+                                    Lampiran
+                                </h4>
+                                <div x-show="selectedSurat.files && selectedSurat.files.length > 0">
+                                    <div class="space-y-2">
+                                        <template x-for="file in selectedSurat.files" :key="file.id">
+                                            <div class="flex items-center justify-between p-2 bg-white rounded border">
+                                                <div class="flex items-center space-x-2">
+                                                    <i :class="getFileIcon(file.original_name)" class="text-lg"></i>
+                                                    <div>
+                                                        <p class="text-sm font-medium text-gray-900" x-text="file.original_name"></p>
+                                                        <p class="text-xs text-gray-500" x-text="formatFileSize(file.file_size)"></p>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center space-x-1">
+                                                    <a :href="`/surat-unit-manager/${selectedSurat.id}/preview-file/${file.id}`" 
+                                                       class="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50" title="Preview" target="_blank">
+                                                        <i class="ri-eye-line"></i>
+                                                    </a>
+                                                    <a :href="`/surat-unit-manager/${selectedSurat.id}/download-file/${file.id}`" 
+                                                       class="text-green-600 hover:text-green-800 p-1 rounded hover:bg-green-50" title="Download">
+                                                        <i class="ri-download-line"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                    <div x-show="selectedSurat.files.length > 1" class="mt-3 pt-2 border-t border-gray-200">
+                                        <a :href="`/surat-unit-manager/${selectedSurat.id}/download`" class="inline-flex items-center text-blue-600 hover:underline">
+                                            <i class="ri-download-2-line mr-1"></i> Download Semua File (ZIP)
+                                        </a>
+                                    </div>
+                                </div>
+                                <div x-show="!selectedSurat.files || selectedSurat.files.length === 0" class="text-sm text-gray-500">
+                                    Tidak ada lampiran.
+                                </div>
+                            </div>
+                        </div>
+                         <!-- Modal Footer -->
+                        <div class="px-6 py-4 bg-gray-50 border-t flex justify-end">
+                            <button @click="showModal = false" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-medium rounded-lg">Tutup</button>
                         </div>
                     </div>
-                </div>
-            </div>
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button type="button" id="confirmDelete" 
-                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
-                    Hapus
-                </button>
-                <button type="button" onclick="closeDeleteModal()" 
-                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                    Batal
-                </button>
+                </template>
             </div>
         </div>
     </div>
 </div>
-
 @endsection
 
 @push('scripts')
 <script>
-let currentSuratId = null;
+document.addEventListener('alpine:init', () => {
+    Alpine.data('suratUnitManager', () => ({
+        allSurat: [],
+        searchQuery: '',
+        statusFilter: '',
+        showModal: false,
+        selectedSurat: null,
+        
+        init() {
+            this.allSurat = @json($suratUnitManager);
+        },
+        
+        get filteredSurat() {
+            if (!this.allSurat) return [];
+            return this.allSurat.filter(surat => {
+                const searchMatch = this.searchQuery.toLowerCase() === '' ||
+                    surat.nomor_surat.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                    surat.perihal.toLowerCase().includes(this.searchQuery.toLowerCase());
+                
+                const statusMatch = this.statusFilter === '' || surat.status_manager === this.statusFilter;
 
-// Filter functionality
-document.getElementById('searchInput').addEventListener('input', filterTable);
-document.getElementById('statusFilter').addEventListener('change', filterTable);
-document.getElementById('startDate').addEventListener('change', filterTable);
-document.getElementById('endDate').addEventListener('change', filterTable);
-
-function filterTable() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const statusFilter = document.getElementById('statusFilter').value;
-    const startDate = document.getElementById('startDate').value;
-    const endDate = document.getElementById('endDate').value;
-    
-    const rows = document.querySelectorAll('#suratTableBody tr');
-    
-    rows.forEach(row => {
-        if (row.cells.length < 7) return; // Skip empty rows
-        
-        const nomorSurat = row.cells[0].textContent.toLowerCase();
-        const perihal = row.cells[2].textContent.toLowerCase();
-        const tanggal = row.cells[1].textContent;
-        const statusElement = row.cells[5].querySelector('span');
-        const status = statusElement ? statusElement.textContent.toLowerCase() : '';
-        
-        let showRow = true;
-        
-        // Search filter
-        if (searchTerm && !nomorSurat.includes(searchTerm) && !perihal.includes(searchTerm)) {
-            showRow = false;
-        }
-        
-        // Status filter
-        if (statusFilter && !status.includes(statusFilter)) {
-            showRow = false;
-        }
-        
-        // Date filter
-        if (startDate || endDate) {
-            const rowDate = new Date(tanggal.split('/').reverse().join('-'));
-            if (startDate && rowDate < new Date(startDate)) {
-                showRow = false;
-            }
-            if (endDate && rowDate > new Date(endDate)) {
-                showRow = false;
-            }
-        }
-        
-        row.style.display = showRow ? '' : 'none';
-    });
-}
-
-// Delete functionality
-function deleteSurat(suratId) {
-    currentSuratId = suratId;
-    document.getElementById('deleteModal').classList.remove('hidden');
-}
-
-function closeDeleteModal() {
-    document.getElementById('deleteModal').classList.add('hidden');
-    currentSuratId = null;
-}
-
-document.getElementById('confirmDelete').addEventListener('click', function() {
-    if (currentSuratId) {
-        fetch(`/surat-unit-manager/${currentSuratId}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Show success message
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil!',
-                    text: data.message,
-                    timer: 2000,
-                    showConfirmButton: false
-                }).then(() => {
-                    location.reload();
-                });
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
-                    text: data.message
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error!',
-                text: 'Terjadi kesalahan saat menghapus surat'
+                return searchMatch && statusMatch;
             });
-        })
-        .finally(() => {
-            closeDeleteModal();
-        });
-    }
-});
+        },
+        
+        openDetailModal(surat) {
+            this.selectedSurat = surat;
+            this.showModal = true;
+        },
+        
+        formatDate(dateString) {
+            if (!dateString) return '-';
+            const options = { day: 'numeric', month: 'long', year: 'numeric' };
+            // Check if it's a full datetime string
+            if (dateString.includes('T')) {
+                options.hour = '2-digit';
+                options.minute = '2-digit';
+            }
+            return new Date(dateString).toLocaleDateString('id-ID', options);
+        },
 
-// Close modal when clicking outside
-document.getElementById('deleteModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeDeleteModal();
-    }
+        getFileIcon(fileName) {
+            const extension = fileName.split('.').pop().toLowerCase();
+            switch (extension) {
+                case 'pdf':
+                    return 'ri-file-pdf-line text-red-500';
+                case 'doc':
+                case 'docx':
+                    return 'ri-file-word-line text-blue-500';
+                case 'xls':
+                case 'xlsx':
+                    return 'ri-file-excel-line text-green-500';
+                case 'ppt':
+                case 'pptx':
+                    return 'ri-file-ppt-line text-orange-500';
+                case 'jpg':
+                case 'jpeg':
+                case 'png':
+                case 'gif':
+                    return 'ri-image-line text-purple-500';
+                case 'zip':
+                case 'rar':
+                    return 'ri-file-zip-line text-yellow-500';
+                default:
+                    return 'ri-file-line text-gray-500';
+            }
+        },
+
+        formatFileSize(bytes) {
+            if (!bytes) return 'Unknown';
+            const units = ['B', 'KB', 'MB', 'GB'];
+            let size = bytes;
+            let unit = 0;
+            while (size >= 1024 && unit < units.length - 1) {
+                size /= 1024;
+                unit++;
+            }
+            return Math.round(size * 100) / 100 + ' ' + units[unit];
+        },
+
+        confirmDelete(id) {
+            Swal.fire({
+                title: 'Anda yakin?',
+                text: "Surat ini akan dihapus secara permanen!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: 'Ya, hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    this.deleteSurat(id);
+                }
+            });
+        },
+
+        async deleteSurat(id) {
+            try {
+                const response = await fetch(`/surat-unit-manager/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    Swal.fire('Terhapus!', data.message, 'success').then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    throw new Error(data.message || 'Terjadi kesalahan saat menghapus surat.');
+                }
+            } catch (error) {
+                Swal.fire('Error!', error.message, 'error');
+            }
+        }
+    }));
 });
 </script>
 @endpush 

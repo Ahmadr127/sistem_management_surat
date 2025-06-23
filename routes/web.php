@@ -66,8 +66,8 @@ Route::middleware(['auth', 'checkUserStatus'])->group(function () {
     Route::get('/api/dashboard/recent-activities', [DashboardController::class, 'getRecentActivities']);
 });
 
-// Route untuk admin, staff, direktur dan super admin
-Route::middleware(['auth', 'checkRole:0,1,2,3'])->group(function () {
+// Route untuk admin, staff, direktur, super admin dan manager
+Route::middleware(['auth', 'checkRole:0,1,2,3,4'])->group(function () {
     // Laporan routes should use LaporanController
     Route::get('/laporan/disposisi-status/{disposisi}', [DisposisiController::class, 'updateStatus'])
         ->name('laporan.disposisi.status.update');
@@ -84,6 +84,10 @@ Route::middleware(['auth', 'checkRole:0,1,2,3'])->group(function () {
         Route::put('/{suratKeluar}', [SuratKeluarController::class, 'update'])->name('update');
         Route::get('/{suratKeluar}/download', [SuratKeluarController::class, 'download'])->name('download');
         
+        // Routes for individual file handling
+        Route::get('/{suratId}/download-file/{fileId}', [SuratKeluarController::class, 'downloadFile'])->name('download-file');
+        Route::get('/{suratId}/preview-file/{fileId}', [SuratKeluarController::class, 'previewFile'])->name('preview-file');
+
         // Route untuk soft delete
         Route::get('/trashed/list', [SuratKeluarController::class, 'trashed'])->name('trashed');
         Route::post('/{id}/restore', [SuratKeluarController::class, 'restore'])->name('restore');
@@ -94,6 +98,26 @@ Route::middleware(['auth', 'checkRole:0,1,2,3'])->group(function () {
     Route::prefix('surat-unit-manager')->name('surat-unit-manager.')->group(function () {
         Route::get('/', [SuratUnitManagerController::class, 'index'])->name('index');
         Route::get('/create', [SuratUnitManagerController::class, 'create'])->name('create');
+        
+        // Letakkan route spesifik di atas route dinamis
+        Route::prefix('manager')->name('manager.')->group(function () {
+            Route::get('/', [SuratUnitManagerApprovalController::class, 'managerIndex'])->name('index');
+            Route::get('/{suratUnitManager}', [SuratUnitManagerApprovalController::class, 'managerShow'])->name('show');
+            Route::post('/{suratUnitManager}/approval', [SuratUnitManagerApprovalController::class, 'managerApproval'])->name('approval');
+        });
+
+        Route::prefix('sekretaris')->name('sekretaris.')->group(function () {
+            Route::get('/', [SuratUnitManagerApprovalController::class, 'sekretarisIndex'])->name('index');
+            Route::get('/{suratUnitManager}', [SuratUnitManagerApprovalController::class, 'sekretarisShow'])->name('show');
+            Route::post('/{suratUnitManager}/approval', [SuratUnitManagerApprovalController::class, 'sekretarisApproval'])->name('approval');
+        });
+
+        Route::prefix('dirut')->name('dirut.')->group(function () {
+            Route::get('/', [SuratUnitManagerApprovalController::class, 'dirutIndex'])->name('index');
+            Route::get('/{suratUnitManager}', [SuratUnitManagerApprovalController::class, 'dirutShow'])->name('show');
+            Route::post('/{suratUnitManager}/approval', [SuratUnitManagerApprovalController::class, 'dirutApproval'])->name('approval');
+        });
+
         Route::post('/', [SuratUnitManagerController::class, 'store'])->name('store');
         Route::get('/{suratUnitManager}', [SuratUnitManagerController::class, 'show'])->name('show');
         Route::get('/{suratUnitManager}/edit', [SuratUnitManagerController::class, 'edit'])->name('edit');
@@ -101,6 +125,8 @@ Route::middleware(['auth', 'checkRole:0,1,2,3'])->group(function () {
         Route::delete('/{suratUnitManager}', [SuratUnitManagerController::class, 'destroy'])->name('destroy');
         Route::get('/{suratUnitManager}/download', [SuratUnitManagerController::class, 'download'])->name('download');
         Route::get('/{suratUnitManager}/preview', [SuratUnitManagerController::class, 'preview'])->name('preview');
+        Route::get('/{suratUnitManager}/download-file/{fileId}', [SuratUnitManagerController::class, 'downloadFile'])->name('download-file');
+        Route::get('/{suratUnitManager}/preview-file/{fileId}', [SuratUnitManagerController::class, 'previewFile'])->name('preview-file');
     });
 
     // Pengaturan & Jadwal
@@ -131,25 +157,25 @@ Route::middleware(['auth', 'checkRole:1,2'])->group(function () {
     });
 
     // Persetujuan Surat Unit Manager - Manager (role 4)
-    Route::prefix('surat-unit-manager/manager')->name('surat-unit-manager.manager.')->group(function () {
-        Route::get('/', [SuratUnitManagerApprovalController::class, 'managerIndex'])->name('index');
-        Route::get('/{suratUnitManager}', [SuratUnitManagerApprovalController::class, 'managerShow'])->name('show');
-        Route::post('/{suratUnitManager}/approval', [SuratUnitManagerApprovalController::class, 'managerApproval'])->name('approval');
-    });
+    // Route::prefix('surat-unit-manager/manager')->name('surat-unit-manager.manager.')->group(function () {
+    //     Route::get('/', [SuratUnitManagerApprovalController::class, 'managerIndex'])->name('index');
+    //     Route::get('/{suratUnitManager}', [SuratUnitManagerApprovalController::class, 'managerShow'])->name('show');
+    //     Route::post('/{suratUnitManager}/approval', [SuratUnitManagerApprovalController::class, 'managerApproval'])->name('approval');
+    // });
 
     // Persetujuan Surat Unit Manager - Sekretaris (role 1)
-    Route::prefix('surat-unit-manager/sekretaris')->name('surat-unit-manager.sekretaris.')->group(function () {
-        Route::get('/', [SuratUnitManagerApprovalController::class, 'sekretarisIndex'])->name('index');
-        Route::get('/{suratUnitManager}', [SuratUnitManagerApprovalController::class, 'sekretarisShow'])->name('show');
-        Route::post('/{suratUnitManager}/approval', [SuratUnitManagerApprovalController::class, 'sekretarisApproval'])->name('approval');
-    });
+    // Route::prefix('surat-unit-manager/sekretaris')->name('surat-unit-manager.sekretaris.')->group(function () {
+    //     Route::get('/', [SuratUnitManagerApprovalController::class, 'sekretarisIndex'])->name('index');
+    //     Route::get('/{suratUnitManager}', [SuratUnitManagerApprovalController::class, 'sekretarisShow'])->name('show');
+    //     Route::post('/{suratUnitManager}/approval', [SuratUnitManagerApprovalController::class, 'sekretarisApproval'])->name('approval');
+    // });
 
     // Persetujuan Surat Unit Manager - Direktur (role 2)
-    Route::prefix('surat-unit-manager/dirut')->name('surat-unit-manager.dirut.')->group(function () {
-        Route::get('/', [SuratUnitManagerApprovalController::class, 'dirutIndex'])->name('index');
-        Route::get('/{suratUnitManager}', [SuratUnitManagerApprovalController::class, 'dirutShow'])->name('show');
-        Route::post('/{suratUnitManager}/approval', [SuratUnitManagerApprovalController::class, 'dirutApproval'])->name('approval');
-    });
+    // Route::prefix('surat-unit-manager/dirut')->name('surat-unit-manager.dirut.')->group(function () {
+    //     Route::get('/', [SuratUnitManagerApprovalController::class, 'dirutIndex'])->name('index');
+    //     Route::get('/{suratUnitManager}', [SuratUnitManagerApprovalController::class, 'dirutShow'])->name('show');
+    //     Route::post('/{suratUnitManager}/approval', [SuratUnitManagerApprovalController::class, 'dirutApproval'])->name('approval');
+    // });
 });
 
 // Route khusus untuk super admin

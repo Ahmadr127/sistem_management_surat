@@ -112,49 +112,51 @@
             </div>
 
             <!-- Table -->
-            <div class="overflow-x-auto border border-gray-100 rounded-lg shadow-sm m-4">
-                <table class="w-full" id="suratKeluarTable">
-                    <thead class="bg-green-600">
-                        <tr>
-                            <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                                No Disposisi & Surat
-                            </th>
-                            <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                                Tanggal
-                            </th>
-                            <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                                Nomor Surat
-                            </th>
-                            <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                                Nama Perusahaan
-                            </th>
-                            <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                                Perihal
-                            </th>
-                            <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                                Jenis
-                            </th>
-                            <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                                Pembuat
-                            </th>
-                            <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                                Status Sekretaris
-                            </th>
-                            <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                                Status Direktur
-                            </th>
-                            <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                                Tujuan Disposisi
-                            </th>
-                            <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                                Aksi
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody id="surat-table-body">
-                        <!-- Data akan diisi melalui JavaScript -->
-                    </tbody>
-                </table>
+            <div class="p-4">
+                <div class="overflow-x-auto border border-gray-100 rounded-lg shadow-sm">
+                    <table class="min-w-full divide-y divide-gray-200" id="suratKeluarTable">
+                        <thead class="bg-green-600">
+                            <tr>
+                                <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                                    No Disposisi
+                                </th>
+                                <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                                    Tanggal
+                                </th>
+                                <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                                    Nomor Surat
+                                </th>
+                                <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                                    Nama Perusahaan
+                                </th>
+                                <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                                    Perihal
+                                </th>
+                                <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                                    Jenis
+                                </th>
+                                <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                                    Pembuat
+                                </th>
+                                <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                                    Status Sekretaris
+                                </th>
+                                <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                                    Status Direktur
+                                </th>
+                                <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                                    Tujuan Disposisi
+                                </th>
+                                <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                                    Aksi
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="surat-table-body">
+                            <!-- Data akan diisi melalui JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- Pagination -->
@@ -272,8 +274,10 @@
                                         <div class="sm:col-span-2">
                                             <dt class="text-sm font-medium text-gray-500">File Surat</dt>
                                             <dd class="mt-1 text-sm text-gray-900">
-                                                <div id="detail-files-list" class="space-y-2"></div>
-                                                <span id="no-file-text" class="text-gray-500 text-sm">Tidak ada file</span>
+                                                <div id="detail-files-list" class="space-y-2">
+                                                    <!-- File list akan diisi oleh JavaScript -->
+                                                </div>
+                                                <div id="no-file-text" class="text-gray-500 text-sm hidden">Tidak ada file</div>
                                             </dd>
                                 </div>
                                     </dl>
@@ -532,6 +536,20 @@
         let currentPage = 1;
         const itemsPerPage = 10;
         let totalPages = 0;
+        let currentSuratData = null; // Tambahkan variabel untuk menyimpan data surat saat ini
+
+        // Fungsi untuk format ukuran file
+        function formatFileSize(bytes) {
+            if (!bytes || bytes === 0) return '0 B';
+            const units = ['B', 'KB', 'MB', 'GB'];
+            let size = bytes;
+            let unit = 0;
+            while (size >= 1024 && unit < units.length - 1) {
+                size /= 1024;
+                unit++;
+            }
+            return Math.round(size * 100) / 100 + ' ' + units[unit];
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
             // Variabel untuk menyimpan data dan state
@@ -968,8 +986,9 @@
                 const surat = suratData.find(s => s.id === id);
                 if (!surat) return;
 
-                // Store the current surat ID for preview tab
+                // Store the current surat ID and data for preview tab
                 currentSuratId = id;
+                currentSuratData = surat; // Simpan data surat untuk digunakan di preview
 
                 // Tampilkan loading state
                 document.getElementById('detail-keterangan-pengirim').textContent = 'Memuat...';
@@ -1991,34 +2010,72 @@
                 const filesList = document.getElementById('detail-files-list');
                 const noFileText = document.getElementById('no-file-text');
                 filesList.innerHTML = '';
+                
                 if (files && files.length > 0) {
-                    noFileText.style.display = 'none';
+                    noFileText.classList.add('hidden');
                     files.forEach((file, idx) => {
                         const ext = file.file_path.split('.').pop().toLowerCase();
-                        let previewBtn = '';
-                        if(['pdf','jpg','jpeg','png','doc','docx','xls','xlsx','ppt','pptx','txt','zip','rar'].includes(ext)) {
-                            previewBtn = `<a href="/${file.file_path}" target="_blank" class="ml-2 text-xs text-blue-600 underline">Preview</a>`;
+                        const fileName = file.original_name || file.file_path.split('/').pop();
+                        
+                        // Tentukan icon berdasarkan tipe file
+                        let fileIcon = 'ri-file-line text-gray-500';
+                        if (['pdf'].includes(ext)) {
+                            fileIcon = 'ri-file-pdf-line text-red-500';
+                        } else if (['doc', 'docx'].includes(ext)) {
+                            fileIcon = 'ri-file-word-line text-blue-500';
+                        } else if (['xls', 'xlsx'].includes(ext)) {
+                            fileIcon = 'ri-file-excel-line text-green-500';
+                        } else if (['ppt', 'pptx'].includes(ext)) {
+                            fileIcon = 'ri-file-ppt-line text-orange-500';
+                        } else if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
+                            fileIcon = 'ri-image-line text-purple-500';
+                        } else if (['zip', 'rar'].includes(ext)) {
+                            fileIcon = 'ri-file-zip-line text-yellow-500';
                         }
+                        
+                        // Tentukan apakah file bisa di-preview
+                        const canPreview = ['pdf', 'jpg', 'jpeg', 'png', 'gif'].includes(ext);
+                        
                         filesList.innerHTML += `
-                            <div class=\"flex items-center space-x-2\">
-                                <i class=\"ri-file-text-line text-lg text-green-500\"></i>
-                                <span class=\"text-sm\">${file.original_name || file.file_path.split('/').pop()}</span>
-                                <a href=\"/${file.file_path}\" target=\"_blank\" class=\"text-xs text-green-600 underline\">Download</a>
-                                ${previewBtn}
+                            <div class="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-md">
+                                <div class="flex items-center space-x-3">
+                                    <i class="${fileIcon} text-lg"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">${fileName}</p>
+                                        <p class="text-xs text-gray-500">${formatFileSize(file.file_size || 0)}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    ${canPreview ? `
+                                        <button onclick="previewFileFullscreen(currentSuratData, ${idx})" 
+                                                class="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50" 
+                                                title="Preview">
+                                            <i class="ri-eye-line"></i>
+                                        </button>
+                                    ` : ''}
+                                    <a href="/suratkeluar/${currentSuratId}/download-file/${file.id}" 
+                                       class="text-green-600 hover:text-green-800 p-1 rounded hover:bg-green-50" 
+                                       title="Download">
+                                        <i class="ri-download-line"></i>
+                                    </a>
+                                </div>
                             </div>
                         `;
                     });
                     
-                    // Event listener untuk tombol preview di daftar file
-                    filesList.querySelectorAll('.modal-preview-btn').forEach(btn => {
-                        btn.addEventListener('click', function() {
-                            const idx = this.getAttribute('data-file-idx');
-                            // Gunakan fullscreen preview modal
-                            previewFileFullscreen(suratData.find(s => s.id === currentSuratId), idx);
-                        });
-                    });
+                    // Jika ada lebih dari satu file, tambahkan tombol download semua
+                    if (files.length > 1) {
+                        filesList.innerHTML += `
+                            <div class="mt-3 pt-2 border-t border-gray-200">
+                                <a href="/suratkeluar/${currentSuratId}/download" 
+                                   class="inline-flex items-center text-blue-600 hover:underline">
+                                    <i class="ri-download-2-line mr-1"></i> Download Semua File (ZIP)
+                                </a>
+                            </div>
+                        `;
+                    }
                 } else {
-                    noFileText.style.display = 'inline';
+                    noFileText.classList.remove('hidden');
                 }
             }
 
@@ -2055,7 +2112,7 @@
             
             // Fungsi untuk preview file dalam modal full screen
             function previewFileFullscreen(surat, idx) {
-                console.log('Membuka preview file untuk surat:', surat.id, 'file index:', idx);
+                console.log('Membuka preview file untuk surat:', surat?.id, 'file index:', idx);
                 
                 if (!surat || !surat.files || !surat.files[idx]) {
                     console.error('File tidak ditemukan:', { suratId: surat?.id, fileIdx: idx });
@@ -2070,7 +2127,7 @@
                 document.getElementById('file-preview-modal').classList.remove('hidden');
                 const fileName = file.original_name || file.file_path.split('/').pop();
                 document.getElementById('preview-modal-title').textContent = 'Preview: ' + fileName;
-                document.getElementById('preview-download-link').href = '/' + file.file_path;
+                document.getElementById('preview-download-link').href = `/suratkeluar/${surat.id}/download-file/${file.id}`;
                 
                 const pdfPreview = document.getElementById('file-preview-modal').querySelector('#pdf-preview');
                 const imgPreview = document.getElementById('file-preview-modal').querySelector('#img-preview');
@@ -2089,7 +2146,7 @@
                 
                 if (['pdf'].includes(ext)) {
                     // Untuk file PDF
-                    pdfPreview.src = '/' + file.file_path;
+                    pdfPreview.src = `/suratkeluar/${surat.id}/preview-file/${file.id}`;
                     pdfPreview.onload = function() {
                         console.log('PDF loaded successfully');
                         loadingPreview.classList.add('hidden');
@@ -2110,7 +2167,7 @@
                     }, 1500);
                 } else if (['jpg','jpeg','png'].includes(ext)) {
                     // Untuk file gambar
-                    imgPreview.src = '/' + file.file_path;
+                    imgPreview.src = `/suratkeluar/${surat.id}/preview-file/${file.id}`;
                     imgPreview.onload = function() {
                         console.log('Image loaded successfully');
                         loadingPreview.classList.add('hidden');
@@ -2257,6 +2314,32 @@
             // Reset iframe source to avoid memory issues
             const pdfPreview = document.getElementById('file-preview-modal').querySelector('#pdf-preview');
             if (pdfPreview) pdfPreview.src = '';
+        });
+
+        // Close detail modal when button is clicked
+        document.getElementById('close-detail-modal').addEventListener('click', function() {
+            document.getElementById('detail-modal').classList.add('hidden');
+        });
+
+        // Close detail modal when close button is clicked
+        document.getElementById('close-detail-modal-btn').addEventListener('click', function() {
+            document.getElementById('detail-modal').classList.add('hidden');
+        });
+
+        // Close modals when clicking outside
+        document.getElementById('detail-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.add('hidden');
+            }
+        });
+
+        document.getElementById('file-preview-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.add('hidden');
+                // Reset iframe source to avoid memory issues
+                const pdfPreview = this.querySelector('#pdf-preview');
+                if (pdfPreview) pdfPreview.src = '';
+            }
         });
     </script>
 @endsection
