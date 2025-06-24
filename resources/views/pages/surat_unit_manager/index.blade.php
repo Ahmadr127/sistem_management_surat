@@ -3,7 +3,7 @@
 @section('title', 'Surat Unit Manager')
 
 @section('content')
-<div x-data="suratUnitManager" x-init="init()" class="bg-white rounded-xl shadow-md">
+<div x-data="suratUnitManager" class="bg-white rounded-xl shadow-md">
     <!-- Header -->
     <div class="px-8 py-6 border-b border-gray-200 bg-white flex justify-between items-center">
         <div>
@@ -49,56 +49,68 @@
                     <tr>
                         <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">Detail Surat</th>
                         <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">Tanggal Dibuat</th>
+                        <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">Tanggal Disetujui</th>
                         <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">Status Persetujuan</th>
                         <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    @foreach($suratUnitManager as $surat)
+                    <template x-for="surat in paginatedSurat" :key="surat.id">
                         <tr class="hover:bg-gray-50">
                             <td class="px-2 py-2">
-                                <div class="text-sm font-semibold text-gray-900">{{ $surat->nomor_surat }}</div>
-                                <div class="text-xs text-gray-600 truncate max-w-xs">{{ $surat->perihal }}</div>
+                                <div class="text-sm font-semibold text-gray-900" x-text="surat.nomor_surat"></div>
+                                <div class="text-xs text-gray-600 truncate max-w-xs" x-text="surat.perihal"></div>
                             </td>
-                            <td class="px-2 py-2 text-sm text-gray-700">{{ $surat->created_at->format('d M Y') }}</td>
+                            <td class="px-2 py-2 text-sm text-gray-700" x-text="formatDateTime(surat.created_at)"></td>
+                            <td class="px-2 py-2 text-sm text-gray-700" x-text="surat.waktu_review_manager ? formatDateTime(surat.waktu_review_manager) : '-' "></td>
                             <td class="px-2 py-2">
-                                <span class="inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full
-                                    @if($surat->status_manager === 'approved') bg-green-100 text-green-800
-                                    @elseif($surat->status_manager === 'rejected') bg-red-100 text-red-800
-                                    @else bg-yellow-100 text-yellow-800 @endif">
-                                    {{ $surat->status_manager }}
+                                <span class="inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full"
+                                    :class="{
+                                        'bg-green-100 text-green-800': surat.status_manager === 'approved',
+                                        'bg-red-100 text-red-800': surat.status_manager === 'rejected',
+                                        'bg-yellow-100 text-yellow-800': surat.status_manager === 'pending'
+                                    }"
+                                    x-text="surat.status_manager">
                                 </span>
                             </td>
                             <td class="px-2 py-2">
                                 <div class="flex items-center space-x-2">
-                                    <button @click="openDetailModal({{ $surat->toJson() }})"
+                                    <button @click="openDetailModal(surat)"
                                             class="text-gray-600 hover:text-gray-900 px-2 py-1 rounded-md bg-gray-50 hover:bg-gray-100 transition-colors flex items-center" title="Lihat Detail">
                                         <i class="ri-eye-line mr-1"></i> Detail
                                     </button>
-                                    <a href="{{ route('surat-unit-manager.edit', $surat->id) }}"
-                                       @if($surat->status_manager !== 'pending' && $surat->status_manager !== 'rejected') style="display:none" @endif
-                                       class="text-yellow-600 hover:text-yellow-800 px-2 py-1 rounded-md bg-yellow-50 hover:bg-yellow-100 transition-colors flex items-center" title="Edit Surat">
+                                    <a :href="`/surat-unit-manager/${surat.id}/edit`"
+                                        x-show="surat.status_manager === 'pending' || surat.status_manager === 'rejected'"
+                                        class="text-yellow-600 hover:text-yellow-800 px-2 py-1 rounded-md bg-yellow-50 hover:bg-yellow-100 transition-colors flex items-center" title="Edit Surat">
                                         <i class="ri-edit-line mr-1"></i> Edit
                                     </a>
-                                    <button @click="confirmDelete({{ $surat->id }})"
+                                    <button @click="confirmDelete(surat.id)"
                                             class="text-red-600 hover:text-red-900 px-2 py-1 rounded-md bg-red-50 hover:bg-red-100 transition-colors flex items-center" title="Hapus Surat">
                                         <i class="ri-delete-bin-line mr-1"></i> Hapus
                                     </button>
                                 </div>
                             </td>
                         </tr>
-                    @endforeach
-                    @if($suratUnitManager->isEmpty())
-                        <tr>
-                            <td colspan="4" class="px-6 py-12 text-center text-gray-500">
-                                Tidak ada surat yang cocok dengan filter atau Anda belum membuat surat.
-                            </td>
-                        </tr>
-                    @endif
+                    </template>
+                    <tr x-show="paginatedSurat.length === 0">
+                        <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                            Tidak ada surat yang cocok dengan filter atau Anda belum membuat surat.
+                        </td>
+                    </tr>
                 </tbody>
             </table>
-            <div class="mt-4">
-                {{ $suratUnitManager->withQueryString()->links() }}
+            <div class="mt-4 flex justify-center gap-1">
+                <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1"
+                    class="px-3 py-1 border rounded-l bg-white text-gray-700 hover:bg-gray-50"
+                    :class="{'opacity-50 cursor-not-allowed': currentPage === 1}">&laquo;</button>
+                <template x-for="page in totalPages" :key="page">
+                    <button @click="changePage(page)"
+                        :class="{'bg-green-100 text-green-700 font-bold': currentPage === page, 'bg-white text-gray-700': currentPage !== page}"
+                        class="px-3 py-1 border-t border-b" x-text="page"></button>
+                </template>
+                <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages"
+                    class="px-3 py-1 border rounded-r bg-white text-gray-700 hover:bg-gray-50"
+                    :class="{'opacity-50 cursor-not-allowed': currentPage === totalPages}">&raquo;</button>
             </div>
         </div>
     </div>
@@ -129,7 +141,7 @@
                                 <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                                     <div class="sm:col-span-2"><dt class="text-sm font-medium text-gray-500">Nomor Surat</dt><dd class="mt-1 text-sm font-semibold text-gray-900" x-text="selectedSurat.nomor_surat"></dd></div>
                                     <div><dt class="text-sm font-medium text-gray-500">Tanggal Surat</dt><dd class="mt-1 text-sm text-gray-900" x-text="formatDate(selectedSurat.tanggal_surat)"></dd></div>
-                                    <div><dt class="text-sm font-medium text-gray-500">Tanggal Dibuat</dt><dd class="mt-1 text-sm text-gray-900" x-text="formatDate(selectedSurat.created_at)"></dd></div>
+                                    <div><dt class="text-sm font-medium text-gray-500">Tanggal Dibuat</dt><dd class="mt-1 text-sm text-gray-900" x-text="formatDateTime(selectedSurat.created_at)"></dd></div>
                                     <div class="sm:col-span-2"><dt class="text-sm font-medium text-gray-500">Perihal</dt><dd class="mt-1 text-sm text-gray-900" x-text="selectedSurat.perihal"></dd></div>
                                     <div class="sm:col-span-2 whitespace-pre-wrap"><dt class="text-sm font-medium text-gray-500">Isi Surat</dt><dd class="mt-1 text-sm text-gray-900" x-text="selectedSurat.isi_surat"></dd></div>
                                 </dl>
@@ -155,8 +167,8 @@
                                             </span>
                                         </dd>
                                     </div>
-                                    <div><dt class="text-sm font-medium text-gray-500">Tanggal Review</dt><dd class="mt-1 text-sm text-gray-900" x-text="selectedSurat.waktu_review_manager ? formatDate(selectedSurat.waktu_review_manager) : '-'"></dd></div>
-                                    <div class="sm:col-span-2"><dt class="text-sm font-medium text-gray-500">Alasan/Keterangan</dt><dd class="mt-1 text-sm text-gray-900 bg-white p-2 rounded border" x-text="selectedSurat.keterangan_manager || '-'"></dd></div>
+                                    <div><dt class="text-sm font-medium text-gray-500">Tanggal Review Manager</dt><dd class="mt-1 text-sm text-gray-900" x-text="selectedSurat.waktu_review_manager ? formatDateTime(selectedSurat.waktu_review_manager) : '-' "></dd></div>
+                                    <div class="sm:col-span-2"><dt class="text-sm font-medium text-gray-500">Alasan/Keterangan</dt><dd class="mt-1 text-sm text-gray-900 bg-white p-2 rounded border" x-text="selectedSurat.keterangan_manager || '-' "></dd></div>
                                 </dl>
                             </div>
                             
@@ -217,48 +229,60 @@
 <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('suratUnitManager', () => ({
-        allSurat: [],
+        allSurat: @json($suratUnitManager),
         searchQuery: '',
         statusFilter: '',
         showModal: false,
         selectedSurat: null,
-        
-        init() {
-            // Data untuk modal detail diambil dari tombol, bukan dari allSurat
-            const urlParams = new URLSearchParams(window.location.search);
-            this.searchQuery = urlParams.get('search') || '';
-            this.statusFilter = urlParams.get('status') || '';
-        },
-        
-        applyFilters() {
-            const params = new URLSearchParams();
+        currentPage: 1,
+        itemsPerPage: 10,
+        get filteredSurat() {
+            let data = this.allSurat;
+            console.log('statusFilter:', this.statusFilter, typeof this.statusFilter);
             if (this.searchQuery) {
-                params.set('search', this.searchQuery);
+                data = data.filter(surat =>
+                    surat.nomor_surat.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                    surat.perihal.toLowerCase().includes(this.searchQuery.toLowerCase())
+                );
             }
-            if (this.statusFilter) {
-                params.set('status', this.statusFilter);
-            } else {
-                params.delete('status');
+            if (this.statusFilter !== '') {
+                data = data.filter(surat => surat.status_manager === this.statusFilter);
             }
-            window.location.href = `${window.location.pathname}?${params.toString()}`;
+            return data;
         },
-
+        get totalPages() {
+            const total = Math.ceil(this.filteredSurat.length / this.itemsPerPage) || 1;
+            console.log('totalPages:', total, 'filteredSurat:', this.filteredSurat.length);
+            return total;
+        },
+        get paginatedSurat() {
+            const start = (this.currentPage - 1) * this.itemsPerPage;
+            const end = start + this.itemsPerPage;
+            return this.filteredSurat.slice(start, end);
+        },
+        changePage(page) {
+            console.log('changePage called:', page, 'totalPages:', this.totalPages);
+            if (page < 1 || page > this.totalPages) return;
+            this.currentPage = page;
+        },
         openDetailModal(surat) {
             this.selectedSurat = surat;
             this.showModal = true;
         },
-        
         formatDate(dateString) {
             if (!dateString) return '-';
             const options = { day: 'numeric', month: 'long', year: 'numeric' };
-            // Check if it's a full datetime string
             if (dateString.includes('T')) {
                 options.hour = '2-digit';
                 options.minute = '2-digit';
             }
             return new Date(dateString).toLocaleDateString('id-ID', options);
         },
-
+        formatDateTime(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        },
         getFileIcon(fileName) {
             const extension = fileName.split('.').pop().toLowerCase();
             switch (extension) {
@@ -285,7 +309,6 @@ document.addEventListener('alpine:init', () => {
                     return 'ri-file-line text-gray-500';
             }
         },
-
         formatFileSize(bytes) {
             if (!bytes) return 'Unknown';
             const units = ['B', 'KB', 'MB', 'GB'];
@@ -297,7 +320,6 @@ document.addEventListener('alpine:init', () => {
             }
             return Math.round(size * 100) / 100 + ' ' + units[unit];
         },
-
         confirmDelete(id) {
             Swal.fire({
                 title: 'Anda yakin?',
@@ -314,7 +336,6 @@ document.addEventListener('alpine:init', () => {
                 }
             });
         },
-
         async deleteSurat(id) {
             try {
                 const response = await fetch(`/surat-unit-manager/${id}`, {

@@ -191,7 +191,7 @@ class SuratUnitManagerController extends Controller
             }
 
             // Filter berdasarkan status
-            if ($request->has('status')) {
+            if ($request->has('status') && $request->status !== '') {
                 $query->byStatusManager($request->status);
             }
 
@@ -221,7 +221,9 @@ class SuratUnitManagerController extends Controller
             // Order by newest records first
             $suratUnitManager = $query->orderBy('tanggal_surat', 'desc')
                                      ->orderBy('created_at', 'desc')
-                                     ->paginate(10)->withQueryString();
+                                     ->get();
+
+            \Log::info('SuratUnitManager status_manager:', $suratUnitManager->pluck('status_manager')->toArray());
 
             // Perbaiki data file yang hilang jika ada
             $this->fixMissingFileData();

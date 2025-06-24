@@ -1737,8 +1737,10 @@
             }
 
             // Event handler for close modal to reset modal positioning
-        document.getElementById('close-detail-modal').addEventListener('click', function() {
-            document.getElementById('detail-modal').classList.add('hidden');
+        const closeDetailModalBtn = document.getElementById('close-detail-modal');
+        if (closeDetailModalBtn) {
+            closeDetailModalBtn.addEventListener('click', function() {
+                document.getElementById('detail-modal').classList.add('hidden');
                 // Tidak perlu mereset preview container karena sudah dihapus
                 
                 // Reset modal positioning
@@ -1756,7 +1758,8 @@
                 }
                 
                 currentSuratId = null;
-        });
+            });
+        }
 
         document.getElementById('close-preview-modal').addEventListener('click', function() {
             document.getElementById('file-preview-modal').classList.add('hidden');

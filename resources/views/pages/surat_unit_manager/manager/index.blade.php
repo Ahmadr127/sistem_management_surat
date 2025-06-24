@@ -3,7 +3,7 @@
 @section('title', 'Persetujuan Surat Unit - Manager')
 
 @section('content')
-<div x-data="approvalManager" x-init="init()" class="bg-white rounded-xl shadow-md">
+<div x-data="suratUnitManager" class="bg-white rounded-xl shadow-md">
     <!-- Header -->
     <div class="px-8 py-6 border-b border-gray-200 bg-white flex justify-between items-center">
         <div>
@@ -48,12 +48,13 @@
                         <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">Detail Surat</th>
                         <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">Dari Unit</th>
                         <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">Tanggal Dibuat</th>
+                        <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">Tanggal Review Manager</th>
                         <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">Status</th>
                         <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    <template x-for="surat in allSurat" :key="surat.id">
+                    <template x-for="surat in paginatedSurat" :key="surat.id">
                     <tr class="hover:bg-gray-50">
                         <td class="px-2 py-2">
                             <div class="text-sm font-semibold text-gray-900" x-text="surat.nomor_surat"></div>
@@ -63,7 +64,8 @@
                                 <div class="text-sm font-medium text-gray-900" x-text="surat.unit.name"></div>
                                 <div class="text-xs text-gray-600" x-text="surat.unit.jabatan ? surat.unit.jabatan.nama_jabatan : ''"></div>
                         </td>
-                        <td class="px-2 py-2 text-sm text-gray-700" x-text="formatDate(surat.created_at)"></td>
+                        <td class="px-2 py-2 text-sm text-gray-700" x-text="formatDateTime(surat.created_at)"></td>
+                        <td class="px-2 py-2 text-sm text-gray-700" x-text="surat.waktu_review_manager ? formatDateTime(surat.waktu_review_manager) : '-' "></td>
                         <td class="px-2 py-2">
                             <span class="inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full"
                                 :class="{
@@ -82,13 +84,26 @@
                         </td>
                     </tr>
                     </template>
-                    <tr x-show="!allSurat.length">
+                    <tr x-show="paginatedSurat.length === 0">
                         <td colspan="5" class="px-6 py-12 text-center text-gray-500">
                             Tidak ada data surat yang cocok dengan filter.
                         </td>
                     </tr>
                 </tbody>
             </table>
+            <div class="mt-4 flex justify-center gap-1">
+                <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1"
+                    class="px-3 py-1 border rounded-l bg-white text-gray-700 hover:bg-gray-50"
+                    :class="{'opacity-50 cursor-not-allowed': currentPage === 1}">&laquo;</button>
+                <template x-for="page in totalPages" :key="page">
+                    <button @click="changePage(page)"
+                        :class="{'bg-green-100 text-green-700 font-bold': currentPage === page, 'bg-white text-gray-700': currentPage !== page}"
+                        class="px-3 py-1 border-t border-b" x-text="page"></button>
+                </template>
+                <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages"
+                    class="px-3 py-1 border rounded-r bg-white text-gray-700 hover:bg-gray-50"
+                    :class="{'opacity-50 cursor-not-allowed': currentPage === totalPages}">&raquo;</button>
+            </div>
         </div>
     </div>
 
@@ -103,7 +118,18 @@
                     <div>
                         <!-- Modal Header -->
                         <div class="px-6 py-4 bg-white border-b border-gray-200 flex justify-between items-center">
-                            <h3 class="text-lg font-semibold text-gray-900">Detail & Persetujuan Surat</h3>
+                            <div class="flex items-center gap-3">
+                                <h3 class="text-lg font-semibold text-gray-900">Detail & Persetujuan Surat</h3>
+                                <!-- Badge Status -->
+                                <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full"
+                                    :class="{
+                                        'bg-green-100 text-green-800': selectedSurat.status_manager === 'approved',
+                                        'bg-red-100 text-red-800': selectedSurat.status_manager === 'rejected',
+                                        'bg-yellow-100 text-yellow-800': selectedSurat.status_manager === 'pending'
+                                    }"
+                                    x-text="selectedSurat.status_manager === 'approved' ? 'Disetujui' : (selectedSurat.status_manager === 'rejected' ? 'Ditolak' : 'Menunggu Persetujuan')">
+                                </span>
+                            </div>
                             <button @click="closeModal" 
                                     class="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-all duration-200">
                                 <i class="ri-close-line text-xl"></i>
@@ -120,6 +146,7 @@
                                         <dl class="grid grid-cols-1 gap-y-3">
                                             <div><dt class="text-sm font-medium text-gray-500">Nomor Surat</dt><dd class="mt-1 text-sm font-semibold text-gray-900" x-text="selectedSurat.nomor_surat"></dd></div>
                                             <div><dt class="text-sm font-medium text-gray-500">Tanggal Surat</dt><dd class="mt-1 text-sm text-gray-900" x-text="formatDate(selectedSurat.tanggal_surat)"></dd></div>
+                                            <div><dt class="text-sm font-medium text-gray-500">Tanggal Dibuat</dt><dd class="mt-1 text-sm text-gray-900" x-text="formatDateTime(selectedSurat.created_at)"></dd></div>
                                             <div><dt class="text-sm font-medium text-gray-500">Perihal</dt><dd class="mt-1 text-sm text-gray-900" x-text="selectedSurat.perihal"></dd></div>
                                             <div class="whitespace-pre-wrap"><dt class="text-sm font-medium text-gray-500">Isi Surat</dt><dd class="mt-1 text-sm text-gray-900" x-text="selectedSurat.isi_surat"></dd></div>
                                             <div x-show="selectedSurat.files && selectedSurat.files.length > 0">
@@ -170,10 +197,23 @@
                                         </dl>
                                     </div>
                                 </div>
-                                <!-- Right Column: Approval Form -->
-                                <div class="p-4 bg-blue-50 rounded-lg border border-blue-100">
-                                    <h4 class="text-base font-semibold text-gray-800 mb-3"><i class="ri-check-double-line mr-1 text-gray-600"></i>Form Persetujuan</h4>
-                                    <form @submit.prevent="submitApproval">
+                                <!-- Right Column: Approval/Status Info -->
+                                <div class="p-4 bg-blue-50 rounded-lg border border-blue-100 space-y-6">
+                                    <h4 class="text-base font-semibold text-gray-800 mb-3"><i class="ri-check-double-line mr-1 text-gray-600"></i>Status & Persetujuan</h4>
+                                    <dl class="grid grid-cols-1 gap-y-3">
+                                        <div><dt class="text-sm font-medium text-gray-500">Status Manager</dt>
+                                            <dd class="mt-1 text-sm font-semibold" :class="{
+                                                'text-green-700': selectedSurat.status_manager === 'approved',
+                                                'text-red-700': selectedSurat.status_manager === 'rejected',
+                                                'text-yellow-700': selectedSurat.status_manager === 'pending'
+                                            }" x-text="selectedSurat.status_manager === 'approved' ? 'Disetujui' : (selectedSurat.status_manager === 'rejected' ? 'Ditolak' : 'Menunggu Persetujuan')"></dd>
+                                        </div>
+                                        <div><dt class="text-sm font-medium text-gray-500">Tanggal Dibuat</dt><dd class="mt-1 text-sm text-gray-900" x-text="formatDateTime(selectedSurat.created_at)"></dd></div>
+                                        <div><dt class="text-sm font-medium text-gray-500">Tanggal Review Manager</dt><dd class="mt-1 text-sm text-gray-900" x-text="selectedSurat.waktu_review_manager ? formatDateTime(selectedSurat.waktu_review_manager) : '-' "></dd></div>
+                                        <div x-show="selectedSurat.keterangan_manager"><dt class="text-sm font-medium text-gray-500">Keterangan Manager</dt><dd class="mt-1 text-sm text-gray-900" x-text="selectedSurat.keterangan_manager"></dd></div>
+                                    </dl>
+                                    <!-- Approval Form hanya tampil jika status_manager masih pending -->
+                                    <form x-show="selectedSurat.status_manager === 'pending'" @submit.prevent="submitApproval">
                                         <div class="space-y-4">
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700 mb-2">Keputusan Anda <span class="text-red-500">*</span></label>
@@ -255,114 +295,51 @@
 @push('scripts')
 <script>
 document.addEventListener('alpine:init', () => {
-    Alpine.data('approvalManager', () => ({
-        allSurat: [],
+    Alpine.data('suratUnitManager', () => ({
+        allSurat: @json($suratUnitManager),
         searchQuery: '',
-        statusFilter: 'pending',
+        statusFilter: '',
         showModal: false,
         selectedSurat: null,
-        submitting: false,
-        approvalForm: {
-            action: '',
-            keterangan_manager: ''
-        },
-        showValidation: false,
-        init() {
-            this.allSurat = @json($suratUnitManager);
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            this.searchQuery = urlParams.get('search') || '';
-            this.statusFilter = urlParams.get('status') ?? 'pending';
-
-            // Pastikan setiap surat memiliki files array
-            this.allSurat.forEach(surat => {
-                if (!surat.files) {
-                    surat.files = [];
-                }
-            });
-            
-            // Add keyboard event listener for Escape key
-            this.handleKeydown = (e) => {
-                if (e.key === 'Escape' && this.showModal) {
-                    this.closeModal();
-                }
-            };
-            document.addEventListener('keydown', this.handleKeydown);
-
-            let searchTimeout;
-            this.$watch('searchQuery', (value) => {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    this.applyFilters();
-                }, 500);
-            });
-            this.$watch('statusFilter', () => {
-                this.applyFilters();
-            });
-        },
-        
-        applyFilters() {
-            const params = new URLSearchParams();
+        currentPage: 1,
+        itemsPerPage: 10,
+        get filteredSurat() {
+            let data = this.allSurat;
             if (this.searchQuery) {
-                params.set('search', this.searchQuery);
+                data = data.filter(surat =>
+                    surat.nomor_surat.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                    surat.perihal.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                    (surat.unit && surat.unit.name && surat.unit.name.toLowerCase().includes(this.searchQuery.toLowerCase()))
+                );
             }
-            if (this.statusFilter !== null) {
-                params.set('status', this.statusFilter);
+            if (this.statusFilter) {
+                data = data.filter(surat => surat.status_manager === this.statusFilter);
             }
-            window.location.href = `${window.location.pathname}?${params.toString()}`;
+            return data;
         },
-
+        get totalPages() {
+            return Math.ceil(this.filteredSurat.length / this.itemsPerPage) || 1;
+        },
+        get paginatedSurat() {
+            const start = (this.currentPage - 1) * this.itemsPerPage;
+            return this.filteredSurat.slice(start, start + this.itemsPerPage);
+        },
+        changePage(page) {
+            if (page < 1 || page > this.totalPages) return;
+            this.currentPage = page;
+        },
         openApprovalModal(surat) {
-            // Validate surat data
-            if (!surat || !surat.id) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Data Tidak Valid',
-                    text: 'Data surat tidak valid atau tidak ditemukan.',
-                    confirmButtonColor: '#EF4444'
-                });
-                return;
-            }
-            
-            // Check if surat is still pending
-            if (surat.status_manager !== 'pending') {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Surat Sudah Diproses',
-                    text: 'Surat ini sudah diproses dan tidak dapat diubah lagi.',
-                    confirmButtonColor: '#3085d6'
-                });
-                return;
-            }
-            
             this.selectedSurat = surat;
-            this.approvalForm.action = '';
-            this.approvalForm.keterangan_manager = '';
-            this.showValidation = false;
             this.showModal = true;
-            
-            // Focus on first radio button after modal opens
-            setTimeout(() => {
-                const firstRadio = document.querySelector('input[name="action"]');
-                if (firstRadio) {
-                    firstRadio.focus();
-                }
-            }, 100);
         },
         formatDate(dateString) {
             if (!dateString) return '-';
             return new Date(dateString).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
         },
-        formatFileSize(bytes) {
-            if (!bytes) return 'Unknown';
-            const units = ['B', 'KB', 'MB', 'GB'];
-            let size = bytes;
-            let unit = 0;
-            while (size >= 1024 && unit < units.length - 1) {
-                size /= 1024;
-                unit++;
-            }
-            return Math.round(size * 100) / 100 + ' ' + units[unit];
+        formatDateTime(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: 'numeric' });
         },
         getFileIcon(fileName) {
             const extension = fileName.split('.').pop().toLowerCase();
@@ -390,6 +367,23 @@ document.addEventListener('alpine:init', () => {
                     return 'ri-file-line text-gray-500';
             }
         },
+        formatFileSize(bytes) {
+            if (!bytes) return 'Unknown';
+            const units = ['B', 'KB', 'MB', 'GB'];
+            let size = bytes;
+            let unit = 0;
+            while (size >= 1024 && unit < units.length - 1) {
+                size /= 1024;
+                unit++;
+            }
+            return Math.round(size * 100) / 100 + ' ' + units[unit];
+        },
+        submitting: false,
+        approvalForm: {
+            action: '',
+            keterangan_manager: ''
+        },
+        showValidation: false,
         async submitApproval() {
             // Prevent multiple submission
             if (this.submitting) {
@@ -579,12 +573,6 @@ document.addEventListener('alpine:init', () => {
                     confirmButtonColor: '#3085d6',
                     confirmButtonText: 'OK'
                 });
-            }
-        },
-        destroy() {
-            // Cleanup event listener
-            if (this.handleKeydown) {
-                document.removeEventListener('keydown', this.handleKeydown);
             }
         }
     }));

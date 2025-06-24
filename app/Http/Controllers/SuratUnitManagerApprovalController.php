@@ -34,11 +34,8 @@ class SuratUnitManagerApprovalController extends Controller
             ])->byManager($user->id);
 
             // Filter berdasarkan status
-            if ($request->has('status')) {
+            if ($request->has('status') && $request->status !== '') {
                 $query->byStatusManager($request->status);
-            } else {
-                // Default: tampilkan yang pending
-                $query->byStatusManager('pending');
             }
 
             // Search filter

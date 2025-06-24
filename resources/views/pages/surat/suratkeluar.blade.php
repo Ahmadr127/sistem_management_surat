@@ -385,6 +385,9 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Deklarasi variabel global untuk autocomplete perusahaan
+        let suggestionsContainer = document.getElementById('perusahaan-suggestions');
+        let searchTimeout;
         // Get DOM elements - declare all variables just once
         const fileInput = document.getElementById('file-input');
         const uploadText = document.getElementById('upload-text');
@@ -401,7 +404,7 @@
         const tujuanCheckboxes = document.querySelectorAll('.tujuan-checkbox');
         const perusahaanContainer = document.getElementById('perusahaan-container');
         const perusahaanHidden = document.getElementById('perusahaan_hidden');
-        const perusahaanSelect = document.getElementById('perusahaan_select');
+        const perusahaanSearch = document.getElementById('perusahaan_search');
         const tujuanSearch = document.getElementById('tujuan-search');
         const selectAllBtn = document.getElementById('select-all-btn');
         const clearAllBtn = document.getElementById('clear-all-btn');
@@ -451,10 +454,6 @@
                     } else if (this.value === 'internal') {
                         if (generateNomorBtn) {
                             generateNomorBtn.style.display = 'inline-flex';
-                            generateNomorBtn.innerHTML = `
-                                <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
-                                Generate Nomor
-                            `;
                             generateNomorBtn.onclick = generateNomorSurat;
                         }
                         if (generateNomorAspBtn) {
@@ -1230,6 +1229,94 @@
                     `;
                 }
             }
+        }
+
+        // --- FIX: Tampilkan input perusahaan saat eksternal untuk role sekretaris ---
+        function togglePerusahaanInput() {
+            if (jenisSuratSelect && jenisSuratSelect.value === 'eksternal') {
+                perusahaanContainer.style.display = 'block';
+            } else {
+                perusahaanContainer.style.display = 'none';
+                if (perusahaanSearch) perusahaanSearch.value = '';
+            }
+        }
+        if (jenisSuratSelect && perusahaanContainer) {
+            togglePerusahaanInput();
+            jenisSuratSelect.addEventListener('change', togglePerusahaanInput);
+        }
+        // --- Pastikan autocomplete tetap aktif ---
+        if (perusahaanSearch) {
+            perusahaanSearch.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                const query = this.value.trim();
+                if (query.length < 2) {
+                    suggestionsContainer.style.display = 'none';
+                    return;
+                }
+                searchTimeout = setTimeout(() => {
+                    fetch(`/api/perusahaan/search?query=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.data.length > 0) {
+                                suggestionsContainer.innerHTML = data.data.map(perusahaan => `
+                                    <div class="suggestion-item p-2 hover:bg-gray-100 cursor-pointer" 
+                                         data-kode="${perusahaan.kode}"
+                                         data-nama="${perusahaan.nama_perusahaan}">${perusahaan.nama_perusahaan}</div>
+                                `).join('');
+                                suggestionsContainer.style.display = 'block';
+                            } else {
+                                suggestionsContainer.innerHTML = `
+                                    <div class="suggestion-item p-2 hover:bg-gray-100 cursor-pointer text-green-600" id="add-new-company"><i class="ri-add-line mr-2"></i>Tambah "${query}" sebagai perusahaan baru</div>
+                                `;
+                                suggestionsContainer.style.display = 'block';
+                            }
+                        })
+                        .catch(error => {
+                            suggestionsContainer.style.display = 'none';
+                        });
+                }, 300);
+            });
+        }
+        // --- Pilih suggestion atau tambah perusahaan baru ---
+        if (suggestionsContainer) {
+            suggestionsContainer.addEventListener('click', function(e) {
+                const target = e.target.closest('.suggestion-item');
+                if (!target) return;
+                if (target.id === 'add-new-company') {
+                    const newCompanyName = perusahaanSearch.value.trim();
+                    if (newCompanyName) {
+                        fetch('/api/perusahaan/quick-store', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({ nama_perusahaan: newCompanyName })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                perusahaanSearch.value = data.data.nama_perusahaan;
+                                perusahaanHidden.value = data.data.kode;
+                                suggestionsContainer.style.display = 'none';
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil',
+                                    text: 'Perusahaan baru berhasil ditambahkan',
+                                    showConfirmButton: false,
+                                    timer: 1500
+                                });
+                            }
+                        });
+                    }
+                } else {
+                    const kode = target.dataset.kode;
+                    const nama = target.dataset.nama;
+                    perusahaanSearch.value = nama;
+                    perusahaanHidden.value = kode;
+                    suggestionsContainer.style.display = 'none';
+                }
+            });
         }
     });
 </script>
