@@ -120,7 +120,7 @@
                 </label>
                 <input type="file" id="files" name="files[]" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.ppt,.pptx,.zip,.rar"
                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <p class="text-sm text-gray-500 mt-1">Format yang didukung: PDF, DOC, DOCX, JPG, JPEG, PNG, XLS, XLSX, PPT, PPTX, ZIP, RAR (Max: 5MB per file)</p>
+                <p class="text-sm text-gray-500 mt-1">Format yang didukung: PDF, DOC, DOCX, JPG, JPEG, PNG, XLS, XLSX, PPT, PPTX, ZIP, RAR (Max: 2MB per file)</p>
                 <div id="files_error" class="text-red-500 text-sm mt-1 hidden"></div>
                 
                 <!-- File Preview -->

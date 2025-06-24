@@ -54,49 +54,52 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    <template x-for="surat in filteredSurat" :key="surat.id">
+                    @foreach($suratUnitManager as $surat)
                         <tr class="hover:bg-gray-50">
                             <td class="px-2 py-2">
-                                <div class="text-sm font-semibold text-gray-900" x-text="surat.nomor_surat"></div>
-                                <div class="text-xs text-gray-600 truncate max-w-xs" x-text="surat.perihal"></div>
+                                <div class="text-sm font-semibold text-gray-900">{{ $surat->nomor_surat }}</div>
+                                <div class="text-xs text-gray-600 truncate max-w-xs">{{ $surat->perihal }}</div>
                             </td>
-                            <td class="px-2 py-2 text-sm text-gray-700" x-text="formatDate(surat.created_at)"></td>
+                            <td class="px-2 py-2 text-sm text-gray-700">{{ $surat->created_at->format('d M Y') }}</td>
                             <td class="px-2 py-2">
-                                <span class="inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full"
-                                      :class="{
-                                          'bg-green-100 text-green-800': surat.status_manager === 'approved',
-                                          'bg-red-100 text-red-800': surat.status_manager === 'rejected',
-                                          'bg-yellow-100 text-yellow-800': surat.status_manager === 'pending'
-                                      }"
-                                      x-text="surat.status_manager">
+                                <span class="inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full
+                                    @if($surat->status_manager === 'approved') bg-green-100 text-green-800
+                                    @elseif($surat->status_manager === 'rejected') bg-red-100 text-red-800
+                                    @else bg-yellow-100 text-yellow-800 @endif">
+                                    {{ $surat->status_manager }}
                                 </span>
                             </td>
                             <td class="px-2 py-2">
                                 <div class="flex items-center space-x-2">
-                                    <button @click="openDetailModal(surat)" 
+                                    <button @click="openDetailModal({{ $surat->toJson() }})"
                                             class="text-gray-600 hover:text-gray-900 px-2 py-1 rounded-md bg-gray-50 hover:bg-gray-100 transition-colors flex items-center" title="Lihat Detail">
                                         <i class="ri-eye-line mr-1"></i> Detail
                                     </button>
-                                    <a :href="`/surat-unit-manager/${surat.id}/edit`" 
-                                       x-show="surat.status_manager === 'pending' || surat.status_manager === 'rejected'"
+                                    <a href="{{ route('surat-unit-manager.edit', $surat->id) }}"
+                                       @if($surat->status_manager !== 'pending' && $surat->status_manager !== 'rejected') style="display:none" @endif
                                        class="text-yellow-600 hover:text-yellow-800 px-2 py-1 rounded-md bg-yellow-50 hover:bg-yellow-100 transition-colors flex items-center" title="Edit Surat">
                                         <i class="ri-edit-line mr-1"></i> Edit
                                     </a>
-                                    <button @click="confirmDelete(surat.id)" 
+                                    <button @click="confirmDelete({{ $surat->id }})"
                                             class="text-red-600 hover:text-red-900 px-2 py-1 rounded-md bg-red-50 hover:bg-red-100 transition-colors flex items-center" title="Hapus Surat">
                                         <i class="ri-delete-bin-line mr-1"></i> Hapus
                                     </button>
                                 </div>
                             </td>
                         </tr>
-                    </template>
-                    <tr x-show="!filteredSurat.length">
-                        <td colspan="4" class="px-6 py-12 text-center text-gray-500">
-                            Tidak ada surat yang cocok dengan filter atau Anda belum membuat surat.
-                        </td>
-                    </tr>
+                    @endforeach
+                    @if($suratUnitManager->isEmpty())
+                        <tr>
+                            <td colspan="4" class="px-6 py-12 text-center text-gray-500">
+                                Tidak ada surat yang cocok dengan filter atau Anda belum membuat surat.
+                            </td>
+                        </tr>
+                    @endif
                 </tbody>
             </table>
+            <div class="mt-4">
+                {{ $suratUnitManager->withQueryString()->links() }}
+            </div>
         </div>
     </div>
 
@@ -221,22 +224,25 @@ document.addEventListener('alpine:init', () => {
         selectedSurat: null,
         
         init() {
-            this.allSurat = @json($suratUnitManager);
+            // Data untuk modal detail diambil dari tombol, bukan dari allSurat
+            const urlParams = new URLSearchParams(window.location.search);
+            this.searchQuery = urlParams.get('search') || '';
+            this.statusFilter = urlParams.get('status') || '';
         },
         
-        get filteredSurat() {
-            if (!this.allSurat) return [];
-            return this.allSurat.filter(surat => {
-                const searchMatch = this.searchQuery.toLowerCase() === '' ||
-                    surat.nomor_surat.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                    surat.perihal.toLowerCase().includes(this.searchQuery.toLowerCase());
-                
-                const statusMatch = this.statusFilter === '' || surat.status_manager === this.statusFilter;
+        applyFilters() {
+            const params = new URLSearchParams();
+            if (this.searchQuery) {
+                params.set('search', this.searchQuery);
+            }
+            if (this.statusFilter) {
+                params.set('status', this.statusFilter);
+            } else {
+                params.delete('status');
+            }
+            window.location.href = `${window.location.pathname}?${params.toString()}`;
+        },
 
-                return searchMatch && statusMatch;
-            });
-        },
-        
         openDetailModal(surat) {
             this.selectedSurat = surat;
             this.showModal = true;
@@ -334,4 +340,8 @@ document.addEventListener('alpine:init', () => {
     }));
 });
 </script>
+@endpush
+
+@push('styles')
+
 @endpush 

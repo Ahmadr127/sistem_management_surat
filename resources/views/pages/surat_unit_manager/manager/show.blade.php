@@ -275,82 +275,97 @@
 
 @push('scripts')
 <script>
-document.getElementById('approvalForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+document.addEventListener('DOMContentLoaded', function() {
+    const approvalForm = document.getElementById('approvalForm');
     
-    // Get selected action
-    const selectedAction = document.querySelector('input[name="action"]:checked');
-    if (!selectedAction) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Pilih Keputusan',
-            text: 'Silakan pilih keputusan (Setujui/Tolak)'
-        });
-        return;
-    }
-    
-    // Confirm action
-    const actionText = selectedAction.value === 'approve' ? 'menyetujui' : 'menolak';
-    Swal.fire({
-        icon: 'question',
-        title: 'Konfirmasi Keputusan',
-        text: `Apakah Anda yakin ingin ${actionText} surat ini?`,
-        showCancelButton: true,
-        confirmButtonText: 'Ya, Kirim',
-        cancelButtonText: 'Batal',
-        confirmButtonColor: selectedAction.value === 'approve' ? '#10B981' : '#EF4444'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Disable submit button
-            const submitBtn = document.getElementById('submitApproval');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="ri-loader-4-line animate-spin"></i><span>Mengirim...</span>';
+    if (approvalForm) {
+        approvalForm.addEventListener('submit', function(e) {
+            e.preventDefault();
             
-            // Submit form
-            fetch(this.action, {
-                method: 'POST',
-                body: new FormData(this),
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil!',
-                        text: data.message,
-                        timer: 2000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        window.location.href = data.redirect_url;
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error!',
-                        text: data.message
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
+            // Get selected action
+            const selectedAction = document.querySelector('input[name="action"]:checked');
+            if (!selectedAction) {
                 Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
-                    text: 'Terjadi kesalahan saat mengirim keputusan'
+                    icon: 'warning',
+                    title: 'Pilih Keputusan',
+                    text: 'Silakan pilih keputusan (Setujui/Tolak)'
                 });
-            })
-            .finally(() => {
-                // Re-enable submit button
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
+                return;
+            }
+            
+            // Confirm action
+            const actionText = selectedAction.value === 'approve' ? 'menyetujui' : 'menolak';
+            Swal.fire({
+                icon: 'question',
+                title: 'Konfirmasi Keputusan',
+                text: `Apakah Anda yakin ingin ${actionText} surat ini?`,
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Kirim',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: selectedAction.value === 'approve' ? '#10B981' : '#EF4444'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Disable submit button
+                    const submitBtn = document.getElementById('submitApproval');
+                    const originalText = submitBtn.innerHTML;
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="ri-loader-4-line animate-spin"></i><span>Mengirim...</span>';
+                    
+                    // Create FormData
+                    const formData = new FormData(this);
+                    
+                    // Submit form
+                    fetch(this.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        console.log('Response status:', response.status);
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Response data:', data);
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: data.message,
+                                timer: 2000,
+                                showConfirmButton: false
+                            }).then(() => {
+                                window.location.href = data.redirect_url;
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: data.message || 'Terjadi kesalahan saat memproses permintaan'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: 'Terjadi kesalahan saat mengirim keputusan. Silakan coba lagi.'
+                        });
+                    })
+                    .finally(() => {
+                        // Re-enable submit button
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                    });
+                }
             });
-        }
-    });
+        });
+    } else {
+        console.error('Approval form not found');
+    }
 });
 </script>
 @endpush 

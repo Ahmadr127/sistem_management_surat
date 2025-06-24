@@ -53,7 +53,7 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    <template x-for="surat in filteredSurat" :key="surat.id">
+                    <template x-for="surat in allSurat" :key="surat.id">
                     <tr class="hover:bg-gray-50">
                         <td class="px-2 py-2">
                             <div class="text-sm font-semibold text-gray-900" x-text="surat.nomor_surat"></div>
@@ -82,7 +82,7 @@
                         </td>
                     </tr>
                     </template>
-                    <tr x-show="!filteredSurat.length">
+                    <tr x-show="!allSurat.length">
                         <td colspan="5" class="px-6 py-12 text-center text-gray-500">
                             Tidak ada data surat yang cocok dengan filter.
                         </td>
@@ -104,7 +104,10 @@
                         <!-- Modal Header -->
                         <div class="px-6 py-4 bg-white border-b border-gray-200 flex justify-between items-center">
                             <h3 class="text-lg font-semibold text-gray-900">Detail & Persetujuan Surat</h3>
-                            <button @click="showModal = false" class="text-gray-400 hover:text-gray-600"><i class="ri-close-line text-xl"></i></button>
+                            <button @click="closeModal" 
+                                    class="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-all duration-200">
+                                <i class="ri-close-line text-xl"></i>
+                            </button>
                         </div>
 
                         <!-- Modal Content -->
@@ -119,13 +122,42 @@
                                             <div><dt class="text-sm font-medium text-gray-500">Tanggal Surat</dt><dd class="mt-1 text-sm text-gray-900" x-text="formatDate(selectedSurat.tanggal_surat)"></dd></div>
                                             <div><dt class="text-sm font-medium text-gray-500">Perihal</dt><dd class="mt-1 text-sm text-gray-900" x-text="selectedSurat.perihal"></dd></div>
                                             <div class="whitespace-pre-wrap"><dt class="text-sm font-medium text-gray-500">Isi Surat</dt><dd class="mt-1 text-sm text-gray-900" x-text="selectedSurat.isi_surat"></dd></div>
-                                            <div x-show="selectedSurat.file_path">
+                                            <div x-show="selectedSurat.files && selectedSurat.files.length > 0">
                                                 <dt class="text-sm font-medium text-gray-500">Lampiran</dt>
                                                 <dd class="mt-1">
-                                                    <a :href="`/surat-unit-manager/${selectedSurat.id}/download`" class="inline-flex items-center text-blue-600 hover:underline">
-                                                        <i class="ri-download-2-line mr-1"></i> Download Lampiran
-                                                    </a>
+                                                    <div class="space-y-2">
+                                                        <template x-for="file in selectedSurat.files" :key="file.id">
+                                                            <div class="flex items-center justify-between p-2 bg-white rounded border">
+                                                                <div class="flex items-center space-x-2">
+                                                                    <i :class="getFileIcon(file.original_name)" class="text-lg"></i>
+                                                                    <div>
+                                                                        <p class="text-sm font-medium text-gray-900" x-text="file.original_name"></p>
+                                                                        <p class="text-xs text-gray-500" x-text="formatFileSize(file.file_size)"></p>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="flex items-center space-x-1">
+                                                                    <a :href="`/surat-unit-manager/${selectedSurat.id}/preview-file/${file.id}`" 
+                                                                       class="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50" title="Preview" target="_blank">
+                                                                        <i class="ri-eye-line"></i>
+                                                                    </a>
+                                                                    <a :href="`/surat-unit-manager/${selectedSurat.id}/download-file/${file.id}`" 
+                                                                       class="text-green-600 hover:text-green-800 p-1 rounded hover:bg-green-50" title="Download">
+                                                                        <i class="ri-download-line"></i>
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+                                                    <div x-show="selectedSurat.files.length > 1" class="mt-3 pt-2 border-t border-gray-200">
+                                                        <a :href="`/surat-unit-manager/${selectedSurat.id}/download`" class="inline-flex items-center text-blue-600 hover:underline">
+                                                            <i class="ri-download-2-line mr-1"></i> Download Semua File (ZIP)
+                                                        </a>
+                                                    </div>
                                                 </dd>
+                                            </div>
+                                            <div x-show="!selectedSurat.files || selectedSurat.files.length === 0" class="text-sm text-gray-500">
+                                                <dt class="text-sm font-medium text-gray-500">Lampiran</dt>
+                                                <dd class="mt-1">Tidak ada lampiran.</dd>
                                             </div>
                                         </dl>
                                     </div>
@@ -144,27 +176,67 @@
                                     <form @submit.prevent="submitApproval">
                                         <div class="space-y-4">
                                             <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-2">Keputusan Anda</label>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Keputusan Anda <span class="text-red-500">*</span></label>
                                                 <div class="flex space-x-4 p-2 bg-white rounded-lg">
-                                                    <label class="flex-1 text-center py-2 px-4 rounded-md cursor-pointer transition-all duration-200" :class="{'bg-green-600 text-white shadow': approvalForm.action === 'approve'}">
-                                                        <input type="radio" x-model="approvalForm.action" value="approve" required class="sr-only">
+                                                    <label class="flex-1 text-center py-2 px-4 rounded-md cursor-pointer transition-all duration-200" 
+                                                           :class="{
+                                                               'bg-green-600 text-white shadow': approvalForm.action === 'approve',
+                                                               'opacity-50 cursor-not-allowed': submitting
+                                                           }">
+                                                        <input type="radio" x-model="approvalForm.action" value="approve" required class="sr-only" @change="showValidation = false" :disabled="submitting">
                                                         <span><i class="ri-checkbox-circle-line mr-1"></i>Setujui</span>
                                                     </label>
-                                                    <label class="flex-1 text-center py-2 px-4 rounded-md cursor-pointer transition-all duration-200" :class="{'bg-red-600 text-white shadow': approvalForm.action === 'reject'}">
-                                                        <input type="radio" x-model="approvalForm.action" value="reject" required class="sr-only">
+                                                    <label class="flex-1 text-center py-2 px-4 rounded-md cursor-pointer transition-all duration-200" 
+                                                           :class="{
+                                                               'bg-red-600 text-white shadow': approvalForm.action === 'reject',
+                                                               'opacity-50 cursor-not-allowed': submitting
+                                                           }">
+                                                        <input type="radio" x-model="approvalForm.action" value="reject" required class="sr-only" @change="showValidation = false" :disabled="submitting">
                                                         <span><i class="ri-close-circle-line mr-1"></i>Tolak</span>
                                                     </label>
                                                 </div>
+                                                <div x-show="approvalForm.action === '' && showValidation" class="text-red-500 text-sm mt-1">
+                                                    Silakan pilih keputusan Anda
+                                                </div>
                                             </div>
                                             <div>
-                                                <label for="keterangan_manager" class="block text-sm font-medium text-gray-700 mb-1">Keterangan / Alasan</label>
-                                                <textarea id="keterangan_manager" x-model="approvalForm.keterangan_manager" rows="4" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-green-500 focus:ring focus:ring-green-200 transition-all" placeholder="Berikan catatan jika diperlukan..."></textarea>
-                                                <p class="text-xs text-gray-500 mt-1">Keterangan ini wajib diisi jika Anda menolak surat.</p>
+                                                <label for="keterangan_manager" class="block text-sm font-medium text-gray-700 mb-1">
+                                                    Keterangan / Alasan 
+                                                    <span x-show="approvalForm.action === 'reject'" class="text-red-500">*</span>
+                                                </label>
+                                                <textarea id="keterangan_manager" x-model="approvalForm.keterangan_manager" rows="4" 
+                                                          class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-green-500 focus:ring focus:ring-green-200 transition-all" 
+                                                          :class="{'opacity-50 cursor-not-allowed': submitting}"
+                                                          :placeholder="approvalForm.action === 'reject' ? 'Wajib memberikan alasan penolakan...' : 'Berikan catatan jika diperlukan...'"
+                                                          @input="validateKeterangan()"
+                                                          :disabled="submitting"></textarea>
+                                                <div x-show="approvalForm.action === 'reject' && !approvalForm.keterangan_manager.trim() && showValidation" class="text-red-500 text-sm mt-1">
+                                                    Keterangan wajib diisi jika Anda menolak surat
+                                                </div>
+                                                <div x-show="approvalForm.action === 'reject' && approvalForm.keterangan_manager.trim().length > 0 && approvalForm.keterangan_manager.trim().length < 10" class="text-orange-500 text-sm mt-1">
+                                                    Alasan penolakan minimal 10 karakter (tersisa: <span x-text="10 - approvalForm.keterangan_manager.trim().length"></span>)
+                                                </div>
+                                                <p class="text-xs text-gray-500 mt-1">
+                                                    <span x-show="approvalForm.action === 'reject'" class="text-red-500">Keterangan ini wajib diisi jika Anda menolak surat.</span>
+                                                    <span x-show="approvalForm.action === 'approve'">Keterangan bersifat opsional untuk persetujuan.</span>
+                                                </p>
                                             </div>
-                                            <div class="pt-4 flex justify-end">
-                                                <button type="submit" class="w-full px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 font-semibold" :disabled="submitting">
-                                                    <span x-show="!submitting">Kirim Keputusan</span>
-                                                    <span x-show="submitting"><i class="ri-loader-4-line animate-spin"></i> Memproses...</span>
+                                            <div class="pt-4 flex justify-end space-x-3">
+                                                <button type="button" @click="closeModal" 
+                                                        class="px-4 py-2.5 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 font-semibold transition-all"
+                                                        :disabled="submitting">
+                                                    Batal
+                                                </button>
+                                                <button type="submit" 
+                                                        class="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 font-semibold transition-all" 
+                                                        :class="{'opacity-50 cursor-not-allowed': submitting}"
+                                                        :disabled="submitting">
+                                                    <span x-show="!submitting">
+                                                        <i class="ri-send-plane-line mr-1"></i>Kirim Keputusan
+                                                    </span>
+                                                    <span x-show="submitting">
+                                                        <i class="ri-loader-4-line animate-spin mr-1"></i>Memproses...
+                                                    </span>
                                                 </button>
                                             </div>
                                         </div>
@@ -194,67 +266,325 @@ document.addEventListener('alpine:init', () => {
             action: '',
             keterangan_manager: ''
         },
+        showValidation: false,
         init() {
             this.allSurat = @json($suratUnitManager);
-        },
-        get filteredSurat() {
-            if (!this.allSurat) return [];
-            return this.allSurat.filter(surat => {
-                const searchMatch = this.searchQuery.toLowerCase() === '' ||
-                    surat.nomor_surat.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                    surat.perihal.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                    (surat.unit && surat.unit.name.toLowerCase().includes(this.searchQuery.toLowerCase()));
-                
-                const statusMatch = this.statusFilter === '' || surat.status_manager === this.statusFilter;
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            this.searchQuery = urlParams.get('search') || '';
+            this.statusFilter = urlParams.get('status') ?? 'pending';
 
-                return searchMatch && statusMatch;
+            // Pastikan setiap surat memiliki files array
+            this.allSurat.forEach(surat => {
+                if (!surat.files) {
+                    surat.files = [];
+                }
+            });
+            
+            // Add keyboard event listener for Escape key
+            this.handleKeydown = (e) => {
+                if (e.key === 'Escape' && this.showModal) {
+                    this.closeModal();
+                }
+            };
+            document.addEventListener('keydown', this.handleKeydown);
+
+            let searchTimeout;
+            this.$watch('searchQuery', (value) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    this.applyFilters();
+                }, 500);
+            });
+            this.$watch('statusFilter', () => {
+                this.applyFilters();
             });
         },
+        
+        applyFilters() {
+            const params = new URLSearchParams();
+            if (this.searchQuery) {
+                params.set('search', this.searchQuery);
+            }
+            if (this.statusFilter !== null) {
+                params.set('status', this.statusFilter);
+            }
+            window.location.href = `${window.location.pathname}?${params.toString()}`;
+        },
+
         openApprovalModal(surat) {
+            // Validate surat data
+            if (!surat || !surat.id) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Data Tidak Valid',
+                    text: 'Data surat tidak valid atau tidak ditemukan.',
+                    confirmButtonColor: '#EF4444'
+                });
+                return;
+            }
+            
+            // Check if surat is still pending
+            if (surat.status_manager !== 'pending') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Surat Sudah Diproses',
+                    text: 'Surat ini sudah diproses dan tidak dapat diubah lagi.',
+                    confirmButtonColor: '#3085d6'
+                });
+                return;
+            }
+            
             this.selectedSurat = surat;
             this.approvalForm.action = '';
             this.approvalForm.keterangan_manager = '';
+            this.showValidation = false;
             this.showModal = true;
+            
+            // Focus on first radio button after modal opens
+            setTimeout(() => {
+                const firstRadio = document.querySelector('input[name="action"]');
+                if (firstRadio) {
+                    firstRadio.focus();
+                }
+            }, 100);
         },
         formatDate(dateString) {
             if (!dateString) return '-';
             return new Date(dateString).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
         },
+        formatFileSize(bytes) {
+            if (!bytes) return 'Unknown';
+            const units = ['B', 'KB', 'MB', 'GB'];
+            let size = bytes;
+            let unit = 0;
+            while (size >= 1024 && unit < units.length - 1) {
+                size /= 1024;
+                unit++;
+            }
+            return Math.round(size * 100) / 100 + ' ' + units[unit];
+        },
+        getFileIcon(fileName) {
+            const extension = fileName.split('.').pop().toLowerCase();
+            switch (extension) {
+                case 'pdf':
+                    return 'ri-file-pdf-line text-red-500';
+                case 'doc':
+                case 'docx':
+                    return 'ri-file-word-line text-blue-500';
+                case 'xls':
+                case 'xlsx':
+                    return 'ri-file-excel-line text-green-500';
+                case 'ppt':
+                case 'pptx':
+                    return 'ri-file-ppt-line text-orange-500';
+                case 'jpg':
+                case 'jpeg':
+                case 'png':
+                case 'gif':
+                    return 'ri-image-line text-purple-500';
+                case 'zip':
+                case 'rar':
+                    return 'ri-file-zip-line text-yellow-500';
+                default:
+                    return 'ri-file-line text-gray-500';
+            }
+        },
         async submitApproval() {
+            // Prevent multiple submission
+            if (this.submitting) {
+                return;
+            }
+            
+            // Reset validation state
+            this.showValidation = false;
+            
+            // Validate action selection
             if (!this.approvalForm.action) {
-                Swal.fire('Tunggu Dulu!', 'Anda harus memilih "Setujui" atau "Tolak" sebelum mengirim.', 'warning');
+                this.showValidation = true;
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Pilih Keputusan',
+                    text: 'Silakan pilih keputusan (Setujui/Tolak) sebelum mengirim.',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'OK'
+                });
                 return;
             }
 
+            // Validate keterangan for rejection
             if (this.approvalForm.action === 'reject' && !this.approvalForm.keterangan_manager.trim()) {
-                Swal.fire('Tunggu Dulu!', 'Anda harus memberikan alasan penolakan di kolom keterangan.', 'warning');
+                this.showValidation = true;
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Keterangan Wajib',
+                    text: 'Anda harus memberikan alasan penolakan di kolom keterangan.',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'OK'
+                });
+                return;
+            }
+
+            // Validate keterangan length for rejection
+            if (this.approvalForm.action === 'reject' && this.approvalForm.keterangan_manager.trim().length < 10) {
+                this.showValidation = true;
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Keterangan Terlalu Pendek',
+                    text: 'Alasan penolakan harus minimal 10 karakter.',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'OK'
+                });
+                return;
+            }
+
+            // Confirm action
+            const actionText = this.approvalForm.action === 'approve' ? 'menyetujui' : 'menolak';
+            const result = await Swal.fire({
+                icon: 'question',
+                title: 'Konfirmasi Keputusan',
+                text: `Apakah Anda yakin ingin ${actionText} surat ini?`,
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Kirim',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: this.approvalForm.action === 'approve' ? '#10B981' : '#EF4444',
+                cancelButtonColor: '#6B7280'
+            });
+
+            if (!result.isConfirmed) {
                 return;
             }
 
             this.submitting = true;
+            
+            // Show loading notification
+            Swal.fire({
+                title: 'Memproses...',
+                text: 'Sedang mengirim keputusan Anda',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
             try {
+                const csrfToken = '{{ csrf_token() }}';
+                if (!csrfToken) {
+                    throw new Error('CSRF token tidak ditemukan. Silakan refresh halaman.');
+                }
+                
                 const response = await fetch(`/surat-unit-manager/manager/${this.selectedSurat.id}/approval`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-CSRF-TOKEN': csrfToken
                     },
                     body: JSON.stringify(this.approvalForm)
                 });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const data = await response.json();
+                
+                if (!data || typeof data !== 'object') {
+                    throw new Error('Response tidak valid dari server.');
+                }
+                
                 if (data.success) {
-                    Swal.fire('Berhasil!', data.message, 'success').then(() => {
-                        window.location.reload();
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: data.message,
+                        timer: 2000,
+                        showConfirmButton: false,
+                        timerProgressBar: true
                     });
-                    this.showModal = false;
+                    
+                    // Close modal and reload page
+                    this.resetModal();
+                    window.location.reload();
                 } else {
-                    throw new Error(data.message || 'Terjadi kesalahan.');
+                    throw new Error(data.message || 'Terjadi kesalahan saat memproses permintaan.');
                 }
             } catch (error) {
-                Swal.fire('Error!', error.message, 'error');
+                console.error('Error:', error);
+                
+                let errorMessage = 'Terjadi kesalahan saat mengirim keputusan. Silakan coba lagi.';
+                
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+                } else if (error.message.includes('CSRF')) {
+                    errorMessage = 'Sesi Anda telah berakhir. Silakan refresh halaman dan coba lagi.';
+                } else if (error.message.includes('HTTP error')) {
+                    errorMessage = 'Server mengalami masalah. Silakan coba lagi dalam beberapa saat.';
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: errorMessage,
+                    confirmButtonColor: '#EF4444',
+                    confirmButtonText: 'OK'
+                });
             } finally {
                 this.submitting = false;
+                // Close loading notification if still open
+                if (Swal.isVisible()) {
+                    Swal.close();
+                }
+            }
+        },
+        closeModal() {
+            // Check if form has data
+            if (this.approvalForm.action || this.approvalForm.keterangan_manager.trim()) {
+                Swal.fire({
+                    icon: 'question',
+                    title: 'Tutup Modal?',
+                    text: 'Data yang sudah diisi akan hilang. Apakah Anda yakin ingin menutup modal?',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Tutup',
+                    cancelButtonText: 'Batal',
+                    confirmButtonColor: '#6B7280',
+                    cancelButtonColor: '#3085d6'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        this.resetModal();
+                    }
+                });
+            } else {
+                this.resetModal();
+            }
+        },
+        resetModal() {
+            this.showModal = false;
+            this.showValidation = false;
+            this.approvalForm.action = '';
+            this.approvalForm.keterangan_manager = '';
+            this.selectedSurat = null;
+        },
+        validateKeterangan() {
+            if (this.approvalForm.action === 'reject' && this.approvalForm.keterangan_manager.trim().length < 10) {
+                this.showValidation = true;
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Keterangan Terlalu Pendek',
+                    text: 'Alasan penolakan harus minimal 10 karakter.',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'OK'
+                });
+            }
+        },
+        destroy() {
+            // Cleanup event listener
+            if (this.handleKeydown) {
+                document.removeEventListener('keydown', this.handleKeydown);
             }
         }
     }));

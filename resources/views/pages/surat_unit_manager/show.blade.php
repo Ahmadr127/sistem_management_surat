@@ -113,7 +113,7 @@
                             <div class="flex items-center space-x-2">
                                 <a href="{{ route('surat-unit-manager.preview-file', [$suratUnitManager->id, $file->id]) }}" 
                                    class="text-blue-600 hover:text-blue-800 p-1 rounded-md hover:bg-blue-50" title="Preview" target="_blank">
-                                    <i class="ri-eye-line"></i>
+                                    <i class="ri-eye-line"></i> Preview
                                 </a>
                                 <a href="{{ route('surat-unit-manager.download-file', [$suratUnitManager->id, $file->id]) }}" 
                                    class="text-green-600 hover:text-green-800 p-1 rounded-md hover:bg-green-50" title="Download">
