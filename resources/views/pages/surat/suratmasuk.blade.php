@@ -509,6 +509,10 @@
                 } else if (userRole === 1) { // Sekretaris
                     console.log('Role Sekretaris: Mengambil semua data');
                     params.append('all', 'true');
+                } else if (userRole === 5) { // Sekretaris ASP
+                    console.log('Role Sekretaris ASP: Menampilkan surat yang ditujukan pada dia dan surat yang dia buat');
+                    params.append('user_id', {{ auth()->id() }});
+                    params.append('include_created', 'true');
                 } else if (userRole === 2) { // Direktur
                     console.log('Role Direktur: Mengambil data dengan status sekretaris approved');
                     params.append('status_sekretaris', 'approved');
@@ -1091,6 +1095,12 @@
                             case 3:
                                 roleLabel = '<span class="inline-flex px-2 text-xs font-semibold bg-purple-100 text-purple-800 rounded-full ml-1">Admin</span>';
                                 break;
+                            case 4:
+                                roleLabel = '<span class="inline-flex px-2 text-xs font-semibold bg-orange-100 text-orange-800 rounded-full ml-1">Manager</span>';
+                                break;
+                            case 5:
+                                roleLabel = '<span class="inline-flex px-2 text-xs font-semibold bg-pink-100 text-pink-800 rounded-full ml-1">Sekretaris ASP</span>';
+                                break;
                         }
                     }
                     
@@ -1638,28 +1648,37 @@
         }
 
             // Tambahkan event listener untuk tombol preview pada detail surat
-            document.getElementById('detail-preview-link').addEventListener('click', function(e) {
-                e.preventDefault();
-                // Ambil data surat
-                if (!currentSuratId) return;
-                const surat = suratData.find(s => s.id === currentSuratId);
-                if (!surat) return;
-                let previewUrl = '';
-                if (surat.files && surat.files.length > 0) {
-                    previewUrl = '/' + surat.files[0].file_path;
-                } else if (surat.file_path) {
-                    previewUrl = `/suratkeluar/${currentSuratId}/preview`;
-                } else {
-                    alert('File tidak tersedia');
-                    return;
-                }
-                window.open(previewUrl, '_blank');
-            });
+            const detailPreviewLink = document.getElementById('detail-preview-link');
+            if (detailPreviewLink) {
+                detailPreviewLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    // Ambil data surat
+                    if (!currentSuratId) return;
+                    const surat = suratData.find(s => s.id === currentSuratId);
+                    if (!surat) return;
+                    let previewUrl = '';
+                    if (surat.files && surat.files.length > 0) {
+                        previewUrl = '/' + surat.files[0].file_path;
+                    } else if (surat.file_path) {
+                        previewUrl = `/suratkeluar/${currentSuratId}/preview`;
+                    } else {
+                        alert('File tidak tersedia');
+                        return;
+                    }
+                    window.open(previewUrl, '_blank');
+                });
+            }
 
             // Tambahkan event listener untuk tombol close preview
-            document.getElementById('close-detail-preview')?.addEventListener('click', function() {
-                document.getElementById('detail-preview-container')?.classList.add('hidden');
-            });
+            const closeDetailPreview = document.getElementById('close-detail-preview');
+            if (closeDetailPreview) {
+                closeDetailPreview.addEventListener('click', function() {
+                    const detailPreviewContainer = document.getElementById('detail-preview-container');
+                    if (detailPreviewContainer) {
+                        detailPreviewContainer.classList.add('hidden');
+                    }
+                });
+            }
 
             // Fungsi untuk preview file di dalam modal full screen
             function previewFileInDetail() {
@@ -1761,9 +1780,14 @@
             });
         }
 
-        document.getElementById('close-preview-modal').addEventListener('click', function() {
-            document.getElementById('file-preview-modal').classList.add('hidden');
-                
+        const closePreviewModal = document.getElementById('close-preview-modal');
+        if (closePreviewModal) {
+            closePreviewModal.addEventListener('click', function() {
+                const filePreviewModal = document.getElementById('file-preview-modal');
+                if (filePreviewModal) {
+                    filePreviewModal.classList.add('hidden');
+                }
+                    
                 // Reset source untuk iframe dan img untuk menghindari memory leak
                 const pdfPreview = document.getElementById('pdf-preview');
                 if (pdfPreview) pdfPreview.src = '';
@@ -1774,17 +1798,27 @@
                     imgPreview.style.display = 'none';
                 }
             });
-            
-            // Add event listener for detail preview button
-            document.getElementById('detail-preview-link').addEventListener('click', function() {
+        }
+
+        // Add event listener for detail preview button
+        const detailPreviewLink2 = document.getElementById('detail-preview-link');
+        if (detailPreviewLink2) {
+            detailPreviewLink2.addEventListener('click', function() {
                 previewFileInDetail();
             });
-            
-            // Add event listener for closing detail preview
-            document.getElementById('close-detail-preview')?.addEventListener('click', function() {
-                document.getElementById('detail-preview-container')?.classList.add('hidden');
+        }
+        
+        // Add event listener for closing detail preview
+        const closeDetailPreview2 = document.getElementById('close-detail-preview');
+        if (closeDetailPreview2) {
+            closeDetailPreview2.addEventListener('click', function() {
+                const detailPreviewContainer = document.getElementById('detail-preview-container');
+                if (detailPreviewContainer) {
+                    detailPreviewContainer.classList.add('hidden');
+                }
             });
-        });
+        }
+    });
 
         // Tambahkan fungsi renderDetailFiles yang menangani event preview dengan benar
         function renderDetailFiles(files) {

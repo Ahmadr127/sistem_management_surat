@@ -39,7 +39,7 @@ class UserController extends Controller
             'username' => 'required|string|max:255|unique:users',
             'email' => 'nullable|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:3',
-            'role' => 'required|integer|in:0,1,2,3,4',
+            'role' => 'required|integer|in:0,1,2,3,4,5',
             'jabatan_id' => 'required|exists:tbl_jabatan,id',
             'manager_id' => 'nullable|exists:users,id',
             'status_akun' => 'required|in:aktif,nonaktif'
@@ -70,7 +70,7 @@ class UserController extends Controller
             'username' => 'required|string|max:255|unique:users,username,' . $user->id,
             'email' => 'nullable|string|email|max:255|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:3',
-            'role' => 'required|integer|in:0,1,2,3,4',
+            'role' => 'required|integer|in:0,1,2,3,4,5',
             'jabatan_id' => 'required|exists:tbl_jabatan,id',
             'manager_id' => 'nullable|exists:users,id',
             'status_akun' => 'required|in:aktif,nonaktif'

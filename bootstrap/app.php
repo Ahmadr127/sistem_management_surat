@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             // 'super_admin' => \App\Http\Middleware\SuperAdminMiddleware::class,
             'checkUserStatus' => \App\Http\Middleware\CheckUserStatus::class,
             'checkRole' => \App\Http\Middleware\CheckRoleMiddleware::class,
+            'sekretarisAsp' => \App\Http\Middleware\SekretarisAspMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

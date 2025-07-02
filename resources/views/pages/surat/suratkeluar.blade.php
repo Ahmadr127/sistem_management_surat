@@ -20,13 +20,10 @@
         <form action="{{ route('suratkeluar.store') }}" method="POST" enctype="multipart/form-data" class="p-8">
             @csrf
             <!-- Tambahkan hidden input di dalam form -->
-            <input type="hidden" name="perusahaan" value="RSAZRA">
+            <input type="hidden" name="perusahaan" id="perusahaan_hidden" value="">
 
             <!-- Hidden input untuk pengirim_id - selalu gunakan user yang login -->
             <input type="hidden" name="pengirim_id" id="pengirim_id" value="{{ auth()->id() }}">
-
-            <!-- Perusahaan Input - Hidden by default for internal surat -->
-            <input type="hidden" id="perusahaan_hidden" name="perusahaan" value="RSAZRA">
 
             <!-- Toggle untuk Sekretaris sebagai Dirut -->
             @if (auth()->user()->role === 1)
@@ -67,16 +64,33 @@
                             <div class="flex justify-between items-center">
                                 <label class="text-sm font-semibold text-gray-800">Nomor Surat</label>
                                 <div class="relative flex gap-2">
-                                    <button type="button" id="generateNomorBtn"
-                                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 group">
-                                        <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
-                                        Generate Nomor
-                                    </button>
-                                    <button type="button" id="generateNomorAspBtn"
-                                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 group">
-                                        <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
-                                        Generate Nomor ASP
-                                    </button>
+                                    @if (auth()->user()->role === 1)
+                                        <!-- Untuk Sekretaris (role 1): tampilkan kedua button -->
+                                        <button type="button" id="generateNomorBtn"
+                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 group">
+                                            <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                                            Generate Nomor
+                                        </button>
+                                        <button type="button" id="generateNomorAspBtn"
+                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 group">
+                                            <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                                            Generate Nomor ASP
+                                        </button>
+                                    @elseif (auth()->user()->role === 5)
+                                        <!-- Untuk Sekretaris ASP (role 5): hanya tampilkan Generate Nomor ASP -->
+                                        <button type="button" id="generateNomorAspBtn"
+                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 group">
+                                            <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                                            Generate Nomor ASP
+                                        </button>
+                                    @else
+                                        <!-- Untuk role lain: tampilkan Generate Nomor biasa -->
+                                        <button type="button" id="generateNomorBtn"
+                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 group">
+                                            <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                                            Generate Nomor
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                             <div class="relative">
@@ -109,25 +123,25 @@
                         <!-- Jenis Surat -->
                         @if (auth()->user()->role === 0 || auth()->user()->role === 3)
                             <input type="hidden" name="jenis_surat" id="jenis_surat" value="internal">
-                        @else
-                        <div class="space-y-2">
-                            <label class="text-sm font-semibold text-gray-800">Jenis Surat</label>
-                            <div class="relative">
-                                <select name="jenis_surat" id="jenis_surat" required
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200 appearance-none bg-white">
-                                    <option value="internal" {{ old('jenis_surat') == 'internal' ? 'selected' : '' }}>
-                                        Internal
-                                    </option>
-                                    <option value="eksternal" {{ old('jenis_surat') == 'eksternal' ? 'selected' : '' }}>
-                                        Eksternal
-                                    </option>
-                                </select>
-                                <div
-                                    class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
-                                    <i class="ri-arrow-down-s-line"></i>
+                        @elseif (auth()->user()->role === 1 || auth()->user()->role === 5)
+                            <div class="space-y-2">
+                                <label class="text-sm font-semibold text-gray-800">Jenis Surat</label>
+                                <div class="relative">
+                                    <select name="jenis_surat" id="jenis_surat" required
+                                        class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200 appearance-none bg-white">
+                                        <option value="internal" {{ old('jenis_surat') == 'internal' ? 'selected' : '' }}>
+                                            Internal
+                                        </option>
+                                        <option value="eksternal" {{ old('jenis_surat') == 'eksternal' ? 'selected' : '' }}>
+                                            Eksternal
+                                        </option>
+                                    </select>
+                                    <div
+                                        class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                                        <i class="ri-arrow-down-s-line"></i>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
                         @endif
 
                         <!-- Sifat Surat -->
@@ -164,7 +178,6 @@
                                 class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200"
                                 placeholder="Cari atau tambah perusahaan baru..."
                                 autocomplete="off">
-                            <input type="hidden" name="perusahaan" id="perusahaan_id">
                             <div id="perusahaan-suggestions" class="suggestions-list">
                                 <!-- Suggestions will be populated here -->
                             </div>
@@ -245,78 +258,67 @@
                     <!-- Debug field to track disposisi data -->
                     <input type="hidden" id="debug_disposisi_field" name="debug_disposisi_field" value="disposisi_data_tracking">
                     
+                    <!-- Hidden input untuk status default Sekretaris ASP -->
+                    @if (auth()->user()->role === 5)
+                        <input type="hidden" name="status_sekretaris_default" value="approved">
+                    @endif
+                    
                     <!-- Tujuan Disposisi (Multiple Select dengan Search) -->
-                    @if (false)
-                        <div class="space-y-2">
-                            <label class="text-sm font-semibold text-gray-800">Tujuan Disposisi</label>
+                    <div class="space-y-2 mt-4">
+                        <label class="text-sm font-semibold text-gray-800">Tujuan Disposisi</label>
+                        <div class="relative">
+                            <!-- Search Input -->
+                            <div class="mb-2 relative">
+                                <input type="text" id="tujuan-search"
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200"
+                                    placeholder="Cari nama atau jabatan...">
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                                    <i class="ri-search-line"></i>
+                                </div>
+                            </div>
+                            <!-- Selection Box -->
                             <div class="relative">
-                                <!-- Search Input -->
-                                <div class="mb-2 relative">
-                                    <input type="text" id="tujuan-search"
-                                        class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200"
-                                        placeholder="Cari nama atau jabatan...">
-                                    <div
-                                        class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
-                                        <i class="ri-search-line"></i>
+                                <div class="flex justify-between mb-2 items-center">
+                                    <div class="text-xs text-gray-500" id="selection-counter">0 dipilih</div>
+                                    <div class="space-x-2">
+                                        <button type="button" id="select-all-btn"
+                                            class="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors duration-200">
+                                            Pilih Semua
+                                        </button>
+                                        <button type="button" id="clear-all-btn"
+                                            class="px-2 py-1 text-xs bg-gray-50 text-gray-600 rounded hover:bg-gray-100 transition-colors duration-200">
+                                            Hapus Semua
+                                        </button>
                                     </div>
                                 </div>
-
-                                <!-- Selection Box -->
-                                <div class="relative">
-                                    <div class="flex justify-between mb-2 items-center">
-                                        <div class="text-xs text-gray-500" id="selection-counter">0 dipilih</div>
-                                        <div class="space-x-2">
-                                            <button type="button" id="select-all-btn"
-                                                class="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors duration-200">
-                                                Pilih Semua
-                                            </button>
-                                            <button type="button" id="clear-all-btn"
-                                                class="px-2 py-1 text-xs bg-gray-50 text-gray-600 rounded hover:bg-gray-100 transition-colors duration-200">
-                                                Hapus Semua
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div id="tujuan-selection-container"
-                                        class="border border-gray-200 rounded-lg p-3 max-h-60 overflow-y-auto">
-                                        <div class="space-y-2">
-                                            @foreach ($users as $user)
-                                                <div
-                                                    class="flex items-center py-1.5 px-2 hover:bg-gray-50 rounded-md user-selection-item">
-                                                    <input type="checkbox" id="user-{{ $user->id }}"
-                                                        name="tujuan_disposisi[]" value="{{ $user->id }}"
-                                                        class="tujuan-checkbox h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
-                                                    <label for="user-{{ $user->id }}"
-                                                        class="ml-3 block text-sm text-gray-700 cursor-pointer truncate">
-                                                        {{ $user->name }}
-                                                        @if ($user->name == 'Direktur Utama' || strpos(strtolower($user->name), 'direktur') !== false)
-                                                            <span class="text-gray-500">({{ $user->name }})</span>
-                                                        @elseif ($user->jabatan)
-                                                            <span
-                                                                class="text-gray-500">({{ $user->jabatan->nama_jabatan }})</span>
-                                                        @else
-                                                            <span class="text-gray-500">(Tidak ada jabatan)</span>
-                                                        @endif
-                                                    </label>
-                                                </div>
-                                            @endforeach
-                                        </div>
+                                <div id="tujuan-selection-container"
+                                    class="border border-gray-200 rounded-lg p-3 max-h-60 overflow-y-auto">
+                                    <div class="space-y-2">
+                                        @foreach ($users as $user)
+                                            @if (in_array($user->role, [1,2,4]))
+                                            <div class="flex items-center py-1.5 px-2 hover:bg-gray-50 rounded-md user-selection-item">
+                                                <input type="checkbox" id="user-{{ $user->id }}"
+                                                    name="tujuan_disposisi[]" value="{{ $user->id }}"
+                                                    class="tujuan-checkbox h-4 w-4 border-gray-300 rounded"
+                                                    @if ($user->role == 2) checked @endif>
+                                                <label for="user-{{ $user->id }}"
+                                                    class="ml-3 block text-sm text-gray-700 cursor-pointer truncate">
+                                                    {{ $user->name }}
+                                                    @if ($user->jabatan)
+                                                        <span class="text-gray-500">({{ $user->jabatan->nama_jabatan }})</span>
+                                                    @else
+                                                        <span class="text-gray-500">(Tidak ada jabatan)</span>
+                                                    @endif
+                                                </label>
+                                            </div>
+                                            @endif
+                                        @endforeach
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    @endif
+                    </div>
                     
-                    <!-- Hidden input untuk tujuan disposisi default ke Direktur (untuk semua role) -->
-                        @php
-                            // Cari ID direktur dari database
-                            $direktur = App\Models\User::where('name', 'like', '%Direktur Utama%')
-                                ->orWhere('role', 2)
-                                ->first();
-                            $direktur_id = $direktur ? $direktur->id : null;
-                        @endphp
-                        <input type="hidden" name="tujuan_disposisi[]" value="{{ $direktur_id }}">
-
                     <!-- Keterangan Pengirim -->
                     <div class="space-y-2">
                         <label class="text-sm font-semibold text-gray-800">Keterangan Pengirim</label>
@@ -382,6 +384,12 @@
     </div>
 @endsection
 
+@if(session('validationErrors'))
+<script>
+    window.validationErrors = @json(session('validationErrors'));
+</script>
+@endif
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -424,6 +432,14 @@
                 console.log("Jenis surat changed to:", this.value);
                 const generateNomorBtn = document.getElementById('generateNomorBtn');
                 const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
+                
+                // Set perusahaan otomatis untuk internal
+                if (this.value === 'internal') {
+                    perusahaanHidden.value = 'RSAZRA';
+                } else {
+                    perusahaanHidden.value = '';
+                }
+                
                 // Untuk role sekretaris (1)
                 if (userRole === 1) {
                     if (this.value === 'eksternal') {
@@ -474,7 +490,37 @@
                             `;
                         }
                     }
-                } else if (userRole === 0 || userRole === 4) { // Staff/unit atau Manager
+                } else if (userRole === 5) { // Sekretaris ASP (role 5)
+                    // Untuk Sekretaris ASP: selalu tampilkan Generate Nomor ASP
+                    if (generateNomorBtn) {
+                        generateNomorBtn.style.display = 'none'; // Sembunyikan Generate Nomor biasa
+                    }
+                    if (generateNomorAspBtn) {
+                        generateNomorAspBtn.style.display = 'inline-flex';
+                        generateNomorAspBtn.onclick = generateNomorAsp;
+                    }
+                    nomorSuratInput.readOnly = false;
+                    nomorSuratInput.placeholder = "Nomor surat akan digenerate otomatis";
+                    nomorSuratInput.value = "";
+                    nomorSuratInput.classList.remove('bg-gray-50');
+                    nomorSuratInput.classList.add('bg-white');
+                    // Info text
+                    const nomorSuratContainer = nomorSuratInput.closest('.space-y-2');
+                    let infoText = nomorSuratContainer?.querySelector('.text-xs.text-gray-500');
+                    if (infoText) {
+                        infoText.innerHTML = `
+                            <i class="ri-information-line mr-1"></i>
+                            Gunakan Generate Nomor ASP untuk membuat nomor surat ASP.
+                        `;
+                    }
+                    
+                    // Set perusahaan otomatis untuk ASP
+                    if (this.value === 'internal') {
+                        perusahaanHidden.value = 'ASP';
+                    } else {
+                        perusahaanHidden.value = '';
+                    }
+                } else if (userRole === 0 || userRole === 3 || userRole === 4) { // Staff/unit, Admin, atau Manager
                     if (this.value === 'internal') {
                     if (generateNomorBtn) {
                         generateNomorBtn.style.display = 'inline-flex';
@@ -511,11 +557,11 @@
                         nomorSuratInput.classList.add('bg-white');
                     }
                 } else {
-                    // Untuk role lain, hide tombol
-                    if (generateNomorBtn) {
+                    // Untuk role lain, hide tombol (kecuali role 5)
+                    if (generateNomorBtn && userRole !== 5) {
                         generateNomorBtn.style.display = 'none';
                     }
-                    if (generateNomorAspBtn) {
+                    if (generateNomorAspBtn && userRole !== 5) {
                         generateNomorAspBtn.style.display = 'none';
                     }
                     nomorSuratInput.readOnly = false;
@@ -527,6 +573,33 @@
             });
             // Trigger change event on load to set the initial state
             jenisSuratSelect.dispatchEvent(new Event('change'));
+            
+            // Set perusahaan otomatis untuk internal saat halaman dimuat
+            if (jenisSuratSelect.value === 'internal') {
+                if (userRole === 5) {
+                    perusahaanHidden.value = 'ASP'; // Untuk Sekretaris ASP
+                } else {
+                    perusahaanHidden.value = 'RSAZRA'; // Untuk role lain
+                }
+            }
+            
+            // Logic khusus untuk role 5 (Sekretaris ASP)
+            if (userRole === 5) {
+                // Pastikan Generate Nomor ASP selalu terlihat untuk Sekretaris ASP
+                const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
+                if (generateNomorAspBtn) {
+                    generateNomorAspBtn.style.display = 'inline-flex';
+                    generateNomorAspBtn.onclick = generateNomorAsp;
+                }
+                
+                // Sembunyikan Generate Nomor biasa untuk Sekretaris ASP
+                const generateNomorBtn = document.getElementById('generateNomorBtn');
+                if (generateNomorBtn) {
+                    generateNomorBtn.style.display = 'none';
+                }
+                
+                console.log("Sekretaris ASP configuration applied - Generate Nomor ASP button enabled");
+            }
         }
 
         if (asDirutToggle) {
@@ -814,6 +887,13 @@
         if (generateNomorAspBtn) {
             generateNomorAspBtn.addEventListener('click', generateNomorAsp);
             console.log("Event listener attached to Generate Nomor ASP button.");
+            
+            // Untuk role 5 (Sekretaris ASP), pastikan button selalu terlihat dan berfungsi
+            if (userRole === 5) {
+                generateNomorAspBtn.style.display = 'inline-flex';
+                generateNomorAspBtn.onclick = generateNomorAsp;
+                console.log("Generate Nomor ASP button configured for Sekretaris ASP role.");
+            }
         }
 
         // Event listener for date change
@@ -1318,6 +1398,55 @@
                 }
             });
         }
+
+        // Validasi frontend sebelum submit
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                let errors = [];
+                // Validasi nomor surat
+                if (!nomorSuratInput.value.trim()) {
+                    errors.push('Silakan isi nomor surat terlebih dahulu.');
+                }
+                // Validasi tanggal surat
+                if (!tanggalSuratInput.value.trim()) {
+                    errors.push('Silakan pilih tanggal surat.');
+                }
+                // Validasi perusahaan (hanya untuk eksternal)
+                if (jenisSuratSelect && jenisSuratSelect.value === 'eksternal') {
+                    if (!perusahaanHidden.value.trim()) {
+                        errors.push('Perusahaan tujuan surat eksternal belum dipilih. Silakan pilih dari daftar.');
+                    }
+                }
+                // Validasi perihal
+                const perihalInput = document.querySelector('textarea[name="perihal"]');
+                if (!perihalInput.value.trim()) {
+                    errors.push('Silakan isi perihal surat.');
+                }
+                if (errors.length > 0) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Validasi Gagal',
+                        html: errors.map(e => `<div style=\"text-align:left\">${e}</div>`).join(''),
+                        confirmButtonText: 'Tutup',
+                        confirmButtonColor: '#10B981'
+                    });
+                    return false;
+                }
+            });
+        }
+
+        // Handler error validasi backend (AJAX/JSON)
+        if (window.validationErrors) {
+            let errorList = Object.values(window.validationErrors).flat();
+            Swal.fire({
+                icon: 'error',
+                title: 'Validasi Gagal',
+                html: errorList.map(e => `<div style=\"text-align:left\">${e}</div>`).join(''),
+                confirmButtonText: 'Tutup',
+                confirmButtonColor: '#10B981'
+            });
+        }
     });
 </script>
 
@@ -1437,14 +1566,17 @@
     /* User selection item hover effect */
     .user-selection-item {
         transition: all 0.2s ease;
+        background-color: unset !important;
     }
 
     .user-selection-item:hover {
         background-color: #f3f4f6;
     }
 
-    .user-selection-item label {
-        width: 100%;
+    .user-selection-item input[type="checkbox"]:checked ~ label,
+    .user-selection-item input[type="checkbox"]:checked {
+        background-color: unset !important;
+        color: unset !important;
     }
 
     /* Styling untuk suggestions container */

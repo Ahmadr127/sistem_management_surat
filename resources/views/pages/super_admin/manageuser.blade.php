@@ -48,6 +48,7 @@
                             <option value="0">Staff</option>
                             <option value="4">Manager</option>
                             <option value="1">Sekretaris</option>
+                            <option value="5">Sekretaris ASP</option>
                             <option value="2">Direktur</option>
                             <option value="3">Admin</option>
                         </select>
@@ -95,8 +96,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0 h-10 w-10">
-                                                <img class="h-10 w-10 rounded-full object-cover" :src="user.foto_url"
-                                                    :alt="user.name">
+                                                <img class="h-10 w-10 rounded-full object-cover" :src="user.foto_url" :alt="user.name">
                                             </div>
                                             <div class="ml-4">
                                                 <div class="text-sm font-medium text-gray-900" x-text="user.name"></div>
@@ -117,7 +117,8 @@
                                                 'bg-blue-100 text-blue-800': user.role === 1,
                                                 'bg-green-100 text-green-800': user.role === 0,
                                                 'bg-yellow-100 text-yellow-800': user.role === 2,
-                                                'bg-orange-100 text-orange-800': user.role === 4
+                                                'bg-orange-100 text-orange-800': user.role === 4,
+                                                'bg-pink-100 text-pink-800': user.role === 5
                                             }"
                                             x-text="formatRole(user.role)">
                                         </span>
@@ -275,6 +276,7 @@
                                                 <option value="0">Staff</option>
                                                 <option value="4">Manager</option>
                                                 <option value="1">Sekretaris</option>
+                                                <option value="5">Sekretaris ASP</option>
                                                 <option value="2">Direktur</option>
                                                 <option value="3">Admin</option>
                                             </select>
@@ -426,7 +428,7 @@
                 },
 
                 formatRole(role) {
-                    const roles = { 0: 'Staff', 1: 'Sekretaris', 2: 'Direktur', 3: 'Admin', 4: 'Manager' };
+                    const roles = { 0: 'Staff', 1: 'Sekretaris', 2: 'Direktur', 3: 'Admin', 4: 'Manager', 5: 'Sekretaris ASP' };
                     return roles[role] || 'Unknown';
                 },
 

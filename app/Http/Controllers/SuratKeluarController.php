@@ -92,11 +92,6 @@ class SuratKeluarController extends Controller
                 $activeCodes[] = 'RSAZRA';
             }
             
-            // Automatically set perusahaan to RSAZRA for internal letters
-            if ($request->jenis_surat === 'internal') {
-                $request->merge(['perusahaan' => 'RSAZRA']);
-            }
-            
             \Log::info('SuratKeluarController@store: Beginning validation', [
                 'input' => $request->all()
             ]);
@@ -130,11 +125,18 @@ class SuratKeluarController extends Controller
                 \Log::warning('SuratKeluarController@store: Validation failed', [
                     'errors' => $validator->errors()->toArray()
                 ]);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi gagal',
-                    'errors' => $validator->errors()
-                ], 422);
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Validasi gagal',
+                        'errors' => $validator->errors()
+                    ], 422);
+                } else {
+                    // Untuk request biasa, redirect back dengan error ke view
+                    return back()
+                        ->withInput()
+                        ->with('validationErrors', $validator->errors());
+                }
             }
             
             DB::beginTransaction();
@@ -183,26 +185,29 @@ class SuratKeluarController extends Controller
                         $disposisi = new Disposisi();
                         $disposisi->surat_keluar_id = $suratKeluar->id;
                         
-                        // Set status_sekretaris to 'approved' if creator is a secretary (role 1)
-                        if (auth()->user()->role == 1) { // Sekretaris has role 1
-                            $disposisi->status_sekretaris = 'approved';
-                            \Log::info('SuratKeluarController@store: Secretary detected (role 1 = Sekretaris), setting status_sekretaris to approved', [
-                                'user_id' => auth()->id(),
-                                'user_role' => auth()->user()->role,
-                                'user_name' => auth()->user()->name,
-                                'status_sekretaris' => $disposisi->status_sekretaris
-                            ]);
-                        } else {
-                            $disposisi->status_sekretaris = 'pending';
-                            \Log::info('SuratKeluarController@store: Non-secretary detected (roles: 0=Staff, 2=Direktur, 3=Super Admin), setting status_sekretaris to pending', [
-                                'user_id' => auth()->id(),
-                                'user_role' => auth()->user()->role,
-                                'user_name' => auth()->user()->name,
-                                'status_sekretaris' => $disposisi->status_sekretaris
-                            ]);
-                        }
+                        // --- LOGIKA BARU: Surat antar manager/sekretaris tanpa approval ---
+                        $tujuanIds = (array) $request->tujuan_disposisi;
+                        $tujuanRoles = User::whereIn('id', $tujuanIds)->pluck('role')->toArray();
+                        $pengirimRole = auth()->user()->role;
+                        $isAntarManSek = in_array($pengirimRole, [1,4]) && collect($tujuanRoles)->every(fn($r) => in_array($r, [1,4]));
                         
-                        $disposisi->status_dirut = 'pending';
+                        // Logic untuk Sekretaris ASP (role 5) - status default approved
+                        if ($pengirimRole == 5) { // Sekretaris ASP
+                            $disposisi->status_sekretaris = 'approved';
+                            $disposisi->status_dirut = 'pending';
+                        } elseif ($isAntarManSek) {
+                            $disposisi->status_sekretaris = 'approved';
+                            $disposisi->status_dirut = 'approved';
+                        } else {
+                            // Alur lama
+                            if ($pengirimRole == 1) { // Sekretaris
+                                $disposisi->status_sekretaris = 'approved';
+                            } else {
+                                $disposisi->status_sekretaris = 'pending';
+                            }
+                            $disposisi->status_dirut = 'pending';
+                        }
+                        // --- END LOGIKA BARU ---
                         $disposisi->keterangan_pengirim = $request->keterangan_pengirim ?? null;
                         $disposisi->created_by = auth()->id();
             
@@ -214,7 +219,6 @@ class SuratKeluarController extends Controller
                         ]);
                         
                         // Attach users to the disposisi
-                        $tujuanIds = (array) $request->tujuan_disposisi;
                         $disposisi->tujuan()->attach($tujuanIds);
                         
                         \Log::info('SuratKeluarController@store: Attached tujuan to disposisi', [
@@ -349,10 +353,9 @@ class SuratKeluarController extends Controller
                 $activeCodes[] = 'RSAZRA';
             }
             
-            // Automatically set perusahaan to RSAZRA for internal letters
-            if ($request->jenis_surat === 'internal') {
-                $request->merge(['perusahaan' => 'RSAZRA']);
-            }
+            \Log::info('SuratKeluarController@store: Beginning validation', [
+                'input' => $request->all()
+            ]);
                           
             $validator = Validator::make($request->all(), [
                 'nomor_surat' => [
@@ -435,12 +438,16 @@ class SuratKeluarController extends Controller
                 $disposisi->keterangan_pengirim = $request->keterangan_pengirim;
                 
                 // Set status based on user role
-                if (auth()->user()->role == 1) { // Sekretaris
+                if (auth()->user()->role == 5) { // Sekretaris ASP
                     $disposisi->status_sekretaris = 'approved';
+                    $disposisi->status_dirut = 'pending';
+                } elseif (auth()->user()->role == 1) { // Sekretaris
+                    $disposisi->status_sekretaris = 'approved';
+                    $disposisi->status_dirut = 'pending';
                 } else {
                     $disposisi->status_sekretaris = 'pending';
+                    $disposisi->status_dirut = 'pending';
                 }
-                $disposisi->status_dirut = 'pending';
                 
                 $disposisi->save();
                 
@@ -776,27 +783,25 @@ class SuratKeluarController extends Controller
             // Cek apakah request untuk nomor surat ASP
             if ($request->is_asp) {
                 \Log::info('Generating ASP number for date: ' . ($request->tanggal_surat ?? date('Y-m-d')));
-                
-                // Gunakan tanggal dari request atau default ke tahun sekarang
                 $tanggalSurat = $request->tanggal_surat ? date('Y', strtotime($request->tanggal_surat)) : date('Y');
-                
-                // Ambil nomor urut terakhir untuk surat ASP
-                $lastSurat = SuratKeluar::where('jenis_surat', 'eksternal')
-                    ->where('perusahaan', 'ASP')
+                // Ambil semua nomor_surat yang match pola
+                $nomorList = SuratKeluar::where('jenis_surat', 'eksternal')
+                    ->where('nomor_surat', 'like', '%/ASP/%')
                     ->whereYear('tanggal_surat', $tanggalSurat)
-                    ->orderBy('id', 'desc')
-                    ->first();
-
-                if ($lastSurat) {
-                    // Extract nomor urut dari nomor surat terakhir
-                    $parts = explode('/', $lastSurat->nomor_surat);
-                    $lastNumber = (int)$parts[0];
-                    \Log::info('Last ASP number found: ' . $lastNumber);
-                } else {
-                    $lastNumber = 0;
-                    \Log::info('No previous ASP number found, starting from 0');
+                    ->pluck('nomor_surat')
+                    ->toArray();
+                $maxNumber = 0;
+                foreach ($nomorList as $nomor) {
+                    $parts = explode('/', $nomor);
+                    if (isset($parts[0]) && is_numeric($parts[0])) {
+                        $num = intval($parts[0]);
+                        if ($num > $maxNumber) {
+                            $maxNumber = $num;
+                        }
+                    }
                 }
-
+                $lastNumber = str_pad($maxNumber, 3, '0', STR_PAD_LEFT);
+                \Log::info('Last ASP number found: ' . $lastNumber);
                 return response()->json([
                     'success' => true,
                     'last_number' => $lastNumber
@@ -805,21 +810,23 @@ class SuratKeluarController extends Controller
 
             // Cek apakah request untuk nomor surat eksternal AZRA
             if ($request->is_eksternal_azra) {
-                // Ambil nomor urut terakhir untuk surat eksternal AZRA
-                $lastSurat = SuratKeluar::where('jenis_surat', 'eksternal')
-                    ->where('perusahaan', 'RSAZRA')
+                $nomorList = SuratKeluar::where('jenis_surat', 'eksternal')
+                    ->where('nomor_surat', 'like', '%/RSAZRA/%')
                     ->whereYear('tanggal_surat', date('Y'))
-                    ->orderBy('id', 'desc')
-                ->first();
-
-            if ($lastSurat) {
-                    // Extract nomor urut dari nomor surat terakhir
-                $parts = explode('/', $lastSurat->nomor_surat);
-                    $lastNumber = (int)$parts[0];
-                } else {
-                    $lastNumber = 0;
+                    ->pluck('nomor_surat')
+                    ->toArray();
+                $maxNumber = 0;
+                foreach ($nomorList as $nomor) {
+                    $parts = explode('/', $nomor);
+                    if (isset($parts[0]) && is_numeric($parts[0])) {
+                        $num = intval($parts[0]);
+                        if ($num > $maxNumber) {
+                            $maxNumber = $num;
+                        }
+                    }
                 }
-
+                $lastNumber = str_pad($maxNumber, 3, '0', STR_PAD_LEFT);
+                \Log::info('Last AZRA number found: ' . $lastNumber);
                 return response()->json([
                     'success' => true,
                     'last_number' => $lastNumber

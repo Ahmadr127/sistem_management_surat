@@ -559,6 +559,7 @@
 
             // Fungsi untuk mengecek role user
             const userRole = {{ auth()->user()->role ?? 'null' }}; // Role 1: Sekretaris, Role 2: Direktur
+            let userId = {{ auth()->id() }};
 
             // Fungsi helper untuk status
             function getStatusClass(status) {
@@ -736,7 +737,10 @@
 
                     // Filter data berdasarkan role - don't sort, preserve server-side sorting
                     let filteredData = data;
-                    if (userRole === 0 || userRole === 1 || userRole === 3) { // Staff, Sekretaris, Admin
+                    if (userRole === 5) {
+                        // Filter: surat yang dibuat oleh dia atau tujuan disposisi ke dia
+                        filteredData = data.filter(surat => surat.created_by === userId || (surat.disposisi && surat.disposisi.tujuan && surat.disposisi.tujuan.some(t => t.id === userId)));
+                    } else if (userRole === 0 || userRole === 1 || userRole === 3) { // Staff, Sekretaris, Admin
                         console.log('Filtering data for Staff/Sekretaris/Admin role');
                         filteredData = data.filter(surat => surat.created_by === {{ auth()->id() }});
                     }

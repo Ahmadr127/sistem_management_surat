@@ -58,7 +58,7 @@ class DisposisiController extends Controller
             $disposisi = Disposisi::create([
                 'surat_keluar_id' => $request->surat_keluar_id,
                 'keterangan_pengirim' => $request->input('keterangan_pengirim'),
-                'status_sekretaris' => auth()->user()->role == 1 ? 'approved' : 'pending',
+                'status_sekretaris' => auth()->user()->role == 1 || auth()->user()->role == 5 ? 'approved' : 'pending',
                 'status_dirut' => 'pending',
                 'created_by' => auth()->id()
             ]);
@@ -66,7 +66,7 @@ class DisposisiController extends Controller
             // Log the role and status
             \Log::info('DisposisiController@store - Set status based on role:', [
                 'user_role' => auth()->user()->role,
-                'status_sekretaris' => auth()->user()->role == 1 ? 'approved' : 'pending',
+                'status_sekretaris' => auth()->user()->role == 1 || auth()->user()->role == 5 ? 'approved' : 'pending',
                 'user_id' => auth()->id(),
                 'user_name' => auth()->user()->name,
                 'disposisi_data' => $disposisi->toArray()
@@ -272,6 +272,20 @@ class DisposisiController extends Controller
                         }
                     }
                 } 
+                else if ($user->role == 5) { // Sekretaris ASP
+                    \Log::info('Update status sebagai Sekretaris ASP');
+                    $suratKeluar->status_sekretaris = $request->status;
+                    $suratKeluar->catatan_sekretaris = $request->catatan;
+                    $suratKeluar->save();
+                    
+                    if ($request->status == 'ditolak') {
+                        \Log::info('Surat ditolak oleh Sekretaris ASP, menghapus disposisi jika ada');
+                        // Jika ditolak oleh Sekretaris ASP, hapus disposisi yang ada (jika ada)
+                        if ($suratKeluar->disposisi) {
+                            $suratKeluar->disposisi->delete();
+                        }
+                    }
+                }
                 else if ($user->role == 2) { // Direktur
                     \Log::info('Update status sebagai Direktur');
                     $suratKeluar->status_direktur = $request->status;
@@ -461,6 +475,16 @@ class DisposisiController extends Controller
                         $disposisi->waktu_review_sekretaris = now();
                     }
                 } 
+                else if (auth()->user()->role == 5) { // Sekretaris ASP
+                    $disposisi->status_sekretaris = $request->status_sekretaris;
+                    $disposisi->keterangan_sekretaris = $request->keterangan_sekretaris;
+                    
+                    if ($request->filled('waktu_review_sekretaris')) {
+                        $disposisi->waktu_review_sekretaris = $request->waktu_review_sekretaris;
+                    } else {
+                        $disposisi->waktu_review_sekretaris = now();
+                    }
+                }
                 else if (auth()->user()->role == 2) { // Direktur
                     $disposisi->status_dirut = $request->status_dirut;
                     $disposisi->keterangan_dirut = $request->keterangan_dirut;
@@ -533,7 +557,7 @@ class DisposisiController extends Controller
                 
             // Get all available users including both staff (role 0) and admin (role 3)
             $availableUsers = User::where('status_akun', 'aktif')
-                ->whereIn('role', [0, 1, 2, 3]) // Include all roles (Staff, Sekretaris, Direktur, Admin)
+                ->whereIn('role', [1, 4, 5]) // Hanya Sekretaris (1), Manager (4), dan Sekretaris ASP (5)
                 ->where('id', '!=', auth()->id()) // Exclude current user
                 ->select('id', 'name', 'jabatan_id', 'email', 'role')
                 ->with('jabatan:id,nama_jabatan')

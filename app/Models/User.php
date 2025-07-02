@@ -99,7 +99,7 @@ class User extends Authenticatable
         if ($this->foto_profile) {
             return Storage::url($this->foto_profile);
         }
-        return asset('assets/images/default-avatar.png');
+        return asset('images/default-avatar.png');
     }
 
     /**
@@ -143,6 +143,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user is sekretaris ASP
+     */
+    public function isSekretarisAsp()
+    {
+        return $this->role === 5;
+    }
+
+    /**
      * Get role name
      */
     public function getRoleNameAttribute()
@@ -152,7 +160,8 @@ class User extends Authenticatable
             1 => 'Sekretaris',
             2 => 'Direktur',
             3 => 'Admin',
-            4 => 'Manager'
+            4 => 'Manager',
+            5 => 'Sekretaris ASP'
         ];
         return $roles[$this->role] ?? 'Unknown';
     }

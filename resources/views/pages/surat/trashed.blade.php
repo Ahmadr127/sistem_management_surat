@@ -122,6 +122,14 @@
                     // Simpan data untuk referensi
                     trashedSuratData = data;
 
+                    // Filter: surat yang dibuat oleh dia atau tujuan disposisi ke dia
+                    let userRole = {{ auth()->user()->role ?? 'null' }};
+                    let userId = {{ auth()->id() }};
+
+                    if (userRole === 5) {
+                        data = data.filter(surat => surat.created_by === userId || (surat.disposisi && surat.disposisi.tujuan && surat.disposisi.tujuan.some(t => t.id === userId)));
+                    }
+
                     if (data.length === 0) {
                         tableBody.innerHTML = `
                             <tr>

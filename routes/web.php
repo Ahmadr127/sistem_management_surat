@@ -67,7 +67,7 @@ Route::middleware(['auth', 'checkUserStatus'])->group(function () {
 });
 
 // Route untuk admin, staff, direktur, super admin dan manager
-Route::middleware(['auth', 'checkRole:0,1,2,3,4'])->group(function () {
+Route::middleware(['auth', 'checkRole:0,1,2,3,4,5'])->group(function () {
     // Laporan routes should use LaporanController
     Route::get('/laporan/disposisi-status/{disposisi}', [DisposisiController::class, 'updateStatus'])
         ->name('laporan.disposisi.status.update');
@@ -138,7 +138,7 @@ Route::middleware(['auth', 'checkRole:0,1,2,3,4'])->group(function () {
 });
 
 // Route khusus untuk admin dan direktur
-Route::middleware(['auth', 'checkRole:1,2'])->group(function () {
+Route::middleware(['auth', 'checkRole:1,2,5'])->group(function () {
     // App
     Route::get('/app', function () {
         return view('home');
@@ -192,7 +192,7 @@ Route::middleware(['auth', 'checkRole:3'])->group(function () {
 });
 
 // Route untuk admin, sekretaris, dan super admin
-Route::middleware(['auth', 'checkRole:0,1,3'])->group(function () {
+Route::middleware(['auth', 'checkRole:0,1,3,5'])->group(function () {
     // Manage Perusahaan
     Route::get('/manageperusahaan', [PerusahaanController::class, 'index'])->name('manageperusahaan.index');
 });
@@ -200,9 +200,9 @@ Route::middleware(['auth', 'checkRole:0,1,3'])->group(function () {
 // Routes untuk Perusahaan
 Route::prefix('api/perusahaan')->middleware(['auth'])->group(function () {
     Route::get('/', [PerusahaanController::class, 'getForDropdown'])->name('api.perusahaan.dropdown');
-    Route::post('/', [PerusahaanController::class, 'store'])->middleware('checkRole:0,1,3')->name('api.perusahaan.store');
-    Route::put('/{id}', [PerusahaanController::class, 'update'])->middleware('checkRole:0,1,3')->name('api.perusahaan.update');
-    Route::delete('/{id}', [PerusahaanController::class, 'destroy'])->middleware('checkRole:0,1,3')->name('api.perusahaan.destroy');
+    Route::post('/', [PerusahaanController::class, 'store'])->middleware('checkRole:0,1,3,5')->name('api.perusahaan.store');
+    Route::put('/{id}', [PerusahaanController::class, 'update'])->middleware('checkRole:0,1,3,5')->name('api.perusahaan.update');
+    Route::delete('/{id}', [PerusahaanController::class, 'destroy'])->middleware('checkRole:0,1,3,5')->name('api.perusahaan.destroy');
     Route::get('/search', [PerusahaanController::class, 'search'])->name('perusahaan.search');
     Route::post('/quick-store', [PerusahaanController::class, 'quickStore'])->name('perusahaan.quickStore');
 });

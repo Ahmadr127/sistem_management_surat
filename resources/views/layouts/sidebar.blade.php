@@ -21,6 +21,43 @@
             <p class="text-xs font-bold text-green-600 uppercase tracking-wider">Menu Utama</p>
         </div>
 
+        @if (Auth::user()->role === 5)
+            <!-- Sidebar khusus Sekretaris ASP -->
+            <div class="space-y-2.5">
+                <a href="{{ url('/suratmasuk') }}"
+                    class="flex items-center py-3 px-4 rounded-xl transition-all duration-200 group {{ Request::is('suratmasuk*') ? 'bg-green-50 text-green-600' : 'text-gray-600 hover:bg-gray-50' }}">
+                    <i class="ri-mail-download-line text-xl {{ Request::is('suratmasuk*') ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-600' }}"></i>
+                    <span class="ml-3 font-medium">Surat Masuk</span>
+                    @if (Request::is('suratmasuk*'))
+                        <div class="ml-auto h-2 w-2 rounded-full bg-green-600"></div>
+                    @endif
+                </a>
+                <a href="{{ route('suratkeluar.index') }}"
+                    class="flex items-center py-3 px-4 rounded-xl transition-all duration-200 group {{ Request::is('suratkeluar*') ? 'bg-green-50 text-green-600' : 'text-gray-600 hover:bg-gray-50' }}">
+                    <i class="ri-send-plane-line text-xl {{ Request::is('suratkeluar*') ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-600' }}"></i>
+                    <span class="ml-3 font-medium">Surat Keluar</span>
+                    @if (Request::is('suratkeluar*'))
+                        <div class="ml-auto h-2 w-2 rounded-full bg-green-600"></div>
+                    @endif
+                </a>
+                <a href="{{ url('/arsip') }}"
+                    class="flex items-center py-3 px-4 rounded-xl transition-all duration-200 group {{ Request::is('arsip') ? 'bg-green-50 text-green-600' : 'text-gray-600 hover:bg-gray-50' }}">
+                    <i class="ri-archive-line text-xl {{ Request::is('arsip') ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-600' }}"></i>
+                    <span class="ml-3 font-medium">Arsip</span>
+                    @if (Request::is('arsip'))
+                        <div class="ml-auto h-2 w-2 rounded-full bg-green-600"></div>
+                    @endif
+                </a>
+                <a href="{{ route('laporan') }}"
+                    class="flex items-center py-3 px-4 rounded-xl transition-all duration-200 group {{ Request::is('laporan') ? 'bg-green-50 text-green-600' : 'text-gray-600 hover:bg-gray-50' }}">
+                    <i class="ri-file-chart-line text-xl {{ Request::is('laporan') ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-600' }}"></i>
+                    <span class="ml-3 font-medium">Laporan</span>
+                    @if (Request::is('laporan'))
+                        <div class="ml-auto h-2 w-2 rounded-full bg-green-600"></div>
+                    @endif
+                </a>
+            </div>
+        @else
         <div class="space-y-2.5">
             <!-- Dashboard (Semua Role) -->
             <a href="{{ url('/dashboard') }}"
@@ -174,6 +211,7 @@
                     @endif
                 </a>
             </div>
+        @endif
         @endif
     </nav>
 </aside>
