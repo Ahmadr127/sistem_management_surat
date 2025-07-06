@@ -72,9 +72,11 @@
                             <option value="">Semua Role</option>
                             <option value="0">Staff</option>
                             <option value="4">Manager</option>
+                            <option value="6">General Manager</option>
                             <option value="1">Sekretaris</option>
                             <option value="5">Sekretaris ASP</option>
                             <option value="2">Direktur</option>
+                            <option value="7">Direktur Adm Keuangan</option>
                             <option value="3">Admin</option>
                         </select>
                     </div>
@@ -110,6 +112,8 @@
                                 <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Manager</th>
                                 <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    General Manager</th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Status</th>
                                 <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi
                                 </th>
@@ -143,15 +147,22 @@
                                                 'bg-green-100 text-green-800': user.role === 0,
                                                 'bg-yellow-100 text-yellow-800': user.role === 2,
                                                 'bg-orange-100 text-orange-800': user.role === 4,
-                                                'bg-pink-100 text-pink-800': user.role === 5
+                                                'bg-pink-100 text-pink-800': user.role === 5,
+                                                'bg-indigo-100 text-indigo-800': user.role === 6,
+                                                'bg-teal-100 text-teal-800': user.role === 7
                                             }"
                                             x-text="formatRole(user.role)">
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
                                         x-text="user.jabatan?.nama_jabatan || 'Tidak ada jabatan'"></td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                        x-text="user.manager?.name || '-'"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <span x-text="user.manager ? user.manager.name : '-'"></span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <span x-text="user.general_manager ? user.general_manager.name : '-'"></span>
+                                        <span x-show="user.role == 4 && !user.general_manager" class="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">Independen</span>
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
                                             :class="{
@@ -300,9 +311,11 @@
                                                 class="w-full px-4 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent">
                                                 <option value="0">Staff</option>
                                                 <option value="4">Manager</option>
+                                                <option value="6">General Manager</option>
                                                 <option value="1">Sekretaris</option>
                                                 <option value="5">Sekretaris ASP</option>
                                                 <option value="2">Direktur</option>
+                                                <option value="7">Direktur Adm Keuangan</option>
                                                 <option value="3">Admin</option>
                                             </select>
                                         </div>
@@ -357,6 +370,21 @@
                                             </select>
                                         </div>
 
+                                        <!-- General Manager (hanya untuk manager) -->
+                                        <div x-show="formData.role == 4" class="col-span-2">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                General Manager
+                                                <span class="text-sm text-gray-500">(Opsional - kosongkan jika manager independen)</span>
+                                            </label>
+                                            <select x-model="formData.general_manager_id"
+                                                class="w-full px-4 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                                <option value="">Pilih General Manager (Opsional)</option>
+                                                <template x-for="generalManager in generalManagers" :key="generalManager.id">
+                                                    <option :value="generalManager.id" x-text="generalManager.name"></option>
+                                                </template>
+                                            </select>
+                                        </div>
+
                                         <!-- Status -->
                                         <div class="col-span-2">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">Status Akun</label>
@@ -402,6 +430,7 @@
                 users: [],
                 jabatanList: [],
                 managers: @json($managers),
+                generalManagers: @json($generalManagers),
                 searchQuery: '',
                 roleFilter: '',
                 statusFilter: '',
@@ -416,6 +445,7 @@
                     role: 0, // Default to Staff
                     jabatan_id: '',
                     manager_id: '',
+                    general_manager_id: '',
                     status_akun: 'aktif'
                 },
                 currentPage: 1,
@@ -480,7 +510,7 @@
                 },
 
                 formatRole(role) {
-                    const roles = { 0: 'Staff', 1: 'Sekretaris', 2: 'Direktur', 3: 'Admin', 4: 'Manager', 5: 'Sekretaris ASP' };
+                    const roles = { 0: 'Staff', 1: 'Sekretaris', 2: 'Direktur', 3: 'Admin', 4: 'Manager', 5: 'Sekretaris ASP', 6: 'General Manager', 7: 'Direktur Adm Keuangan' };
                     return roles[role] || 'Unknown';
                 },
 
@@ -510,6 +540,7 @@
                         role: user.role,
                         jabatan_id: user.jabatan_id,
                         manager_id: user.manager_id || '',
+                        general_manager_id: user.general_manager_id || '',
                         status_akun: user.status_akun
                     };
                     this.showModal = true;
@@ -526,6 +557,7 @@
                         role: 0,
                         jabatan_id: this.jabatanList.length > 0 ? this.jabatanList[0].id : '',
                         manager_id: '',
+                        general_manager_id: '',
                         status_akun: 'aktif'
                     };
                 },

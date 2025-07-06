@@ -81,7 +81,7 @@
                                     </button>
                                     <a :href="`/surat-unit-manager/${surat.id}/edit`"
                                         x-show="surat.status_manager === 'pending' || surat.status_manager === 'rejected'"
-                                        class="text-yellow-600 hover:text-yellow-800 px-2 py-1 rounded-md bg-yellow-50 hover:bg-yellow-100 transition-colors flex items-center" title="Edit Surat">
+                                       class="text-yellow-600 hover:text-yellow-800 px-2 py-1 rounded-md bg-yellow-50 hover:bg-yellow-100 transition-colors flex items-center" title="Edit Surat">
                                         <i class="ri-edit-line mr-1"></i> Edit
                                     </a>
                                     <button @click="confirmDelete(surat.id)"
@@ -94,9 +94,9 @@
                     </template>
                     <tr x-show="paginatedSurat.length === 0">
                         <td colspan="5" class="px-6 py-12 text-center text-gray-500">
-                            Tidak ada surat yang cocok dengan filter atau Anda belum membuat surat.
-                        </td>
-                    </tr>
+                                Tidak ada surat yang cocok dengan filter atau Anda belum membuat surat.
+                            </td>
+                        </tr>
                 </tbody>
             </table>
             <div class="mt-4 flex justify-center gap-1">

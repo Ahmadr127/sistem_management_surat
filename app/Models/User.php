@@ -30,6 +30,7 @@ class User extends Authenticatable
         'role',
         'jabatan_id',
         'manager_id',
+        'general_manager_id',
         'status_akun',
         'foto_profile',
     ];
@@ -86,6 +87,31 @@ class User extends Authenticatable
     public function staff()
     {
         return $this->hasMany(User::class, 'manager_id');
+    }
+
+    /**
+     * Relasi ke manager yang dibawahi general manager
+     */
+    public function managers()
+    {
+        return $this->hasMany(User::class, 'general_manager_id');
+    }
+
+    /**
+     * Relasi ke general manager (self-referencing)
+     */
+    public function generalManager()
+    {
+        return $this->belongsTo(User::class, 'general_manager_id');
+    }
+
+    /**
+     * Relasi ke semua staff yang dibawahi (termasuk melalui manager)
+     */
+    public function allStaff()
+    {
+        return $this->hasMany(User::class, 'manager_id')
+                    ->with('staff'); // Include nested staff
     }
 
     // Tambahkan accessor untuk memudahkan pengambilan nama jabatan
@@ -151,6 +177,57 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user is general manager
+     */
+    public function isGeneralManager()
+    {
+        return $this->role === 6;
+    }
+
+    /**
+     * Check if user is direktur administrasi keuangan
+     */
+    public function isDirekturAdmKeuangan()
+    {
+        return $this->role === 7;
+    }
+
+    /**
+     * Check if manager is connected to general manager
+     */
+    public function isConnectedToGeneralManager()
+    {
+        return $this->role === 4 && $this->general_manager_id !== null;
+    }
+
+    /**
+     * Check if manager is independent (not connected to general manager)
+     */
+    public function isIndependentManager()
+    {
+        return $this->role === 4 && $this->general_manager_id === null;
+    }
+
+    /**
+     * Get all managers under this general manager
+     */
+    public function getConnectedManagers()
+    {
+        return $this->hasMany(User::class, 'general_manager_id')
+                    ->where('role', 4);
+    }
+
+    /**
+     * Get all independent managers (not connected to any general manager)
+     */
+    public static function getIndependentManagers()
+    {
+        return self::where('role', 4)
+                   ->whereNull('general_manager_id')
+                   ->where('status_akun', 'aktif');
+    }
+
+    /**
      * Get role name
      */
     public function getRoleNameAttribute()
@@ -161,7 +238,9 @@ class User extends Authenticatable
             2 => 'Direktur',
             3 => 'Admin',
             4 => 'Manager',
-            5 => 'Sekretaris ASP'
+            5 => 'Sekretaris ASP',
+            6 => 'General Manager',
+            7 => 'Direktur Adm Keuangan'
         ];
         return $roles[$this->role] ?? 'Unknown';
     }

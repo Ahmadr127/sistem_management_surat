@@ -67,7 +67,7 @@ Route::middleware(['auth', 'checkUserStatus'])->group(function () {
 });
 
 // Route untuk admin, staff, direktur, super admin dan manager
-Route::middleware(['auth', 'checkRole:0,1,2,3,4,5'])->group(function () {
+Route::middleware(['auth', 'checkRole:0,1,2,3,4,5,7'])->group(function () {
     // Laporan routes should use LaporanController
     Route::get('/laporan/disposisi-status/{disposisi}', [DisposisiController::class, 'updateStatus'])
         ->name('laporan.disposisi.status.update');
@@ -138,7 +138,7 @@ Route::middleware(['auth', 'checkRole:0,1,2,3,4,5'])->group(function () {
 });
 
 // Route khusus untuk admin dan direktur
-Route::middleware(['auth', 'checkRole:1,2,5'])->group(function () {
+Route::middleware(['auth', 'checkRole:1,2,5,7'])->group(function () {
     // App
     Route::get('/app', function () {
         return view('home');
@@ -271,6 +271,9 @@ Route::middleware('auth')->prefix('api')->name('api.')->group(function () {
 Route::middleware(['auth', 'checkRole:3'])->prefix('api')->name('api.')->group(function () {
     Route::get('/users', [UserController::class, 'getUsers'])->name('users.get');
     Route::get('/users/managers', [UserController::class, 'getManagers'])->name('users.managers');
+    Route::get('/users/independent-managers', [UserController::class, 'getIndependentManagers'])->name('users.independent-managers');
+    Route::get('/users/connected-managers/{generalManagerId}', [UserController::class, 'getConnectedManagers'])->name('users.connected-managers');
+    Route::get('/users/general-managers', [UserController::class, 'getGeneralManagers'])->name('users.general-managers');
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.delete');

@@ -119,7 +119,7 @@
                         <!-- Modal Header -->
                         <div class="px-6 py-4 bg-white border-b border-gray-200 flex justify-between items-center">
                             <div class="flex items-center gap-3">
-                                <h3 class="text-lg font-semibold text-gray-900">Detail & Persetujuan Surat</h3>
+                            <h3 class="text-lg font-semibold text-gray-900">Detail & Persetujuan Surat</h3>
                                 <!-- Badge Status -->
                                 <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full"
                                     :class="{

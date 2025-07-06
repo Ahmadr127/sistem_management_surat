@@ -732,9 +732,20 @@
                 html += `<nav class="inline-flex rounded-md shadow-sm" aria-label="Pagination">`;
                 // Tombol prev
                 html += `<button class="px-3 py-1 border border-gray-300 bg-white text-gray-700 text-sm font-medium rounded-l-md ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}" ${currentPage === 1 ? 'disabled' : ''} data-page="${currentPage - 1}">&laquo;</button>`;
-                // Nomor halaman
+                // Nomor halaman dengan ellipsis
                 for (let i = 1; i <= totalPages; i++) {
-                    html += `<button class="px-3 py-1 border-t border-b border-gray-300 bg-white text-gray-700 text-sm font-medium ${currentPage === i ? 'bg-green-100 text-green-700 font-bold' : 'hover:bg-gray-50'}" data-page="${i}">${i}</button>`;
+                    if (
+                        i === 1 ||
+                        i === totalPages ||
+                        (i >= currentPage - 1 && i <= currentPage + 1)
+                    ) {
+                        html += `<button class="px-3 py-1 border-t border-b border-gray-300 bg-white text-gray-700 text-sm font-medium ${currentPage === i ? 'bg-green-100 text-green-700 font-bold' : 'hover:bg-gray-50'}" data-page="${i}">${i}</button>`;
+                    } else if (
+                        i === currentPage - 2 ||
+                        i === currentPage + 2
+                    ) {
+                        html += `<span class="px-3 py-1 border-t border-b border-gray-300 bg-white text-gray-400 text-sm font-medium">...</span>`;
+                    }
                 }
                 // Tombol next
                 html += `<button class="px-3 py-1 border border-gray-300 bg-white text-gray-700 text-sm font-medium rounded-r-md ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}" ${currentPage === totalPages ? 'disabled' : ''} data-page="${currentPage + 1}">&raquo;</button>`;
