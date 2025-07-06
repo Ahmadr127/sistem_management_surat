@@ -688,31 +688,8 @@ class SuratKeluarController extends Controller
 
             $user = auth()->user();
             
-            // Logika filter untuk role
-            if ($user->role == 0) { // Staff
-                // Hanya surat yang dibuat oleh staff tersebut atau yang ditujukan kepadanya
-                $query->where(function($q) use ($user) {
-                    $q->where('created_by', $user->id)
-                      ->orWhereHas('disposisi.tujuan', function ($subq) use ($user) {
-                          $subq->where('user_id', $user->id);
-                      });
-                });
-            } elseif ($user->role == 1) { // Sekretaris
-                // Sekretaris dapat melihat semua surat
-            } elseif ($user->role == 2) { // Direktur
-                // Direktur dapat melihat semua surat
-                $query->where(function($q) {
-                    $q->whereHas('disposisi', function($subq) {
-                        $subq->where('status_sekretaris', 'approved');
-                    })
-                    ->orWhere('created_by', auth()->id()); // Jika direktur membuat surat
-                });
-            } elseif ($user->role == 4) { // Manager
-                // Manager hanya bisa melihat surat yang ditujukan padanya
-                $query->whereHas('disposisi.tujuan', function ($q) use ($user) {
-                    $q->where('user_id', $user->id);
-                });
-            }
+            // Semua role hanya menampilkan data yang dibuat oleh user yang sedang login
+            $query->where('created_by', $user->id);
 
             // Filter status disposisi
             if ($request->filled('status_sekretaris')) {
@@ -782,26 +759,27 @@ class SuratKeluarController extends Controller
         try {
             // Cek apakah request untuk nomor surat ASP
             if ($request->is_asp) {
-                \Log::info('Generating ASP number for date: ' . ($request->tanggal_surat ?? date('Y-m-d')));
-                $tanggalSurat = $request->tanggal_surat ? date('Y', strtotime($request->tanggal_surat)) : date('Y');
-                // Ambil semua nomor_surat yang match pola
+                $tahun = $request->tanggal_surat ? date('Y', strtotime($request->tanggal_surat)) : date('Y');
                 $nomorList = SuratKeluar::where('jenis_surat', 'eksternal')
                     ->where('nomor_surat', 'like', '%/ASP/%')
-                    ->whereYear('tanggal_surat', $tanggalSurat)
+                    ->whereRaw("EXTRACT(YEAR FROM tanggal_surat) = ?", [$tahun])
                     ->pluck('nomor_surat')
                     ->toArray();
+
+                \Log::info('Nomor surat ASP ditemukan:', $nomorList);
+
                 $maxNumber = 0;
                 foreach ($nomorList as $nomor) {
-                    $parts = explode('/', $nomor);
-                    if (isset($parts[0]) && is_numeric($parts[0])) {
-                        $num = intval($parts[0]);
+                    if (preg_match('/^(\\d{3})\/ASP\//', $nomor, $matches)) {
+                        $num = intval($matches[1]);
                         if ($num > $maxNumber) {
                             $maxNumber = $num;
                         }
                     }
                 }
-                $lastNumber = str_pad($maxNumber, 3, '0', STR_PAD_LEFT);
-                \Log::info('Last ASP number found: ' . $lastNumber);
+                // Kembalikan nomor berikutnya (maxNumber + 1)
+                $nextNumber = $maxNumber + 1;
+                $lastNumber = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
                 return response()->json([
                     'success' => true,
                     'last_number' => $lastNumber
@@ -810,30 +788,34 @@ class SuratKeluarController extends Controller
 
             // Cek apakah request untuk nomor surat eksternal AZRA
             if ($request->is_eksternal_azra) {
+                $tahun = $request->tanggal_surat ? date('Y', strtotime($request->tanggal_surat)) : date('Y');
                 $nomorList = SuratKeluar::where('jenis_surat', 'eksternal')
                     ->where('nomor_surat', 'like', '%/RSAZRA/%')
-                    ->whereYear('tanggal_surat', date('Y'))
+                    ->whereRaw("EXTRACT(YEAR FROM tanggal_surat) = ?", [$tahun])
                     ->pluck('nomor_surat')
                     ->toArray();
+
+                \Log::info('Nomor surat AZRA ditemukan:', $nomorList);
+
                 $maxNumber = 0;
                 foreach ($nomorList as $nomor) {
-                    $parts = explode('/', $nomor);
-                    if (isset($parts[0]) && is_numeric($parts[0])) {
-                        $num = intval($parts[0]);
+                    if (preg_match('/^(\\d{3})\/RSAZRA\//', $nomor, $matches)) {
+                        $num = intval($matches[1]);
                         if ($num > $maxNumber) {
                             $maxNumber = $num;
                         }
                     }
                 }
-                $lastNumber = str_pad($maxNumber, 3, '0', STR_PAD_LEFT);
-                \Log::info('Last AZRA number found: ' . $lastNumber);
+                // Kembalikan nomor berikutnya (maxNumber + 1)
+                $nextNumber = $maxNumber + 1;
+                $lastNumber = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
                 return response()->json([
                     'success' => true,
                     'last_number' => $lastNumber
                 ]);
             }
 
-            // Logic untuk nomor surat internal (tidak diubah)
+            // Logic untuk nomor surat internal (tidak diubah, tapi perbaiki parsing dan query tahun)
             $kodeJabatan = $request->kode_jabatan;
             $isAsDirut = $request->is_as_dirut;
 
@@ -842,27 +824,33 @@ class SuratKeluarController extends Controller
                 $kodeJabatan = 'DIRUT';
             }
 
-            // Ambil nomor urut terakhir untuk jabatan tersebut
-            $lastSurat = SuratKeluar::where('jenis_surat', 'internal')
-                ->whereYear('tanggal_surat', date('Y'))
+            $tahun = $request->tanggal_surat ? date('Y', strtotime($request->tanggal_surat)) : date('Y');
+            $nomorList = SuratKeluar::where('jenis_surat', 'internal')
+                ->whereRaw("EXTRACT(YEAR FROM tanggal_surat) = ?", [$tahun])
                 ->where(function ($query) use ($kodeJabatan) {
                     $query->where('nomor_surat', 'like', "%/{$kodeJabatan}/%")
                         ->orWhere('nomor_surat', 'like', "%/{$kodeJabatan}/%");
                 })
-                ->orderBy('id', 'desc')
-                ->first();
+                ->pluck('nomor_surat')
+                ->toArray();
 
-            if ($lastSurat) {
-                // Extract nomor urut dari nomor surat terakhir
-                $parts = explode('/', $lastSurat->nomor_surat);
-                $lastNumber = (int)$parts[0];
-            } else {
-                $lastNumber = 0;
+            \Log::info('Nomor surat internal ditemukan:', $nomorList);
+
+            $maxNumber = 0;
+            foreach ($nomorList as $nomor) {
+                if (preg_match('/^(\\d{3})\/' . preg_quote($kodeJabatan, '/') . '\//', $nomor, $matches)) {
+                    $num = intval($matches[1]);
+                    if ($num > $maxNumber) {
+                        $maxNumber = $num;
+                    }
+                }
             }
 
+            // Kembalikan nomor berikutnya (maxNumber + 1) dengan format yang konsisten
+            $nextNumber = $maxNumber + 1;
             return response()->json([
                 'success' => true,
-                'last_number' => $lastNumber
+                'last_number' => $nextNumber
             ]);
         } catch (\Exception $e) {
             \Log::error('Error in getLastNumber: ' . $e->getMessage());

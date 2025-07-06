@@ -83,6 +83,13 @@
                                             <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
                                             Generate Nomor ASP
                                         </button>
+                                    @elseif (auth()->user()->role === 0 || auth()->user()->role === 3 || auth()->user()->role === 4)
+                                        <!-- Untuk Staff (role 0), Admin (role 3), atau Manager (role 4): tampilkan Generate Nomor biasa -->
+                                        <button type="button" id="generateNomorBtn"
+                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 group">
+                                            <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                                            Generate Nomor
+                                        </button>
                                     @else
                                         <!-- Untuk role lain: tampilkan Generate Nomor biasa -->
                                         <button type="button" id="generateNomorBtn"
@@ -121,7 +128,7 @@
                         </div>
 
                         <!-- Jenis Surat -->
-                        @if (auth()->user()->role === 0 || auth()->user()->role === 3)
+                        @if (auth()->user()->role === 0 || auth()->user()->role === 3 || auth()->user()->role === 4)
                             <input type="hidden" name="jenis_surat" id="jenis_surat" value="internal">
                         @elseif (auth()->user()->role === 1 || auth()->user()->role === 5)
                             <div class="space-y-2">
@@ -295,7 +302,7 @@
                                     class="border border-gray-200 rounded-lg p-3 max-h-60 overflow-y-auto">
                                     <div class="space-y-2">
                                         @foreach ($users as $user)
-                                            @if (in_array($user->role, [1,2,4]))
+                                            @if (in_array($user->role, [1,2,4,5]))
                                             <div class="flex items-center py-1.5 px-2 hover:bg-gray-50 rounded-md user-selection-item">
                                                 <input type="checkbox" id="user-{{ $user->id }}"
                                                     name="tujuan_disposisi[]" value="{{ $user->id }}"
@@ -522,28 +529,28 @@
                     }
                 } else if (userRole === 0 || userRole === 3 || userRole === 4) { // Staff/unit, Admin, atau Manager
                     if (this.value === 'internal') {
-                    if (generateNomorBtn) {
-                        generateNomorBtn.style.display = 'inline-flex';
-                        generateNomorBtn.onclick = generateNomorSurat;
-                    }
-                    if (generateNomorAspBtn) {
-                        generateNomorAspBtn.style.display = 'none';
-                    }
-                    nomorSuratInput.readOnly = false;
-                    nomorSuratInput.placeholder = "Nomor surat akan digenerate otomatis";
-                    nomorSuratInput.value = "";
-                    nomorSuratInput.classList.remove('bg-gray-50');
-                    nomorSuratInput.classList.add('bg-white');
-                    // Info text
-                    const nomorSuratContainer = nomorSuratInput.closest('.space-y-2');
-                    let infoText = nomorSuratContainer?.querySelector('.text-xs.text-gray-500');
-                    if (infoText) {
-                        infoText.innerHTML = `
-                            <i class="ri-information-line mr-1"></i>
-                            Gunakan tanda strip (-) jika ingin menggunakan nomor surat yang sama dengan surat lain.
-                        `;
-                    }
-                } else {
+                        if (generateNomorBtn) {
+                            generateNomorBtn.style.display = 'inline-flex';
+                            generateNomorBtn.onclick = generateNomorSurat;
+                        }
+                        if (generateNomorAspBtn) {
+                            generateNomorAspBtn.style.display = 'none';
+                        }
+                        nomorSuratInput.readOnly = false;
+                        nomorSuratInput.placeholder = "Nomor surat akan digenerate otomatis";
+                        nomorSuratInput.value = "";
+                        nomorSuratInput.classList.remove('bg-gray-50');
+                        nomorSuratInput.classList.add('bg-white');
+                        // Info text
+                        const nomorSuratContainer = nomorSuratInput.closest('.space-y-2');
+                        let infoText = nomorSuratContainer?.querySelector('.text-xs.text-gray-500');
+                        if (infoText) {
+                            infoText.innerHTML = `
+                                <i class="ri-information-line mr-1"></i>
+                                Gunakan tanda strip (-) jika ingin menggunakan nomor surat yang sama dengan surat lain.
+                            `;
+                        }
+                    } else {
                         if (generateNomorBtn) {
                             generateNomorBtn.style.display = 'none';
                         }
@@ -599,6 +606,24 @@
                 }
                 
                 console.log("Sekretaris ASP configuration applied - Generate Nomor ASP button enabled");
+            }
+            
+            // Logic khusus untuk role 4 (Manager)
+            if (userRole === 4) {
+                // Pastikan Generate Nomor selalu terlihat untuk Manager
+                const generateNomorBtn = document.getElementById('generateNomorBtn');
+                if (generateNomorBtn) {
+                    generateNomorBtn.style.display = 'inline-flex';
+                    generateNomorBtn.onclick = generateNomorSurat;
+                }
+                
+                // Sembunyikan Generate Nomor ASP untuk Manager
+                const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
+                if (generateNomorAspBtn) {
+                    generateNomorAspBtn.style.display = 'none';
+                }
+                
+                console.log("Manager configuration applied - Generate Nomor button enabled");
             }
         }
 
@@ -877,10 +902,9 @@
         }
 
         // Event listener for generate button
-        // **REMOVED** - This block is removed as the logic is handled by the 'change' event listener on jenisSuratSelect
-        // if (generateNomorBtn) {
-        //     generateNomorBtn.addEventListener('click', generateNomorSurat);
-        // }
+        if (generateNomorBtn) {
+            generateNomorBtn.addEventListener('click', generateNomorSurat);
+        }
 
         // Tambahkan event listener untuk tombol Generate Nomor ASP
         const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');

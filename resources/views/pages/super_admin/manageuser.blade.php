@@ -7,6 +7,31 @@
         [x-cloak] {
             display: none !important;
         }
+        
+        /* Custom scrollbar untuk dropdown */
+        .overflow-y-auto::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .overflow-y-auto::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .overflow-y-auto {
+            -ms-overflow-style: none;
+            scrollbar-width: thin;
+        }
     </style>
 @endpush
 
@@ -285,12 +310,39 @@
                                         <!-- Jabatan -->
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700 mb-2">Jabatan</label>
-                                            <select x-model="formData.jabatan_id" required
-                                                class="w-full px-4 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                                <template x-for="jabatan in jabatanList" :key="jabatan.id">
-                                                    <option :value="jabatan.id" x-text="jabatan.nama_jabatan"></option>
-                                                </template>
-                                            </select>
+                                            <div class="relative" x-data="{ open: false, search: '' }">
+                                                <button type="button" @click="open = !open"
+                                                    class="w-full px-4 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent flex justify-between items-center">
+                                                    <span x-text="getSelectedJabatanName() || 'Pilih Jabatan'"></span>
+                                                    <i class="ri-arrow-down-s-line" :class="{ 'rotate-180': open }"></i>
+                                                </button>
+                                                
+                                                <div x-show="open" @click.away="open = false" x-cloak
+                                                    class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
+                                                    <!-- Search Input -->
+                                                    <div class="p-2 border-b border-gray-200">
+                                                        <input type="text" x-model="search" placeholder="Cari jabatan..."
+                                                            class="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                                                    </div>
+                                                    
+                                                    <!-- Jabatan List -->
+                                                    <div class="max-h-48 overflow-y-auto">
+                                                        <template x-for="jabatan in jabatanList.filter(j => j.nama_jabatan.toLowerCase().includes(search.toLowerCase()))" :key="jabatan.id">
+                                                            <button type="button" @click="selectJabatan(jabatan); open = false"
+                                                                class="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                                                                :class="{ 'bg-green-50 text-green-700': formData.jabatan_id == jabatan.id }">
+                                                                <span x-text="jabatan.nama_jabatan"></span>
+                                                            </button>
+                                                        </template>
+                                                        
+                                                        <!-- No results message -->
+                                                        <div x-show="jabatanList.filter(j => j.nama_jabatan.toLowerCase().includes(search.toLowerCase())).length === 0" 
+                                                            class="px-4 py-2 text-sm text-gray-500 text-center">
+                                                            Tidak ada jabatan yang ditemukan
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <!-- Manager (hanya untuk staff) -->
@@ -631,6 +683,13 @@
                 closeModal() {
                     this.showModal = false;
                     this.resetForm();
+                },
+                getSelectedJabatanName() {
+                    const selectedJabatan = this.jabatanList.find(j => j.id === this.formData.jabatan_id);
+                    return selectedJabatan ? selectedJabatan.nama_jabatan : null;
+                },
+                selectJabatan(jabatan) {
+                    this.formData.jabatan_id = jabatan.id;
                 }
             }));
         });

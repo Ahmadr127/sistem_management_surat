@@ -33,15 +33,33 @@ class SuratMasukController extends Controller
                 'perusahaanData'
             ]);
             
-            // Filter untuk role 0 (staff)
+            // Filter untuk role 0 (staff) atau role 5 (Sekretaris ASP)
             if ($request->has('user_id')) {
                 $userId = $request->user_id;
                 Log::info('Filtering surat for user_id: ' . $userId);
                 
-                $query->whereHas('disposisi.tujuan', function($q) use ($userId) {
-                    $q->where('users.id', $userId);
-                });
+                // Jika include_created = true, tambahkan surat yang dibuat oleh user
+                if ($request->has('include_created') && $request->include_created === 'true') {
+                    $query->where(function($q) use ($userId) {
+                        // Surat yang ditujukan kepada user
+                        $q->whereHas('disposisi.tujuan', function($subq) use ($userId) {
+                            $subq->where('users.id', $userId);
+                        });
+                        // Atau surat yang dibuat oleh user
+                        $q->orWhere('created_by', $userId);
+                    });
+                } else {
+                    // Hanya surat yang ditujukan kepada user
+                    $query->whereHas('disposisi.tujuan', function($q) use ($userId) {
+                        $q->where('users.id', $userId);
+                    });
+                }
             } 
+            // Filter untuk role 1 (Sekretaris) - semua data
+            else if ($request->has('all') && $request->all === 'true') {
+                Log::info('Showing all surat for Sekretaris');
+                // Tidak ada filter tambahan, tampilkan semua
+            }
             // Filter untuk role 2 (direktur)
             else if ($request->has('status_sekretaris')) {
                 $query->whereHas('disposisi', function($q) use ($request) {

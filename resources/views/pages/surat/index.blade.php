@@ -136,9 +136,6 @@
                                     Jenis
                                 </th>
                                 <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                                    Pembuat
-                                </th>
-                                <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
                                     Status Sekretaris
                                 </th>
                                 <th scope="col" class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider">
@@ -666,8 +663,6 @@
                     const namaPerusahaan = (surat.perusahaanData && surat.perusahaanData.nama_perusahaan ? surat.perusahaanData.nama_perusahaan : (surat.nama_perusahaan ? surat.nama_perusahaan : (surat.perusahaan ? surat.perusahaan : '-'))).toLowerCase();
                     const perihal = (surat.perihal || '').toLowerCase();
                     const jenis = (surat.jenis_surat === 'internal' ? 'internal' : 'eksternal');
-                    const pembuat = (surat.creator ? surat.creator.name : '').toLowerCase();
-                    const jabatan = (surat.creator && surat.creator.jabatan ? surat.creator.jabatan : '').toLowerCase();
                     const statusSekretaris = (surat.disposisi && surat.disposisi.status_sekretaris ? surat.disposisi.status_sekretaris : 'pending').toLowerCase();
                     const statusDirut = (surat.disposisi && surat.disposisi.status_dirut ? surat.disposisi.status_dirut : 'pending').toLowerCase();
                     const tujuanDisposisi = (surat.disposisi && surat.disposisi.tujuan && surat.disposisi.tujuan.length > 0 ? surat.disposisi.tujuan.map(t => t.name).join(' ').toLowerCase() : '');
@@ -678,8 +673,6 @@
                         namaPerusahaan.includes(searchQuery) ||
                         perihal.includes(searchQuery) ||
                         jenis.includes(searchQuery) ||
-                        pembuat.includes(searchQuery) ||
-                        jabatan.includes(searchQuery) ||
                         statusSekretaris.includes(searchQuery) ||
                         statusDirut.includes(searchQuery) ||
                         tujuanDisposisi.includes(searchQuery)
@@ -737,13 +730,8 @@
 
                     // Filter data berdasarkan role - don't sort, preserve server-side sorting
                     let filteredData = data;
-                    if (userRole === 5) {
-                        // Filter: surat yang dibuat oleh dia atau tujuan disposisi ke dia
-                        filteredData = data.filter(surat => surat.created_by === userId || (surat.disposisi && surat.disposisi.tujuan && surat.disposisi.tujuan.some(t => t.id === userId)));
-                    } else if (userRole === 0 || userRole === 1 || userRole === 3) { // Staff, Sekretaris, Admin
-                        console.log('Filtering data for Staff/Sekretaris/Admin role');
-                        filteredData = data.filter(surat => surat.created_by === {{ auth()->id() }});
-                    }
+                    // Semua role hanya menampilkan data yang dibuat oleh user yang sedang login
+                    filteredData = data.filter(surat => surat.created_by === {{ auth()->id() }});
 
                     console.log('Filtered data:', filteredData);
                     suratData = filteredData; // Simpan ke variabel global
@@ -760,6 +748,7 @@
                                 </td>
                             </tr>
                         `;
+                        renderPagination();
                         return;
                     }
 
@@ -805,7 +794,7 @@
                 if (pageData.length === 0) {
                     tableBody.innerHTML = `
                         <tr>
-                            <td colspan="9" class="text-center py-8">
+                            <td colspan="8" class="text-center py-8">
                                 <div class="flex flex-col items-center justify-center">
                                     <i class="ri-inbox-line text-gray-400 text-3xl mb-2"></i>
                                     <p class="text-gray-500">Tidak ada data yang ditemukan</p>
@@ -884,12 +873,6 @@
                                 <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${surat.jenis_surat === 'internal' ? 'bg-sky-100 text-sky-800' : 'bg-fuchsia-100 text-fuchsia-800'}">
                                     ${surat.jenis_surat === 'internal' ? 'Internal' : 'Eksternal'}
                                 </span>
-                            </td>
-                            <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-500">
-                                ${surat.creator ? surat.creator.name : 'Unknown'}
-                                ${surat.creator?.jabatan ? 
-                                    `<span class="text-xs text-gray-400">(${surat.creator.jabatan})</span>` 
-                                    : ''}
                             </td>
                             <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-500">
                                 <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(statusSekretaris)}">

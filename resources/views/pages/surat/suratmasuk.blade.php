@@ -509,6 +509,10 @@
                 } else if (userRole === 1) { // Sekretaris
                     console.log('Role Sekretaris: Mengambil semua data');
                     params.append('all', 'true');
+                } else if (userRole === 4) { // Manager
+                    console.log('Role Manager: Menampilkan surat yang ditujukan pada dia dan surat yang dia buat');
+                    params.append('user_id', {{ auth()->id() }});
+                    params.append('include_created', 'true');
                 } else if (userRole === 5) { // Sekretaris ASP
                     console.log('Role Sekretaris ASP: Menampilkan surat yang ditujukan pada dia dan surat yang dia buat');
                     params.append('user_id', {{ auth()->id() }});
@@ -556,6 +560,32 @@
                                     surat.disposisi?.status_dirut === 'approved';
 
                                 return isTujuanDisposisi || isCreatedAndApproved;
+                            });
+                        } else if (userRole === 4) { // Manager
+                            console.log('Filtering data for Manager');
+                            filteredData = data.filter(surat => {
+                                // Cek apakah user adalah tujuan disposisi
+                                const isTujuanDisposisi = surat.disposisi?.tujuan?.some(
+                                    tujuan => tujuan.id === {{ auth()->id() }}
+                                );
+
+                                // Cek apakah surat dibuat oleh user
+                                const isCreatedByUser = surat.created_by === {{ auth()->id() }};
+
+                                return isTujuanDisposisi || isCreatedByUser;
+                            });
+                        } else if (userRole === 5) { // Sekretaris ASP
+                            console.log('Filtering data for Sekretaris ASP');
+                            filteredData = data.filter(surat => {
+                                // Cek apakah user adalah tujuan disposisi
+                                const isTujuanDisposisi = surat.disposisi?.tujuan?.some(
+                                    tujuan => tujuan.id === {{ auth()->id() }}
+                                );
+
+                                // Cek apakah surat dibuat oleh user
+                                const isCreatedByUser = surat.created_by === {{ auth()->id() }};
+
+                                return isTujuanDisposisi || isCreatedByUser;
                             });
                         }
 
@@ -676,11 +706,11 @@
                                         <i class="ri-eye-line mr-1"></i> Detail
                                     </button>
 
-                                    ${(userRole === 1 || userRole === 2) ? `
+                                    ${(userRole === 1 || userRole === 2 || userRole === 5) ? `
                                         <button onclick="editDisposisi(${surat.id})" class="inline-flex items-center px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md transition-colors duration-200" title="Edit Disposisi">
                                             <i class="ri-file-edit-line mr-1"></i> Disposisi
-                                                                                    </button>
-                                                                                ` : ''}
+                                        </button>
+                                    ` : ''}
                                 </div>
                             </td>
                         </tr>
@@ -912,7 +942,7 @@
                                 document.getElementById('edit-disposisi-id').value = data.disposisi.id;
 
                                 // Atur bagian yang ditampilkan berdasarkan role
-                                if (userRole === 1) { // Sekretaris
+                                if (userRole === 1 || userRole === 5) { // Sekretaris atau Sekretaris ASP
                                     document.getElementById('sekretaris-section').classList.remove(
                                         'hidden');
                                     document.getElementById('direktur-section').classList.add('hidden');
@@ -1295,7 +1325,7 @@
                 // Kumpulkan data berdasarkan role
                 let formData = new FormData();
 
-                if (userRole === 1) { // Sekretaris
+                if (userRole === 1 || userRole === 5) { // Sekretaris atau Sekretaris ASP
                     const sekretarisStatus = document.getElementById('status_sekretaris').value;
                     formData.append('status_sekretaris', sekretarisStatus);
                     console.log('Sekretaris Status:', sekretarisStatus);
