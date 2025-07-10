@@ -757,46 +757,19 @@ class SuratKeluarController extends Controller
     public function getLastNumber(Request $request)
     {
         try {
-            // Cek apakah request untuk nomor surat ASP
-            if ($request->is_asp) {
-                $tahun = $request->tanggal_surat ? date('Y', strtotime($request->tanggal_surat)) : date('Y');
-                $nomorList = SuratKeluar::where('jenis_surat', 'eksternal')
-                    ->where('nomor_surat', 'like', '%/ASP/%')
-                    ->whereRaw("EXTRACT(YEAR FROM tanggal_surat) = ?", [$tahun])
+            // Logic untuk nomor surat internal maupun eksternal
+            $isEksternalAzra = $request->is_eksternal_azra ?? false;
+            $isAsp = $request->is_asp ?? false;
+            $tahun = $request->tanggal_surat ? date('Y', strtotime($request->tanggal_surat)) : date('Y');
+
+            if ($isEksternalAzra) {
+                // Eksternal AZRA
+                $nomorList = SuratKeluar::where('nomor_surat', 'like', '%/RSAZRA/%')
+                    ->whereYear('tanggal_surat', $tahun)
                     ->pluck('nomor_surat')
                     ->toArray();
-
-                \Log::info('Nomor surat ASP ditemukan:', $nomorList);
-
-                $maxNumber = 0;
-                foreach ($nomorList as $nomor) {
-                    if (preg_match('/^(\\d{3})\/ASP\//', $nomor, $matches)) {
-                        $num = intval($matches[1]);
-                        if ($num > $maxNumber) {
-                            $maxNumber = $num;
-                        }
-                    }
-                }
-                // Kembalikan nomor berikutnya (maxNumber + 1)
-                $nextNumber = $maxNumber + 1;
-                $lastNumber = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
-                return response()->json([
-                    'success' => true,
-                    'last_number' => $lastNumber
-                ]);
-            }
-
-            // Cek apakah request untuk nomor surat eksternal AZRA
-            if ($request->is_eksternal_azra) {
-                $tahun = $request->tanggal_surat ? date('Y', strtotime($request->tanggal_surat)) : date('Y');
-                $nomorList = SuratKeluar::where('jenis_surat', 'eksternal')
-                    ->where('nomor_surat', 'like', '%/RSAZRA/%')
-                    ->whereRaw("EXTRACT(YEAR FROM tanggal_surat) = ?", [$tahun])
-                    ->pluck('nomor_surat')
-                    ->toArray();
-
+                \Log::info('Tahun yang diambil:', [$tahun]);
                 \Log::info('Nomor surat AZRA ditemukan:', $nomorList);
-
                 $maxNumber = 0;
                 foreach ($nomorList as $nomor) {
                     if (preg_match('/^(\\d{3})\/RSAZRA\//', $nomor, $matches)) {
@@ -806,36 +779,49 @@ class SuratKeluarController extends Controller
                         }
                     }
                 }
-                // Kembalikan nomor berikutnya (maxNumber + 1)
-                $nextNumber = $maxNumber + 1;
-                $lastNumber = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+                $lastNumber = str_pad($maxNumber, 3, '0', STR_PAD_LEFT); // hanya angka terakhir
                 return response()->json([
                     'success' => true,
                     'last_number' => $lastNumber
                 ]);
             }
 
-            // Logic untuk nomor surat internal (tidak diubah, tapi perbaiki parsing dan query tahun)
+            if ($isAsp) {
+                // ASP
+                $nomorList = SuratKeluar::where('nomor_surat', 'like', '%/ASP/%')
+                    ->whereYear('tanggal_surat', $tahun)
+                    ->pluck('nomor_surat')
+                    ->toArray();
+                $maxNumber = 0;
+                foreach ($nomorList as $nomor) {
+                    if (preg_match('/^(\\d{3})\/ASP\//', $nomor, $matches)) {
+                        $num = intval($matches[1]);
+                        if ($num > $maxNumber) {
+                            $maxNumber = $num;
+                        }
+                    }
+                }
+                $lastNumber = str_pad($maxNumber, 3, '0', STR_PAD_LEFT); // hanya angka terakhir
+                return response()->json([
+                    'success' => true,
+                    'last_number' => $lastNumber
+                ]);
+            }
+
+            // Logic untuk nomor surat internal (default)
             $kodeJabatan = $request->kode_jabatan;
             $isAsDirut = $request->is_as_dirut;
-
-            // Jika as dirut, gunakan DIRUT sebagai kode jabatan
             if ($isAsDirut) {
                 $kodeJabatan = 'DIRUT';
             }
-
-            $tahun = $request->tanggal_surat ? date('Y', strtotime($request->tanggal_surat)) : date('Y');
-            $nomorList = SuratKeluar::where('jenis_surat', 'internal')
-                ->whereRaw("EXTRACT(YEAR FROM tanggal_surat) = ?", [$tahun])
+            $nomorList = SuratKeluar::whereYear('tanggal_surat', $tahun)
                 ->where(function ($query) use ($kodeJabatan) {
                     $query->where('nomor_surat', 'like', "%/{$kodeJabatan}/%")
-                        ->orWhere('nomor_surat', 'like', "%/{$kodeJabatan}/%");
+                        ->orWhere('nomor_surat', 'like', "%/{$kodeJabatan}/%\-");
                 })
                 ->pluck('nomor_surat')
                 ->toArray();
-
             \Log::info('Nomor surat internal ditemukan:', $nomorList);
-
             $maxNumber = 0;
             foreach ($nomorList as $nomor) {
                 if (preg_match('/^(\\d{3})\/' . preg_quote($kodeJabatan, '/') . '\//', $nomor, $matches)) {
@@ -845,12 +831,10 @@ class SuratKeluarController extends Controller
                     }
                 }
             }
-
-            // Kembalikan nomor berikutnya (maxNumber + 1) dengan format yang konsisten
-            $nextNumber = $maxNumber + 1;
+            $lastNumber = $maxNumber; // hanya angka terakhir
             return response()->json([
                 'success' => true,
-                'last_number' => $nextNumber
+                'last_number' => $lastNumber
             ]);
         } catch (\Exception $e) {
             \Log::error('Error in getLastNumber: ' . $e->getMessage());

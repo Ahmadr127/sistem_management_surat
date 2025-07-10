@@ -65,16 +65,11 @@
                                 <label class="text-sm font-semibold text-gray-800">Nomor Surat</label>
                                 <div class="relative flex gap-2">
                                     @if (auth()->user()->role === 1)
-                                        <!-- Untuk Sekretaris (role 1): tampilkan kedua button -->
+                                        <!-- Untuk Sekretaris (role 1): hanya tampilkan Generate Nomor biasa -->
                                         <button type="button" id="generateNomorBtn"
                                             class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 group">
                                             <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
                                             Generate Nomor
-                                        </button>
-                                        <button type="button" id="generateNomorAspBtn"
-                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 group">
-                                            <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
-                                            Generate Nomor ASP
                                         </button>
                                     @elseif (auth()->user()->role === 5)
                                         <!-- Untuk Sekretaris ASP (role 5): hanya tampilkan Generate Nomor ASP -->
@@ -301,23 +296,26 @@
                                 <div id="tujuan-selection-container"
                                     class="border border-gray-200 rounded-lg p-3 max-h-60 overflow-y-auto">
                                     <div class="space-y-2">
+                                        @php
+                                            $allowedRolesAsp = [1, 2, 6, 7]; // Sekretaris, Dirut, GM, Keuangan
+                                        @endphp
                                         @foreach ($users as $user)
-                                            @if (in_array($user->role, [1,2,4,5]))
-                                            <div class="flex items-center py-1.5 px-2 hover:bg-gray-50 rounded-md user-selection-item">
-                                                <input type="checkbox" id="user-{{ $user->id }}"
-                                                    name="tujuan_disposisi[]" value="{{ $user->id }}"
-                                                    class="tujuan-checkbox h-4 w-4 border-gray-300 rounded"
-                                                    @if ($user->role == 2) checked @endif>
-                                                <label for="user-{{ $user->id }}"
-                                                    class="ml-3 block text-sm text-gray-700 cursor-pointer truncate">
-                                                    {{ $user->name }}
-                                                    @if ($user->jabatan)
-                                                        <span class="text-gray-500">({{ $user->jabatan->nama_jabatan }})</span>
-                                                    @else
-                                                        <span class="text-gray-500">(Tidak ada jabatan)</span>
-                                                    @endif
-                                                </label>
-                                            </div>
+                                            @if ((auth()->user()->role === 5 && in_array($user->role, $allowedRolesAsp)) || auth()->user()->role !== 5 && in_array($user->role, [1,2,4,5]))
+                                                <div class="flex items-center py-1.5 px-2 hover:bg-gray-50 rounded-md user-selection-item">
+                                                    <input type="checkbox" id="user-{{ $user->id }}"
+                                                        name="tujuan_disposisi[]" value="{{ $user->id }}"
+                                                        class="tujuan-checkbox h-4 w-4 border-gray-300 rounded"
+                                                        @if ($user->role == 2) checked @endif>
+                                                    <label for="user-{{ $user->id }}"
+                                                        class="ml-3 block text-sm text-gray-700 cursor-pointer truncate">
+                                                        {{ $user->name }}
+                                                        @if ($user->jabatan)
+                                                            <span class="text-gray-500">({{ $user->jabatan->nama_jabatan }})</span>
+                                                        @else
+                                                            <span class="text-gray-500">(Tidak ada jabatan)</span>
+                                                        @endif
+                                                    </label>
+                                                </div>
                                             @endif
                                         @endforeach
                                         {{-- Tambahkan GM ke list jika user login adalah manager dan punya general_manager_id --}}
@@ -503,7 +501,7 @@
                     } else if (this.value === 'internal') {
                         if (generateNomorBtn) {
                             generateNomorBtn.style.display = 'inline-flex';
-                            generateNomorBtn.onclick = generateNomorSurat;
+                            //generateNomorBtn.onclick = generateNomorSurat;
                         }
                         if (generateNomorAspBtn) {
                             generateNomorAspBtn.style.display = 'none';
@@ -530,7 +528,7 @@
                     }
                     if (generateNomorAspBtn) {
                         generateNomorAspBtn.style.display = 'inline-flex';
-                        generateNomorAspBtn.onclick = generateNomorAsp;
+                        //generateNomorAspBtn.onclick = generateNomorAsp;
                     }
                     nomorSuratInput.readOnly = false;
                     nomorSuratInput.placeholder = "Nomor surat akan digenerate otomatis";
@@ -557,7 +555,7 @@
                     if (this.value === 'internal') {
                         if (generateNomorBtn) {
                             generateNomorBtn.style.display = 'inline-flex';
-                            generateNomorBtn.onclick = generateNomorSurat;
+                            //generateNomorBtn.onclick = generateNomorSurat;
                         }
                         if (generateNomorAspBtn) {
                             generateNomorAspBtn.style.display = 'none';
@@ -622,7 +620,7 @@
                 const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
                 if (generateNomorAspBtn) {
                     generateNomorAspBtn.style.display = 'inline-flex';
-                    generateNomorAspBtn.onclick = generateNomorAsp;
+                    //generateNomorAspBtn.onclick = generateNomorAsp;
                 }
                 
                 // Sembunyikan Generate Nomor biasa untuk Sekretaris ASP
@@ -640,7 +638,7 @@
                 const generateNomorBtn = document.getElementById('generateNomorBtn');
                 if (generateNomorBtn) {
                     generateNomorBtn.style.display = 'inline-flex';
-                    generateNomorBtn.onclick = generateNomorSurat;
+                    //generateNomorBtn.onclick = generateNomorSurat;
                 }
                 
                 // Sembunyikan Generate Nomor ASP untuk Manager
@@ -941,7 +939,7 @@
             // Untuk role 5 (Sekretaris ASP), pastikan button selalu terlihat dan berfungsi
             if (userRole === 5) {
                 generateNomorAspBtn.style.display = 'inline-flex';
-                generateNomorAspBtn.onclick = generateNomorAsp;
+                //generateNomorAspBtn.onclick = generateNomorAsp;
                 console.log("Generate Nomor ASP button configured for Sekretaris ASP role.");
             }
         }
