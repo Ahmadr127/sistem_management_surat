@@ -320,6 +320,32 @@
                                             </div>
                                             @endif
                                         @endforeach
+                                        {{-- Tambahkan GM ke list jika user login adalah manager dan punya general_manager_id --}}
+                                        @php
+                                            $authUser = auth()->user();
+                                            $gmUser = null;
+                                            if ($authUser->role === 4 && $authUser->general_manager_id) {
+                                                $gmUser = $users->first(function($u) use ($authUser) {
+                                                    return $u->role === 6 && $u->id == $authUser->general_manager_id;
+                                                });
+                                            }
+                                        @endphp
+                                        @if ($gmUser)
+                                            <div class="flex items-center py-1.5 px-2 hover:bg-gray-50 rounded-md user-selection-item">
+                                                <input type="checkbox" id="user-{{ $gmUser->id }}"
+                                                    name="tujuan_disposisi[]" value="{{ $gmUser->id }}"
+                                                    class="tujuan-checkbox h-4 w-4 border-gray-300 rounded">
+                                                <label for="user-{{ $gmUser->id }}"
+                                                    class="ml-3 block text-sm text-gray-700 cursor-pointer truncate">
+                                                    {{ $gmUser->name }}
+                                                    @if ($gmUser->jabatan)
+                                                        <span class="text-gray-500">({{ $gmUser->jabatan->nama_jabatan }})</span>
+                                                    @else
+                                                        <span class="text-gray-500">(General Manager)</span>
+                                                    @endif
+                                                </label>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
