@@ -40,7 +40,7 @@ class GeneralManagerSeeder extends Seeder
             );
 
             // Update manager yang sudah ada untuk memiliki general manager
-            $managers = User::where('role', 4)->get();
+            $managers = User::whereIn('role', [4, 7])->get(); // Include both Manager and Manager Keuangan
             foreach ($managers as $manager) {
                 // Hanya update jika manager belum memiliki general manager
                 if (!$manager->general_manager_id) {

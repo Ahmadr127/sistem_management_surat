@@ -517,6 +517,14 @@
                     console.log('Role Sekretaris ASP: Menampilkan surat yang ditujukan pada dia dan surat yang dia buat');
                     params.append('user_id', {{ auth()->id() }});
                     params.append('include_created', 'true');
+                } else if (userRole === 6) { // General Manager
+                    console.log('Role General Manager: Menampilkan surat yang ditujukan pada dia dan surat yang dia buat');
+                    params.append('user_id', {{ auth()->id() }});
+                    params.append('include_created', 'true');
+                } else if (userRole === 7) { // Manager Keuangan
+                    console.log('Role Manager Keuangan: Menampilkan surat yang ditujukan pada dia dan surat yang dia buat');
+                    params.append('user_id', {{ auth()->id() }});
+                    params.append('include_created', 'true');
                 } else if (userRole === 2) { // Direktur
                     console.log('Role Direktur: Mengambil data dengan status sekretaris approved');
                     params.append('status_sekretaris', 'approved');
@@ -576,6 +584,28 @@
                             });
                         } else if (userRole === 5) { // Sekretaris ASP
                             console.log('Filtering data for Sekretaris ASP');
+                            filteredData = data.filter(surat => {
+                                // Cek apakah user adalah tujuan disposisi
+                                const isTujuanDisposisi = surat.disposisi?.tujuan?.some(
+                                    tujuan => tujuan.id === {{ auth()->id() }}
+                                );
+
+                                // Cek apakah surat dibuat oleh user
+                                const isCreatedByUser = surat.created_by === {{ auth()->id() }};
+
+                                return isTujuanDisposisi || isCreatedByUser;
+                            });
+                        } else if (userRole === 6) { // General Manager
+                            console.log('Filtering data for General Manager');
+                            // Untuk General Manager, data dari API sudah benar, tidak perlu filter lagi
+                            filteredData = data;
+                            console.log('Using all data for General Manager (no additional filtering)');
+                        } else if (userRole === 7) { // Manager Keuangan
+                            console.log('Filtering data for Manager Keuangan');
+                            // Untuk Manager Keuangan, data dari API sudah benar, tidak perlu filter lagi
+                            filteredData = data;
+                        } else if (userRole === 2) { // Direktur
+                            console.log('Filtering data for Direktur');
                             filteredData = data.filter(surat => {
                                 // Cek apakah user adalah tujuan disposisi
                                 const isTujuanDisposisi = surat.disposisi?.tujuan?.some(
@@ -706,7 +736,7 @@
                                         <i class="ri-eye-line mr-1"></i> Detail
                                     </button>
 
-                                    ${(userRole === 1 || userRole === 2 || userRole === 5) ? `
+                                    ${(userRole === 1 || userRole === 2 || userRole === 5 || userRole === 6 || userRole === 7) ? `
                                         <button onclick="editDisposisi(${surat.id})" class="inline-flex items-center px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md transition-colors duration-200" title="Edit Disposisi">
                                             <i class="ri-file-edit-line mr-1"></i> Disposisi
                                         </button>
@@ -1141,6 +1171,12 @@
                                 break;
                             case 5:
                                 roleLabel = '<span class="inline-flex px-2 text-xs font-semibold bg-pink-100 text-pink-800 rounded-full ml-1">Sekretaris ASP</span>';
+                                break;
+                            case 6:
+                                roleLabel = '<span class="inline-flex px-2 text-xs font-semibold bg-indigo-100 text-indigo-800 rounded-full ml-1">General Manager</span>';
+                                break;
+                            case 7:
+                                roleLabel = '<span class="inline-flex px-2 text-xs font-semibold bg-teal-100 text-teal-800 rounded-full ml-1">Manager Keuangan</span>';
                                 break;
                         }
                     }

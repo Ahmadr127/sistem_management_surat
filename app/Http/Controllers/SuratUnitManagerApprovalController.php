@@ -132,15 +132,157 @@ class SuratUnitManagerApprovalController extends Controller
 
             } catch (\Exception $e) {
                 DB::rollBack();
-                throw $e;
+                Log::error('Error in managerApproval: ' . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat memproses persetujuan'
+                ], 500);
             }
 
         } catch (\Exception $e) {
             Log::error('Error in SuratUnitManagerApprovalController@managerApproval: ' . $e->getMessage());
-            
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan saat memproses persetujuan'
+            ], 500);
+        }
+    }
+
+    /**
+     * Menampilkan daftar surat yang perlu disetujui manager keuangan
+     */
+    public function managerKeuanganIndex(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            
+            // Hanya manager keuangan yang bisa akses
+            if ($user->role !== 7) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini');
+            }
+
+            $query = SuratUnitManager::with([
+                'unit.jabatan',
+                'manager.jabatan',
+                'sekretaris.jabatan',
+                'dirut.jabatan',
+                'perusahaanData',
+                'files'
+            ])->byManager($user->id);
+
+            // Filter berdasarkan status
+            if ($request->has('status') && $request->status !== '') {
+                $query->byStatusManager($request->status);
+            }
+
+            // Search filter
+            if ($request->has('search')) {
+                $query->search($request->search);
+            }
+
+            $suratUnitManager = $query->orderBy('created_at', 'desc')->get();
+
+            // Gunakan view yang sama dengan manager biasa
+            return view('pages.surat_unit_manager.manager.index', compact('suratUnitManager'));
+        } catch (\Exception $e) {
+            Log::error('Error in SuratUnitManagerApprovalController@managerKeuanganIndex: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat data');
+        }
+    }
+
+    /**
+     * Menampilkan detail surat untuk persetujuan manager keuangan
+     */
+    public function managerKeuanganShow(SuratUnitManager $suratUnitManager)
+    {
+        try {
+            $user = auth()->user();
+            
+            // Check access permission
+            if ($user->role !== 7 || $suratUnitManager->manager_id !== $user->id) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki akses ke surat ini');
+            }
+
+            // Load files relationship
+            $suratUnitManager->load('files');
+
+            // Gunakan view yang sama dengan manager biasa
+            return view('pages.surat_unit_manager.manager.show', compact('suratUnitManager'));
+        } catch (\Exception $e) {
+            Log::error('Error in SuratUnitManagerApprovalController@managerKeuanganShow: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat detail surat');
+        }
+    }
+
+    /**
+     * Proses persetujuan/rejection oleh manager keuangan
+     */
+    public function managerKeuanganApproval(Request $request, SuratUnitManager $suratUnitManager)
+    {
+        try {
+            $user = auth()->user();
+            
+            // Check access permission
+            if ($user->role !== 7 || $suratUnitManager->manager_id !== $user->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses untuk menyetujui surat ini'
+                ], 403);
+            }
+
+            // Check if surat is still pending
+            if ($suratUnitManager->status_manager !== 'pending') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Surat sudah diproses'
+                ], 422);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'action' => 'required|in:approve,reject',
+                'keterangan_manager' => 'nullable|string'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            DB::beginTransaction();
+
+            try {
+                $suratUnitManager->status_manager = $request->action === 'approve' ? 'approved' : 'rejected';
+                $suratUnitManager->keterangan_manager = $request->keterangan_manager;
+                $suratUnitManager->waktu_review_manager = now();
+                $suratUnitManager->save();
+
+                DB::commit();
+
+                $actionText = $request->action === 'approve' ? 'disetujui' : 'ditolak';
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => "Surat berhasil {$actionText}",
+                    'redirect_url' => route('surat-unit-manager.manager-keuangan.index')
+                ]);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Error in managerKeuanganApproval: ' . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat memproses persetujuan'
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error in SuratUnitManagerApprovalController@managerKeuanganApproval: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memproses persetujuan'
             ], 500);
         }
     }

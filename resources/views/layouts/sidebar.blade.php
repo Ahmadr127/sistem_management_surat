@@ -165,16 +165,30 @@
                                     <div class="ml-auto h-2 w-2 rounded-full bg-green-600"></div>
                                 @endif
                             </a>
-                        @elseif (Auth::user()->role === 4)
+                        @endif
+
+                        <!-- Surat Unit Manager untuk Manager -->
+                        @if (Auth::user()->role === 4)
                             <a href="{{ route('surat-unit-manager.manager.index') }}"
                                 class="flex items-center py-3 px-4 rounded-xl transition-all duration-200 group {{ Request::is('surat-unit-manager/manager*') ? 'bg-green-50 text-green-600' : 'text-gray-600 hover:bg-gray-50' }}">
                                 <i class="ri-briefcase-4-line text-xl {{ Request::is('surat-unit-manager/manager*') ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-600' }}"></i>
-                                <span class="ml-3 font-medium">Surat Unit Manager</span>
+                                <span class="ml-3 font-medium">Persetujuan Surat Unit</span>
                                 @if (Request::is('surat-unit-manager/manager*'))
                                     <div class="ml-auto h-2 w-2 rounded-full bg-green-600"></div>
                                 @endif
                             </a>
-                        @elseif (Auth::user()->role === 1)
+                        @endif
+
+                        <!-- Surat Unit Manager untuk Manager Keuangan -->
+                        @if (Auth::user()->role === 7)
+                            <a href="{{ route('surat-unit-manager.manager-keuangan.index') }}"
+                                class="flex items-center py-3 px-4 rounded-xl transition-all duration-200 group {{ Request::is('surat-unit-manager/manager-keuangan*') ? 'bg-green-50 text-green-600' : 'text-gray-600 hover:bg-gray-50' }}">
+                                <i class="ri-briefcase-4-line text-xl {{ Request::is('surat-unit-manager/manager-keuangan*') ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-600' }}"></i>
+                                <span class="ml-3 font-medium">Persetujuan Surat Unit</span>
+                                @if (Request::is('surat-unit-manager/manager-keuangan*'))
+                                    <div class="ml-auto h-2 w-2 rounded-full bg-green-600"></div>
+                                @endif
+                            </a>
                         @endif
 
                         <!-- Jadwal untuk Admin dan Direktur -->

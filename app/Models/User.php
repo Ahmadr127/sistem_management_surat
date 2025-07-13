@@ -184,10 +184,18 @@ class User extends Authenticatable
         return $this->role === 6;
     }
 
+    // /**
+    //  * Check if user is direktur administrasi keuangan
+    //  */
+    // public function isDirekturAdmKeuangan()
+    // {
+    //     return $this->role === 7;
+    // }
+
     /**
-     * Check if user is direktur administrasi keuangan
+     * Check if user is manager keuangan
      */
-    public function isDirekturAdmKeuangan()
+    public function isManagerKeuangan()
     {
         return $this->role === 7;
     }
@@ -197,7 +205,7 @@ class User extends Authenticatable
      */
     public function isConnectedToGeneralManager()
     {
-        return $this->role === 4 && $this->general_manager_id !== null;
+        return ($this->role === 4 || $this->role === 7) && $this->general_manager_id !== null;
     }
 
     /**
@@ -205,7 +213,7 @@ class User extends Authenticatable
      */
     public function isIndependentManager()
     {
-        return $this->role === 4 && $this->general_manager_id === null;
+        return ($this->role === 4 || $this->role === 7) && $this->general_manager_id === null;
     }
 
     /**
@@ -214,7 +222,7 @@ class User extends Authenticatable
     public function getConnectedManagers()
     {
         return $this->hasMany(User::class, 'general_manager_id')
-                    ->where('role', 4);
+                    ->whereIn('role', [4, 7]); // Include both Manager and Manager Keuangan
     }
 
     /**
@@ -222,7 +230,7 @@ class User extends Authenticatable
      */
     public static function getIndependentManagers()
     {
-        return self::where('role', 4)
+        return self::whereIn('role', [4, 7]) // Include both Manager and Manager Keuangan
                    ->whereNull('general_manager_id')
                    ->where('status_akun', 'aktif');
     }
@@ -240,7 +248,7 @@ class User extends Authenticatable
             4 => 'Manager',
             5 => 'Sekretaris ASP',
             6 => 'General Manager',
-            7 => 'Direktur Adm Keuangan'
+            7 => 'Manager Keuangan'
         ];
         return $roles[$this->role] ?? 'Unknown';
     }

@@ -76,7 +76,7 @@
                             <option value="1">Sekretaris</option>
                             <option value="5">Sekretaris ASP</option>
                             <option value="2">Direktur</option>
-                            <option value="7">Direktur Adm Keuangan</option>
+                            <option value="7">Manager Keuangan</option>
                             <option value="3">Admin</option>
                         </select>
                     </div>
@@ -315,7 +315,7 @@
                                                 <option value="1">Sekretaris</option>
                                                 <option value="5">Sekretaris ASP</option>
                                                 <option value="2">Direktur</option>
-                                                <option value="7">Direktur Adm Keuangan</option>
+                                                <option value="7">Manager Keuangan</option>
                                                 <option value="3">Admin</option>
                                             </select>
                                         </div>
@@ -375,6 +375,21 @@
                                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                                 General Manager
                                                 <span class="text-sm text-gray-500">(Opsional - kosongkan jika manager independen)</span>
+                                            </label>
+                                            <select x-model="formData.general_manager_id"
+                                                class="w-full px-4 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                                <option value="">Pilih General Manager (Opsional)</option>
+                                                <template x-for="generalManager in generalManagers" :key="generalManager.id">
+                                                    <option :value="generalManager.id" x-text="generalManager.name"></option>
+                                                </template>
+                                            </select>
+                                        </div>
+
+                                        <!-- General Manager untuk Manager Keuangan -->
+                                        <div x-show="formData.role == 7" class="col-span-2">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                General Manager
+                                                <span class="text-sm text-gray-500">(Opsional - kosongkan jika manager keuangan independen)</span>
                                             </label>
                                             <select x-model="formData.general_manager_id"
                                                 class="w-full px-4 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent">
@@ -510,7 +525,7 @@
                 },
 
                 formatRole(role) {
-                    const roles = { 0: 'Staff', 1: 'Sekretaris', 2: 'Direktur', 3: 'Admin', 4: 'Manager', 5: 'Sekretaris ASP', 6: 'General Manager', 7: 'Direktur Adm Keuangan' };
+                    const roles = { 0: 'Staff', 1: 'Sekretaris', 2: 'Direktur', 3: 'Admin', 4: 'Manager', 5: 'Sekretaris ASP', 6: 'General Manager', 7: 'Manager Keuangan' };
                     return roles[role] || 'Unknown';
                 },
 

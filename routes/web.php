@@ -346,4 +346,13 @@ Route::middleware(['auth', 'checkRole:4'])->group(function () {
     });
 });
 
+// Route khusus untuk manager keuangan (role 7) - fitur dasar manager
+Route::middleware(['auth', 'checkRole:7'])->group(function () {
+    Route::prefix('surat-unit-manager/manager-keuangan')->name('surat-unit-manager.manager-keuangan.')->group(function () {
+        Route::get('/', [SuratUnitManagerApprovalController::class, 'managerKeuanganIndex'])->name('index');
+        Route::get('/{suratUnitManager}', [SuratUnitManagerApprovalController::class, 'managerKeuanganShow'])->name('show');
+        Route::post('/{suratUnitManager}/approval', [SuratUnitManagerApprovalController::class, 'managerKeuanganApproval'])->name('approval');
+    });
+});
+
 

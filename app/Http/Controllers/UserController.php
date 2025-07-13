@@ -294,11 +294,11 @@ class UserController extends Controller
     }
 
     /**
-     * Get independent managers (not connected to general manager)
+     * Get independent managers (not connected to any general manager)
      */
     public function getIndependentManagers()
     {
-        $independentManagers = User::where('role', 4)
+        $independentManagers = User::whereIn('role', [4, 7]) // Include both Manager and Manager Keuangan
             ->whereNull('general_manager_id')
             ->where('status_akun', 'aktif')
             ->select('id', 'name', 'username')
@@ -312,7 +312,7 @@ class UserController extends Controller
      */
     public function getConnectedManagers($generalManagerId)
     {
-        $connectedManagers = User::where('role', 4)
+        $connectedManagers = User::whereIn('role', [4, 7]) // Include both Manager and Manager Keuangan
             ->where('general_manager_id', $generalManagerId)
             ->where('status_akun', 'aktif')
             ->select('id', 'name', 'username')
