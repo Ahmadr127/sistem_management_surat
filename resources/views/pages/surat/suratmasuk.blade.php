@@ -252,6 +252,10 @@
                             <p class="text-sm font-medium text-gray-500">Tujuan Disposisi</p>
                             <div id="detail-tujuan-disposisi" class="text-sm text-gray-700">
                                 <p>Belum ada tujuan disposisi</p>
+                                {{-- Tombol hanya muncul jika user adalah tujuan disposisi, logika blade/JS bisa disesuaikan --}}
+                                @if(auth()->check() && isset($userAdalahPenerimaDisposisi) && $userAdalahPenerimaDisposisi)
+                                    <button type="button" onclick="openKeteranganPenerimaModal({{ $disposisiId }}, '{{ $keteranganPenerima ?? '' }}')" class="mt-2 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Isi Keterangan Saya</button>
+                                @endif
                             </div>
                         </div>
 
@@ -429,6 +433,18 @@
         </div>
     </div>
 
+    <!-- Modal Keterangan Penerima Disposisi -->
+    <div id="keterangan-penerima-modal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-40 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+            <h3 class="text-lg font-semibold mb-4">Keterangan Anda sebagai Penerima Disposisi</h3>
+            <textarea id="keterangan-penerima-input" rows="4" class="w-full border rounded p-2 mb-4" placeholder="Tulis keterangan Anda di sini..."></textarea>
+            <div class="flex justify-end space-x-2">
+                <button type="button" onclick="closeKeteranganPenerimaModal()" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Batal</button>
+                <button type="button" onclick="simpanKeteranganPenerima()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Simpan</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript untuk mengelola data dan interaksi -->
     <script>
         // Definisikan suratData sebagai variabel global
@@ -528,6 +544,9 @@
                 } else if (userRole === 2) { // Direktur
                     console.log('Role Direktur: Mengambil data dengan status sekretaris approved');
                     params.append('status_sekretaris', 'approved');
+                } else if (userRole === 8) { // Direktur ASP
+                    console.log('Role Direktur ASP: Mengambil data dengan status sekretaris approved');
+                    params.append('status_sekretaris_asp', 'approved');
                 }
 
                 url = `${url}?${params.toString()}`;
@@ -617,6 +636,19 @@
 
                                 return isTujuanDisposisi || isCreatedByUser;
                             });
+                        } else if (userRole === 8) { // Direktur ASP
+                            console.log('Filtering data for Direktur ASP');
+                            filteredData = data.filter(surat => {
+                                // Cek apakah user adalah tujuan disposisi
+                                const isTujuanDisposisi = surat.disposisi?.tujuan?.some(
+                                    tujuan => tujuan.id === {{ auth()->id() }}
+                                );
+
+                                // Cek apakah surat dibuat oleh user
+                                const isCreatedByUser = surat.created_by === {{ auth()->id() }};
+
+                                return isTujuanDisposisi || isCreatedByUser;
+                            });
                         }
 
                         console.log('Filtered data:', filteredData);
@@ -650,15 +682,23 @@
 
                 if (!Array.isArray(data) || data.length === 0) {
                     tableBody.innerHTML = `
-                        <tr>
-                            <td colspan="9" class="text-center py-10">
-                                <div class="flex flex-col items-center justify-center">
-                                    <i class="ri-inbox-line text-gray-400 text-3xl mb-3"></i>
-                                    <p class="text-gray-500 font-medium">Belum ada surat masuk</p>
-                                    <p class="text-gray-400 text-sm mt-1">Surat masuk akan muncul di sini</p>
-                                </div>
-                            </td>
-                        </tr>
+                        <td class="px-2 py-2 whitespace-nowrap text-sm font-medium">
+    <div class="flex flex-wrap gap-2">
+        <button onclick="showDetail(${surat.id})" class="inline-flex items-center px-2.5 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 rounded-md transition-colors duration-200" title="Lihat Detail">
+            <i class="ri-eye-line mr-1"></i> Detail
+        </button>
+        ${(userRole === 1 || userRole === 2 || userRole === 5 || userRole === 6 || userRole === 7 || userRole === 8) ? `
+            <button onclick="editDisposisi(${surat.id})" class="inline-flex items-center px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md transition-colors duration-200" title="Edit Disposisi">
+                <i class="ri-file-edit-line mr-1"></i> Disposisi
+            </button>
+        ` : ''}
+        ${(surat.user_adalah_penerima_disposisi && surat.disposisi_id) ? `
+            <button type="button" onclick="openKeteranganPenerimaModal(${surat.disposisi_id}, '${surat.keterangan_penerima ? surat.keterangan_penerima.replace(/'/g, "\\'") : ''}')" class="inline-flex items-center px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors duration-200" title="Isi Keterangan Saya">
+                <i class='ri-edit-2-line mr-1'></i> Isi Keterangan Saya
+            </button>
+        ` : ''}
+    </div>
+</td>
                     `;
                     paginationContainer.innerHTML = '';
                     return;
@@ -736,7 +776,7 @@
                                         <i class="ri-eye-line mr-1"></i> Detail
                                     </button>
 
-                                    ${(userRole === 1 || userRole === 2 || userRole === 5 || userRole === 6 || userRole === 7) ? `
+                                    ${(userRole === 1 || userRole === 2 || userRole === 5 || userRole === 6 || userRole === 7 || userRole === 8) ? `
                                         <button onclick="editDisposisi(${surat.id})" class="inline-flex items-center px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md transition-colors duration-200" title="Edit Disposisi">
                                             <i class="ri-file-edit-line mr-1"></i> Disposisi
                                         </button>
@@ -1001,12 +1041,21 @@
 
                                     // Setup event listener untuk status_dirut
                                     setupStatusDirectorChangeHandler();
+                                } else if (userRole === 8) { // Direktur ASP
+                                    document.getElementById('sekretaris-section').classList.add('hidden');
+                                    document.getElementById('direktur-section').classList.remove('hidden');
 
-                                    // Initial visibility setup based on current status
-                                    toggleTujuanDisposisiVisibility(statusDirut);
+                                    // Isi field direktur
+                                    const statusDirut = data.disposisi.status_dirut || 'pending';
+                                    document.getElementById('status_dirut').value = statusDirut;
 
-                                    // Muat tujuan disposisi
-                                    loadDisposisiUsers(data.disposisi.id);
+                                    // Setup event listener untuk status_dirut
+                                    setupStatusDirectorChangeHandler();
+
+                                    // Panggil loadDisposisiUsers agar tujuan disposisi tampil
+                                    if (data.disposisi.id) {
+                                        loadDisposisiUsers(data.disposisi.id);
+                                    }
                                 }
                             } else {
                                 alert('Data disposisi tidak ditemukan');
@@ -1176,7 +1225,10 @@
                                 roleLabel = '<span class="inline-flex px-2 text-xs font-semibold bg-indigo-100 text-indigo-800 rounded-full ml-1">General Manager</span>';
                                 break;
                             case 7:
-                                roleLabel = '<span class="inline-flex px-2 text-xs font-semibold bg-teal-100 text-teal-800 rounded-full ml-1">Manager Keuangan</span>';
+                                roleLabel = '<span class="inline-flex px-2 text-xs font-semibold bg-red-100 text-red-800 rounded-full ml-1">Manager Keuangan</span>';
+                                break;
+                            case 8:
+                                roleLabel = '<span class="inline-flex px-2 text-xs font-semibold bg-teal-100 text-teal-800 rounded-full ml-1">Direktur ASP</span>';
                                 break;
                         }
                     }
@@ -1385,6 +1437,48 @@
 
                     console.log('Direktor Status:', direktorStatus);
                     console.log('Direktor Keterangan:', direktorKeterangan);
+
+                    // Debug tujuan disposisi container
+                    const container = document.getElementById('tujuan-disposisi-container');
+                    console.log('Tujuan container exists:', !!container);
+                    if (container) {
+                        console.log('Tujuan container HTML:', container.innerHTML.substring(0, 100) + '...');
+                    }
+
+                    // Ambil tujuan disposisi yang dipilih
+                    const allCheckboxes = document.querySelectorAll('.tujuan-disposisi-checkbox');
+                    const tujuanCheckboxes = document.querySelectorAll('.tujuan-disposisi-checkbox:checked');
+
+                    console.log('All checkboxes selector:', '.tujuan-disposisi-checkbox');
+                    console.log('Total checkboxes found:', allCheckboxes.length);
+                    console.log('All checkboxes IDs:', Array.from(allCheckboxes).map(cb => cb.id));
+                    console.log('Checked checkboxes found:', tujuanCheckboxes.length);
+                    console.log('Checked checkboxes IDs:', Array.from(tujuanCheckboxes).map(cb => cb.id));
+
+                    // Gunakan tujuanCheckboxes untuk disposisi jika ada, jika tidak gunakan window.selectedUserIds
+                    let tujuanIds = Array.from(tujuanCheckboxes).map(cb => cb.value);
+
+                    // Fallback ke window.selectedUserIds jika tidak ada checkbox yang dipilih tetapi ada selectedUserIds
+                    if (tujuanIds.length === 0 && window.selectedUserIds && window.selectedUserIds.length > 0) {
+                        console.log('Menggunakan window.selectedUserIds sebagai fallback:', window.selectedUserIds);
+                        tujuanIds = window.selectedUserIds;
+                    }
+
+                    // Tambahkan setiap ID tujuan ke formData
+                    tujuanIds.forEach(id => {
+                        formData.append('tujuan_disposisi[]', id);
+                    });
+
+                    console.log('Tujuan disposisi yang dipilih:', tujuanIds);
+                } else if (userRole === 8) { // Direktur ASP
+                    const direktorStatus = document.getElementById('status_dirut').value;
+                    const direktorKeterangan = document.getElementById('keterangan_dirut').value;
+
+                    formData.append('status_dirut', direktorStatus);
+                    formData.append('keterangan_dirut', direktorKeterangan);
+
+                    console.log('Direktur ASP Status:', direktorStatus);
+                    console.log('Direktur ASP Keterangan:', direktorKeterangan);
 
                     // Debug tujuan disposisi container
                     const container = document.getElementById('tujuan-disposisi-container');
@@ -1927,6 +2021,50 @@
             } else {
                 noFileText.style.display = 'inline';
             }
+        }
+
+        // Modal Keterangan Penerima Disposisi
+        let currentDisposisiId = null;
+        function openKeteranganPenerimaModal(disposisiId, keteranganLama = '') {
+            currentDisposisiId = disposisiId;
+            // Ambil keterangan lama dari API
+            fetch(`/api/disposisi/${disposisiId}/tujuan`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.tujuan) {
+                        const user = data.tujuan.find(u => u.id == {{ auth()->id() }});
+                        document.getElementById('keterangan-penerima-input').value = user && user.pivot && user.pivot.keterangan_penerima ? user.pivot.keterangan_penerima : '';
+                    } else {
+                        document.getElementById('keterangan-penerima-input').value = '';
+                    }
+                    document.getElementById('keterangan-penerima-modal').classList.remove('hidden');
+                });
+        }
+        function closeKeteranganPenerimaModal() {
+            document.getElementById('keterangan-penerima-modal').classList.add('hidden');
+            document.getElementById('keterangan-penerima-input').value = '';
+        }
+        function simpanKeteranganPenerima() {
+            const keterangan = document.getElementById('keterangan-penerima-input').value;
+            fetch(`/api/disposisi/${currentDisposisiId}/keterangan-penerima`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ keterangan_penerima: keterangan })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Keterangan berhasil disimpan!');
+                    closeKeteranganPenerimaModal();
+                } else {
+                    alert('Gagal menyimpan keterangan: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(() => alert('Gagal menyimpan keterangan (network error)'));
         }
     </script>
 @endsection

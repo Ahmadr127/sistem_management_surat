@@ -119,7 +119,7 @@
             @endif
 
             <!-- Transaksi Dropdown (Untuk Staff, Admin, Direktur, Super Admin, dan Manager) -->
-            @if (in_array(Auth::user()->role, [0,1,2,3,4,6,7]))
+            @if (in_array(Auth::user()->role, [0,1,2,3,4,6,7,8]))
                 <div class="relative" x-data="{ open: {{ Request::is('disposisi*', 'suratkeluar*', 'jadwal*') ? 'true' : 'false' }} }">
                     <button @click="open = !open"
                         class="w-full flex items-center py-3 px-4 rounded-xl transition-all duration-200 group text-gray-600 hover:bg-gray-50">
@@ -144,7 +144,7 @@
                         </a>
 
                         <!-- Surat Keluar untuk Staff, Admin, Super Admin, dan Manager (bukan Direktur dan Unit) -->
-                        @if (in_array(Auth::user()->role, [1, 3, 4, 6, 7]))
+                        @if (in_array(Auth::user()->role, [1, 3, 4, 6, 7, 8]))
                             <a href="{{ route('suratkeluar.index') }}"
                                 class="flex items-center py-2 px-4 rounded-lg transition-all duration-200 {{ Request::is('suratkeluar*') ? 'text-green-600 bg-green-50' : 'text-gray-600 hover:bg-gray-50' }}">
                                 <i class="ri-send-plane-line text-lg mr-3"></i>
@@ -199,7 +199,7 @@
         </div>
 
         <!-- Menu Lainnya (untuk semua role) -->
-        @if (in_array(Auth::user()->role, [0,1,2,3,4,6,7]))
+        @if (in_array(Auth::user()->role, [0,1,2,3,4,6,7,8]))
             <div class="px-4 mb-4 mt-8">
                 <p class="text-xs font-bold text-green-600 uppercase tracking-wider">Lainnya</p>
             </div>

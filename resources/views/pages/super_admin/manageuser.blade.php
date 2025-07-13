@@ -77,6 +77,7 @@
                             <option value="5">Sekretaris ASP</option>
                             <option value="2">Direktur</option>
                             <option value="7">Manager Keuangan</option>
+                            <option value="8">Direktur ASP</option>
                             <option value="3">Admin</option>
                         </select>
                     </div>
@@ -149,7 +150,8 @@
                                                 'bg-orange-100 text-orange-800': user.role === 4,
                                                 'bg-pink-100 text-pink-800': user.role === 5,
                                                 'bg-indigo-100 text-indigo-800': user.role === 6,
-                                                'bg-teal-100 text-teal-800': user.role === 7
+                                                'bg-teal-100 text-teal-800': user.role === 7,
+                                                'bg-cyan-100 text-cyan-800': user.role === 8
                                             }"
                                             x-text="formatRole(user.role)">
                                         </span>
@@ -316,6 +318,7 @@
                                                 <option value="5">Sekretaris ASP</option>
                                                 <option value="2">Direktur</option>
                                                 <option value="7">Manager Keuangan</option>
+                                                <option value="8">Direktur ASP</option>
                                                 <option value="3">Admin</option>
                                             </select>
                                         </div>
@@ -525,7 +528,7 @@
                 },
 
                 formatRole(role) {
-                    const roles = { 0: 'Staff', 1: 'Sekretaris', 2: 'Direktur', 3: 'Admin', 4: 'Manager', 5: 'Sekretaris ASP', 6: 'General Manager', 7: 'Manager Keuangan' };
+                    const roles = { 0: 'Staff', 1: 'Sekretaris', 2: 'Direktur', 3: 'Admin', 4: 'Manager', 5: 'Sekretaris ASP', 6: 'General Manager', 7: 'Manager Keuangan', 8: 'Direktur ASP' };
                     return roles[role] || 'Unknown';
                 },
 

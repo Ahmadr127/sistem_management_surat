@@ -78,6 +78,13 @@
                                             <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
                                             Generate Nomor ASP
                                         </button>
+                                    @elseif (auth()->user()->role === 8)
+                                        <!-- Untuk Direktur ASP (role 8): hanya tampilkan Generate Nomor ASP -->
+                                        <button type="button" id="generateNomorAspBtn"
+                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 group">
+                                            <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                                            Generate Nomor ASP
+                                        </button>
                                     @elseif (auth()->user()->role === 0 || auth()->user()->role === 3 || auth()->user()->role === 4)
                                         <!-- Untuk Staff (role 0), Admin (role 3), atau Manager (role 4): tampilkan Generate Nomor biasa -->
                                         <button type="button" id="generateNomorBtn"
@@ -125,7 +132,7 @@
                         <!-- Jenis Surat -->
                         @if (auth()->user()->role === 0 || auth()->user()->role === 3 || auth()->user()->role === 4)
                             <input type="hidden" name="jenis_surat" id="jenis_surat" value="internal">
-                        @elseif (auth()->user()->role === 1 || auth()->user()->role === 5)
+                        @elseif (auth()->user()->role === 1 || auth()->user()->role === 5 || auth()->user()->role === 8)
                             <div class="space-y-2">
                                 <label class="text-sm font-semibold text-gray-800">Jenis Surat</label>
                                 <div class="relative">
@@ -265,6 +272,11 @@
                         <input type="hidden" name="status_sekretaris_default" value="approved">
                     @endif
                     
+                    <!-- Hidden input untuk status default Direktur ASP -->
+                    @if (auth()->user()->role === 8)
+                        <input type="hidden" name="status_sekretaris_default" value="approved">
+                    @endif
+                    
                     <!-- Tujuan Disposisi (Multiple Select dengan Search) -->
                     <div class="space-y-2 mt-4">
                         <label class="text-sm font-semibold text-gray-800">Tujuan Disposisi</label>
@@ -300,7 +312,7 @@
                                             $allowedRolesAsp = [1, 2, 6, 7]; // Sekretaris, Dirut, GM, Keuangan
                                         @endphp
                                         @foreach ($users as $user)
-                                            @if ((auth()->user()->role === 5 && in_array($user->role, $allowedRolesAsp)) || auth()->user()->role !== 5 && in_array($user->role, [1,2,4,5]))
+                                            @if ((auth()->user()->role === 5 && in_array($user->role, $allowedRolesAsp)) || auth()->user()->role !== 5 && in_array($user->role, [1,2,4,5,8]))
                                                 <div class="flex items-center py-1.5 px-2 hover:bg-gray-50 rounded-md user-selection-item">
                                                     <input type="checkbox" id="user-{{ $user->id }}"
                                                         name="tujuan_disposisi[]" value="{{ $user->id }}"
@@ -551,6 +563,36 @@
                     } else {
                         perusahaanHidden.value = '';
                     }
+                } else if (userRole === 8) { // Direktur ASP (role 8)
+                    // Untuk Direktur ASP: selalu tampilkan Generate Nomor ASP
+                    if (generateNomorBtn) {
+                        generateNomorBtn.style.display = 'none'; // Sembunyikan Generate Nomor biasa
+                    }
+                    if (generateNomorAspBtn) {
+                        generateNomorAspBtn.style.display = 'inline-flex';
+                        //generateNomorAspBtn.onclick = generateNomorAsp;
+                    }
+                    nomorSuratInput.readOnly = false;
+                    nomorSuratInput.placeholder = "Nomor surat akan digenerate otomatis";
+                    nomorSuratInput.value = "";
+                    nomorSuratInput.classList.remove('bg-gray-50');
+                    nomorSuratInput.classList.add('bg-white');
+                    // Info text
+                    const nomorSuratContainer = nomorSuratInput.closest('.space-y-2');
+                    let infoText = nomorSuratContainer?.querySelector('.text-xs.text-gray-500');
+                    if (infoText) {
+                        infoText.innerHTML = `
+                            <i class="ri-information-line mr-1"></i>
+                            Gunakan Generate Nomor ASP untuk membuat nomor surat ASP.
+                        `;
+                    }
+                    
+                    // Set perusahaan otomatis untuk ASP
+                    if (this.value === 'internal') {
+                        perusahaanHidden.value = 'ASP';
+                    } else {
+                        perusahaanHidden.value = '';
+                    }
                 } else if (userRole === 0 || userRole === 3 || userRole === 4) { // Staff/unit, Admin, atau Manager
                     if (this.value === 'internal') {
                         if (generateNomorBtn) {
@@ -609,6 +651,8 @@
             if (jenisSuratSelect.value === 'internal') {
                 if (userRole === 5) {
                     perusahaanHidden.value = 'ASP'; // Untuk Sekretaris ASP
+                } else if (userRole === 8) {
+                    perusahaanHidden.value = 'ASP'; // Untuk Direktur ASP
                 } else {
                     perusahaanHidden.value = 'RSAZRA'; // Untuk role lain
                 }
@@ -630,6 +674,24 @@
                 }
                 
                 console.log("Sekretaris ASP configuration applied - Generate Nomor ASP button enabled");
+            }
+            
+            // Logic khusus untuk role 8 (Direktur ASP)
+            if (userRole === 8) {
+                // Pastikan Generate Nomor ASP selalu terlihat untuk Direktur ASP
+                const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
+                if (generateNomorAspBtn) {
+                    generateNomorAspBtn.style.display = 'inline-flex';
+                    //generateNomorAspBtn.onclick = generateNomorAsp;
+                }
+                
+                // Sembunyikan Generate Nomor biasa untuk Direktur ASP
+                const generateNomorBtn = document.getElementById('generateNomorBtn');
+                if (generateNomorBtn) {
+                    generateNomorBtn.style.display = 'none';
+                }
+                
+                console.log("Direktur ASP configuration applied - Generate Nomor ASP button enabled");
             }
             
             // Logic khusus untuk role 4 (Manager)
@@ -941,6 +1003,13 @@
                 generateNomorAspBtn.style.display = 'inline-flex';
                 //generateNomorAspBtn.onclick = generateNomorAsp;
                 console.log("Generate Nomor ASP button configured for Sekretaris ASP role.");
+            }
+            
+            // Untuk role 8 (Direktur ASP), pastikan button selalu terlihat dan berfungsi
+            if (userRole === 8) {
+                generateNomorAspBtn.style.display = 'inline-flex';
+                //generateNomorAspBtn.onclick = generateNomorAsp;
+                console.log("Generate Nomor ASP button configured for Direktur ASP role.");
             }
         }
 

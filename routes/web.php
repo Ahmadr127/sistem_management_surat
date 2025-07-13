@@ -67,7 +67,7 @@ Route::middleware(['auth', 'checkUserStatus'])->group(function () {
 });
 
 // Route untuk admin, staff, direktur, super admin dan manager
-Route::middleware(['auth', 'checkRole:0,1,2,3,4,5,7'])->group(function () {
+Route::middleware(['auth', 'checkRole:0,1,2,3,4,5,7,8'])->group(function () {
     // Laporan routes should use LaporanController
     Route::get('/laporan/disposisi-status/{disposisi}', [DisposisiController::class, 'updateStatus'])
         ->name('laporan.disposisi.status.update');
@@ -138,7 +138,7 @@ Route::middleware(['auth', 'checkRole:0,1,2,3,4,5,7'])->group(function () {
 });
 
 // Route khusus untuk admin dan direktur
-Route::middleware(['auth', 'checkRole:1,2,5,7'])->group(function () {
+Route::middleware(['auth', 'checkRole:1,2,5,7,8'])->group(function () {
     // App
     Route::get('/app', function () {
         return view('home');
@@ -354,5 +354,8 @@ Route::middleware(['auth', 'checkRole:7'])->group(function () {
         Route::post('/{suratUnitManager}/approval', [SuratUnitManagerApprovalController::class, 'managerKeuanganApproval'])->name('approval');
     });
 });
+
+Route::post('/api/disposisi/{id}/keterangan-penerima', [App\Http\Controllers\DisposisiController::class, 'updateKeteranganPenerima'])->name('api.disposisi.keterangan-penerima');
+Route::post('/api/disposisi/{id}/keterangan-pengirim', [App\Http\Controllers\DisposisiController::class, 'updateKeteranganPengirim'])->name('api.disposisi.keterangan-pengirim');
 
 

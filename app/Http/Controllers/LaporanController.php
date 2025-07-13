@@ -150,6 +150,8 @@ class LaporanController extends Controller
             \Log::info("No additional filter for sekretaris role");
         } elseif ($user->role == 2) { // Direktur - can see all
             \Log::info("No additional filter for direktur role");
+        } elseif ($user->role == 8) { // Direktur ASP - can see all
+            \Log::info("No additional filter for direktur ASP role");
         }
         
         $result = $query->get();
@@ -221,6 +223,8 @@ class LaporanController extends Controller
             \Log::info("No additional filter for sekretaris role");
         } elseif ($user->role == 2) { // Direktur
             \Log::info("No additional filter for direktur role");
+        } elseif ($user->role == 8) { // Direktur ASP
+            \Log::info("No additional filter for direktur ASP role");
         }
         
         $result = $query->get();

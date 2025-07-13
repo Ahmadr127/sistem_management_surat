@@ -201,6 +201,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user is direktur ASP
+     */
+    public function isDirekturAsp()
+    {
+        return $this->role === 8;
+    }
+
+    /**
      * Check if manager is connected to general manager
      */
     public function isConnectedToGeneralManager()
@@ -248,7 +256,8 @@ class User extends Authenticatable
             4 => 'Manager',
             5 => 'Sekretaris ASP',
             6 => 'General Manager',
-            7 => 'Manager Keuangan'
+            7 => 'Manager Keuangan',
+            8 => 'Direktur ASP'
         ];
         return $roles[$this->role] ?? 'Unknown';
     }

@@ -62,7 +62,8 @@ class Disposisi extends Model
     public function tujuan()
     {
         return $this->belongsToMany(User::class, 'tbl_disposisi_user', 'disposisi_id', 'user_id')
-            ->withTimestamps();
+            ->withTimestamps()
+            ->withPivot('keterangan_penerima');
     }
 
     /**

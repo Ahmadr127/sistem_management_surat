@@ -292,6 +292,12 @@ class DisposisiController extends Controller
                     $suratKeluar->catatan_direktur = $request->catatan;
                     $suratKeluar->save();
                 }
+                else if ($user->role == 8) { // Direktur ASP
+                    \Log::info('Update status sebagai Direktur ASP');
+                    $suratKeluar->status_direktur = $request->status;
+                    $suratKeluar->catatan_direktur = $request->catatan;
+                    $suratKeluar->save();
+                }
                 
                 DB::commit();
                 
@@ -540,6 +546,67 @@ class DisposisiController extends Controller
     }
 
     /**
+     * Update keterangan penerima disposisi oleh user tujuan
+     */
+    public function updateKeteranganPenerima(Request $request, $id)
+    {
+        \Log::debug('updateKeteranganPenerima - Mulai', [
+            'disposisi_id' => $id,
+            'user_id' => auth()->id(),
+            'request_all' => $request->all(),
+            'headers' => $request->headers->all(),
+            'ip' => $request->ip(),
+        ]);
+        try {
+            $userId = auth()->id();
+            $keterangan = $request->input('keterangan_penerima');
+            \Log::debug('updateKeteranganPenerima - Cek tujuan', [
+                'user_id' => $userId,
+                'disposisi_id' => $id,
+                'keterangan_penerima' => $keterangan
+            ]);
+            // Pastikan user adalah tujuan disposisi
+            $isTujuan = \DB::table('tbl_disposisi_user')
+                ->where('disposisi_id', $id)
+                ->where('user_id', $userId)
+                ->exists();
+            \Log::debug('updateKeteranganPenerima - isTujuan', [
+                'isTujuan' => $isTujuan
+            ]);
+            if (!$isTujuan) {
+                \Log::warning('updateKeteranganPenerima - User bukan tujuan disposisi', [
+                    'user_id' => $userId,
+                    'disposisi_id' => $id
+                ]);
+                return response()->json(['success' => false, 'message' => 'Anda bukan tujuan disposisi ini'], 403);
+            }
+            $affected = \DB::table('tbl_disposisi_user')
+                ->where('disposisi_id', $id)
+                ->where('user_id', $userId)
+                ->update(['keterangan_penerima' => $keterangan]);
+            \Log::info('updateKeteranganPenerima - Update keterangan_penerima', [
+                'affected_rows' => $affected,
+                'user_id' => $userId,
+                'disposisi_id' => $id,
+                'keterangan_penerima' => $keterangan
+            ]);
+            return response()->json(['success' => true, 'message' => 'Keterangan penerima berhasil disimpan']);
+        } catch (\Exception $e) {
+            \Log::error('updateKeteranganPenerima - Exception', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => auth()->id(),
+                'disposisi_id' => $id,
+                'request_all' => $request->all()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Get tujuan disposisi along with available users for selection
      */
     public function getTujuanDisposisiWithUsers($id)
@@ -557,7 +624,7 @@ class DisposisiController extends Controller
                 
             // Get all available users including both staff (role 0) and admin (role 3)
             $availableUsers = User::where('status_akun', 'aktif')
-                ->whereIn('role', [1, 4, 5]) // Hanya Sekretaris (1), Manager (4), dan Sekretaris ASP (5)
+                ->whereIn('role', [1, 2, 4, 5, 6, 7, 8]) // Tambahkan role 2 (Direktur) dan role lain jika perlu
                 ->where('id', '!=', auth()->id()) // Exclude current user
                 ->select('id', 'name', 'jabatan_id', 'email', 'role')
                 ->with('jabatan:id,nama_jabatan')
@@ -603,6 +670,24 @@ class DisposisiController extends Controller
                 'success' => false,
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    public function updateKeteranganPengirim(Request $request, $id)
+    {
+        try {
+            $disposisi = \App\Models\Disposisi::findOrFail($id);
+            $keterangan = $request->input('keterangan_pengirim');
+            $disposisi->keterangan_pengirim = $keterangan;
+            $disposisi->save();
+            \Log::info('updateKeteranganPengirim - Update keterangan_pengirim', [
+                'disposisi_id' => $id,
+                'keterangan_pengirim' => $keterangan
+            ]);
+            return response()->json(['success' => true, 'message' => 'Keterangan pengirim berhasil disimpan']);
+        } catch (\Exception $e) {
+            \Log::error('updateKeteranganPengirim error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 }

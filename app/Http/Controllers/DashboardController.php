@@ -74,6 +74,12 @@ class DashboardController extends Controller
                       ->orWhereRaw('LOWER(status_dirut) = ?', ['rejected']);
                 })->get(['id', 'status_sekretaris', 'status_dirut']);
                 Log::info('Disposisi selesai by dirut (all):', $disposisiSelesai->toArray());
+            } else if ($user->role == 8) { // direktur ASP
+                $disposisiSelesai = Disposisi::where(function($q) {
+                    $q->whereRaw('LOWER(status_dirut) = ?', ['approved'])
+                      ->orWhereRaw('LOWER(status_dirut) = ?', ['rejected']);
+                })->get(['id', 'status_sekretaris', 'status_dirut']);
+                Log::info('Disposisi selesai by dirut ASP (all):', $disposisiSelesai->toArray());
             } else {
                 $disposisiUser = Disposisi::whereHas('tujuan', function($q) use ($user) {
                     $q->where('users.id', $user->id);

@@ -45,6 +45,15 @@ class UserSeeder extends Seeder
                     'status_akun' => 'aktif',
                 ],
                 [
+                    'name' => 'Direktur ASP',
+                    'username' => 'dirut_asp',
+                    'email' => 'dirut_asp@gmail.com',
+                    'password' => Hash::make('123'),
+                    'role' => 8,
+                    'jabatan_id' => $jabatanDirut->id,
+                    'status_akun' => 'aktif',
+                ],
+                [
                     'name' => 'Sekretaris',
                     'username' => 'sekretaris',
                     'email' => 'sekretaris@gmail.com',

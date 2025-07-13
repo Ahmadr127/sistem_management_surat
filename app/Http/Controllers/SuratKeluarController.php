@@ -195,6 +195,9 @@ class SuratKeluarController extends Controller
                         if ($pengirimRole == 5) { // Sekretaris ASP
                             $disposisi->status_sekretaris = 'approved';
                             $disposisi->status_dirut = 'pending';
+                        } elseif ($pengirimRole == 8) { // Direktur ASP
+                            $disposisi->status_sekretaris = 'approved';
+                            $disposisi->status_dirut = 'pending';
                         } elseif ($isAntarManSek) {
                             $disposisi->status_sekretaris = 'approved';
                             $disposisi->status_dirut = 'approved';
@@ -439,6 +442,9 @@ class SuratKeluarController extends Controller
                 
                 // Set status based on user role
                 if (auth()->user()->role == 5) { // Sekretaris ASP
+                    $disposisi->status_sekretaris = 'approved';
+                    $disposisi->status_dirut = 'pending';
+                } elseif (auth()->user()->role == 8) { // Direktur ASP
                     $disposisi->status_sekretaris = 'approved';
                     $disposisi->status_dirut = 'pending';
                 } elseif (auth()->user()->role == 1) { // Sekretaris
