@@ -417,11 +417,11 @@ class DisposisiController extends Controller
             
             $disposisi = Disposisi::findOrFail($id);
             
-            // Get users who are the target of the disposisi
+            // Get users who are the target of the disposisi with keterangan_penerima
             $tujuan = $disposisi->tujuan()
                 ->select('users.id', 'users.name', 'users.jabatan_id', 'users.email')
                 ->with('jabatan:id,nama_jabatan')
-                ->paginate(10);
+                ->get();
             
             \Log::info('Data tujuan disposisi ditemukan: ' . $tujuan->count());
             

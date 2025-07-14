@@ -312,7 +312,7 @@
                                             $allowedRolesAsp = [1, 2, 6, 7]; // Sekretaris, Dirut, GM, Keuangan
                                         @endphp
                                         @foreach ($users as $user)
-                                            @if ((auth()->user()->role === 5 && in_array($user->role, $allowedRolesAsp)) || auth()->user()->role !== 5 && in_array($user->role, [1,2,4,5,8]))
+                                            @if ((auth()->user()->role === 5 && in_array($user->role, $allowedRolesAsp)) || auth()->user()->role !== 5 && in_array($user->role, [1,2,4,5,7,8]))
                                                 <div class="flex items-center py-1.5 px-2 hover:bg-gray-50 rounded-md user-selection-item">
                                                     <input type="checkbox" id="user-{{ $user->id }}"
                                                         name="tujuan_disposisi[]" value="{{ $user->id }}"

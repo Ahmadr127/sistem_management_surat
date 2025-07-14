@@ -187,17 +187,39 @@ class SuratKeluarController extends Controller
                         
                         // --- LOGIKA BARU: Surat antar manager/sekretaris tanpa approval ---
                         $tujuanIds = (array) $request->tujuan_disposisi;
-                        $tujuanRoles = User::whereIn('id', $tujuanIds)->pluck('role')->toArray();
+                        $tujuanRoles = User::whereIn('id', $tujuanIds)->pluck('role', 'id')->toArray();
                         $pengirimRole = auth()->user()->role;
+                        $pengirim = auth()->user();
+
+                        // Cek logika khusus manager ke GM atau manager keuangan
+                        $isManagerToGMKeu = false;
+                        if ($pengirimRole == 4 && $pengirim->general_manager_id) {
+                            $hasGM = false;
+                            $hasKeuangan = false;
+                            foreach ($tujuanRoles as $id => $role) {
+                                if ($role == 6 && $id == $pengirim->general_manager_id) {
+                                    $hasGM = true;
+                                }
+                                if ($role == 7) {
+                                    $hasKeuangan = true;
+                                }
+                            }
+                            if ($hasGM || $hasKeuangan) {
+                                $isManagerToGMKeu = true;
+                            }
+                        }
+
                         $isAntarManSek = in_array($pengirimRole, [1,4]) && collect($tujuanRoles)->every(fn($r) => in_array($r, [1,4]));
-                        
-                        // Logic untuk Sekretaris ASP (role 5) - status default approved
+
                         if ($pengirimRole == 5) { // Sekretaris ASP
                             $disposisi->status_sekretaris = 'approved';
                             $disposisi->status_dirut = 'pending';
                         } elseif ($pengirimRole == 8) { // Direktur ASP
                             $disposisi->status_sekretaris = 'approved';
                             $disposisi->status_dirut = 'pending';
+                        } elseif ($isManagerToGMKeu) {
+                            $disposisi->status_sekretaris = 'approved';
+                            $disposisi->status_dirut = 'approved';
                         } elseif ($isAntarManSek) {
                             $disposisi->status_sekretaris = 'approved';
                             $disposisi->status_dirut = 'approved';

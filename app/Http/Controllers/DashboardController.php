@@ -33,15 +33,72 @@ class DashboardController extends Controller
             ]);
             
             // Hitung total surat masuk sesuai logic di SuratMasukController
+            $query = SuratKeluar::with(['disposisi', 'disposisi.tujuan', 'creator', 'files', 'perusahaanData']);
+            
             if ($user->role == 0 || $user->role == 3) { // Staff atau Admin
-                $totalSurat = SuratKeluar::whereHas('disposisi.tujuan', function($q) use ($user) {
-                    $q->where('users.id', $user->id);
-                })->count();
-            } else {
-                $totalSurat = SuratKeluar::count();
+                // Surat yang ditujukan kepada user dan surat yang dibuat oleh user (jika disetujui direktur)
+                $query->where(function($q) use ($user) {
+                    // Surat yang ditujukan kepada user
+                    $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
+                        $subq->where('users.id', $user->id);
+                    });
+                    // Atau surat yang dibuat oleh user dan disetujui direktur
+                    $q->orWhere(function($subq) use ($user) {
+                        $subq->where('created_by', $user->id)
+                             ->whereHas('disposisi', function($subsubq) {
+                                 $subsubq->where('status_dirut', 'approved');
+                             });
+                    });
+                });
+            } else if ($user->role == 1) { // Sekretaris
+                // Semua data surat
+                Log::info('Showing all surat for Sekretaris');
+            } else if ($user->role == 2) { // Direktur
+                // Surat dengan status sekretaris approved
+                $query->whereHas('disposisi', function($q) {
+                    $q->where('status_sekretaris', 'approved');
+                });
+            } else if ($user->role == 4) { // Manager
+                // Surat yang ditujukan kepada user dan surat yang dibuat oleh user
+                $query->where(function($q) use ($user) {
+                    $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
+                        $subq->where('users.id', $user->id);
+                    });
+                    $q->orWhere('created_by', $user->id);
+                });
+            } else if ($user->role == 5) { // Sekretaris ASP
+                // Surat yang ditujukan kepada user dan surat yang dibuat oleh user
+                $query->where(function($q) use ($user) {
+                    $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
+                        $subq->where('users.id', $user->id);
+                    });
+                    $q->orWhere('created_by', $user->id);
+                });
+            } else if ($user->role == 6) { // General Manager
+                // Surat yang ditujukan kepada user dan surat yang dibuat oleh user
+                $query->where(function($q) use ($user) {
+                    $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
+                        $subq->where('users.id', $user->id);
+                    });
+                    $q->orWhere('created_by', $user->id);
+                });
+            } else if ($user->role == 7) { // Manager Keuangan
+                // Surat yang ditujukan kepada user dan surat yang dibuat oleh user
+                $query->where(function($q) use ($user) {
+                    $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
+                        $subq->where('users.id', $user->id);
+                    });
+                    $q->orWhere('created_by', $user->id);
+                });
+            } else if ($user->role == 8) { // Direktur ASP
+                // Surat dengan status sekretaris approved
+                $query->whereHas('disposisi', function($q) {
+                    $q->where('status_sekretaris_asp', 'approved');
+                });
             }
             
-            Log::info('Total Surat calculated:', ['count' => $totalSurat]);
+            $totalSurat = $query->count();
+            Log::info('Total Surat calculated:', ['count' => $totalSurat, 'role' => $user->role]);
 
             // Hitung total disposisi - sama untuk semua role
             $totalDisposisi = Disposisi::whereHas('tujuan', function($q) use ($user) {
@@ -67,41 +124,26 @@ class DashboardController extends Controller
             
             Log::info('Disposisi Belum Selesai calculated:', ['count' => $disposisiBelumSelesai]);
 
-            // Hitung disposisi selesai: khusus direktur tanpa filter tujuan
-            if ($user->role == 2) { // direktur
-                $disposisiSelesai = Disposisi::where(function($q) {
-                    $q->whereRaw('LOWER(status_dirut) = ?', ['approved'])
-                      ->orWhereRaw('LOWER(status_dirut) = ?', ['rejected']);
-                })->get(['id', 'status_sekretaris', 'status_dirut']);
-                Log::info('Disposisi selesai by dirut (all):', $disposisiSelesai->toArray());
-            } else if ($user->role == 8) { // direktur ASP
-                $disposisiSelesai = Disposisi::where(function($q) {
-                    $q->whereRaw('LOWER(status_dirut) = ?', ['approved'])
-                      ->orWhereRaw('LOWER(status_dirut) = ?', ['rejected']);
-                })->get(['id', 'status_sekretaris', 'status_dirut']);
-                Log::info('Disposisi selesai by dirut ASP (all):', $disposisiSelesai->toArray());
-            } else {
-                $disposisiUser = Disposisi::whereHas('tujuan', function($q) use ($user) {
-                    $q->where('users.id', $user->id);
-                })->get(['id', 'status_sekretaris', 'status_dirut']);
-                $disposisiSelesai = $disposisiUser->filter(function($item) {
-                    return (
-                        strtolower($item->status_dirut) === 'approved' ||
-                        strtolower($item->status_dirut) === 'rejected'
-                    );
-                });
-                Log::info('Disposisi selesai by user (dirut only):', $disposisiSelesai->toArray());
-            }
-
-            // Logging semua status disposisi
-            $allDisposisi = Disposisi::all(['id', 'status_sekretaris', 'status_dirut']);
-            Log::info('Semua status disposisi:', $allDisposisi->toArray());
+            // Hitung disposisi selesai
+            $disposisiSelesai = Disposisi::where(function($q) use ($user) {
+                $q->whereHas('tujuan', function($q2) use ($user) {
+                    $q2->where('users.id', $user->id);
+                })
+                ->orWhere('created_by', $user->id);
+            })
+            ->where(function($q) {
+                $q->where('status_sekretaris', 'approved')
+                  ->where('status_dirut', 'approved');
+            })
+            ->count();
+            
+            Log::info('Disposisi Selesai calculated:', ['count' => $disposisiSelesai]);
 
             $response = [
                 'totalSurat' => $totalSurat,
                 'totalDisposisi' => $totalDisposisi,
                 'disposisiBelumSelesai' => $disposisiBelumSelesai,
-                'disposisiSelesai' => $disposisiSelesai->count()
+                'disposisiSelesai' => $disposisiSelesai
             ];
 
             Log::info('Final response:', $response);
@@ -128,23 +170,96 @@ class DashboardController extends Controller
     {
         try {
             $user = Auth::user();
-            $activities = Disposisi::with(['suratKeluar', 'tujuan'])
-                ->where(function($q) use ($user) {
-                    $q->whereHas('tujuan', function($q2) use ($user) {
-                        $q2->where('users.id', $user->id);
-                    })
-                    ->orWhere('created_by', $user->id);
-                })
-                ->latest()
+            Log::info('Getting recent activities for user:', [
+                'id' => $user->id,
+                'name' => $user->name,
+                'role' => $user->role
+            ]);
+            
+            $query = SuratKeluar::with([
+                'disposisi', 
+                'disposisi.tujuan',
+                'creator',
+                'files',
+                'perusahaanData'
+            ]);
+            
+            // Filter berdasarkan role sesuai logic di SuratMasukController
+            if ($user->role == 0 || $user->role == 3) { // Staff atau Admin
+                // Surat yang ditujukan kepada user dan surat yang dibuat oleh user (jika disetujui direktur)
+                $query->where(function($q) use ($user) {
+                    // Surat yang ditujukan kepada user
+                    $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
+                        $subq->where('users.id', $user->id);
+                    });
+                    // Atau surat yang dibuat oleh user dan disetujui direktur
+                    $q->orWhere(function($subq) use ($user) {
+                        $subq->where('created_by', $user->id)
+                             ->whereHas('disposisi', function($subsubq) {
+                                 $subsubq->where('status_dirut', 'approved');
+                             });
+                    });
+                });
+            } else if ($user->role == 1) { // Sekretaris
+                // Semua data surat
+                Log::info('Showing all surat for Sekretaris');
+            } else if ($user->role == 2) { // Direktur
+                // Surat dengan status sekretaris approved
+                $query->whereHas('disposisi', function($q) {
+                    $q->where('status_sekretaris', 'approved');
+                });
+            } else if ($user->role == 4) { // Manager
+                // Surat yang ditujukan kepada user dan surat yang dibuat oleh user
+                $query->where(function($q) use ($user) {
+                    $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
+                        $subq->where('users.id', $user->id);
+                    });
+                    $q->orWhere('created_by', $user->id);
+                });
+            } else if ($user->role == 5) { // Sekretaris ASP
+                // Surat yang ditujukan kepada user dan surat yang dibuat oleh user
+                $query->where(function($q) use ($user) {
+                    $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
+                        $subq->where('users.id', $user->id);
+                    });
+                    $q->orWhere('created_by', $user->id);
+                });
+            } else if ($user->role == 6) { // General Manager
+                // Surat yang ditujukan kepada user dan surat yang dibuat oleh user
+                $query->where(function($q) use ($user) {
+                    $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
+                        $subq->where('users.id', $user->id);
+                    });
+                    $q->orWhere('created_by', $user->id);
+                });
+            } else if ($user->role == 7) { // Manager Keuangan
+                // Surat yang ditujukan kepada user dan surat yang dibuat oleh user
+                $query->where(function($q) use ($user) {
+                    $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
+                        $subq->where('users.id', $user->id);
+                    });
+                    $q->orWhere('created_by', $user->id);
+                });
+            } else if ($user->role == 8) { // Direktur ASP
+                // Surat dengan status sekretaris approved
+                $query->whereHas('disposisi', function($q) {
+                    $q->where('status_sekretaris_asp', 'approved');
+                });
+            }
+            
+            $activities = $query->latest('tanggal_surat')
                 ->take(5)
                 ->get()
-                ->map(function ($disposisi) {
+                ->map(function ($surat) {
                     return [
-                        'id' => $disposisi->id,
-                        'nomor_surat' => optional($disposisi->suratKeluar)->nomor_surat ?? 'N/A',
-                        'perihal' => optional($disposisi->suratKeluar)->perihal ?? 'N/A',
-                        'created_at' => $disposisi->created_at,
-                        'status' => $disposisi->status_sekretaris === 'approved' && $disposisi->status_dirut === 'approved' 
+                        'id' => $surat->id,
+                        'nomor_surat' => $surat->nomor_surat ?? 'N/A',
+                        'perihal' => $surat->perihal ?? 'N/A',
+                        'created_at' => $surat->created_at,
+                        'tanggal_surat' => $surat->tanggal_surat,
+                        'status' => $surat->disposisi && 
+                                  $surat->disposisi->status_sekretaris === 'approved' && 
+                                  $surat->disposisi->status_dirut === 'approved' 
                             ? 'selesai' 
                             : 'belum selesai'
                     ];

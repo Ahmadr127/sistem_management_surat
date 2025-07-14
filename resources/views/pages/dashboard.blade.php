@@ -26,7 +26,7 @@
                     </div>
                 </div>
                 <h3 class="text-2xl font-bold text-gray-800" x-text="stats.totalSurat || 0"></h3>
-                <p class="text-sm text-gray-500 mt-1">Total Surat</p>
+                <p class="text-sm text-gray-500 mt-1">Total Surat Masuk</p>
             </div>
 
             <!-- Total Disposisi -->
@@ -69,7 +69,7 @@
             <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex-1">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-lg font-semibold text-gray-800">Aktivitas Terbaru</h2>
-                    <a href="{{ url('/laporan/disposisi') }}" class="text-sm text-green-600 hover:text-green-700">
+                    <a href="{{ url('/suratmasuk') }}" class="text-sm text-green-600 hover:text-green-700">
                         Lihat Semua
                     </a>
                 </div>
