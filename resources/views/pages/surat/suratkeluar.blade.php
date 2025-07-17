@@ -257,7 +257,7 @@
             <!-- Card untuk Disposisi -->
             <div class="mt-6 bg-white rounded-xl border border-gray-200 overflow-hidden">
                 <div class="p-6 border-b border-gray-200 bg-gray-50">
-                    <h3 class="text-sm font-semibold text-gray-800">
+                    <h3 class="text-sm font-semibold text-gray-800 card-disposisi-title">
                         <i class="ri-share-forward-line mr-2 text-gray-600"></i>
                         Disposisi Surat
                     </h3>
@@ -279,13 +279,14 @@
                     
                     <!-- Tujuan Disposisi (Multiple Select dengan Search) -->
                     <div class="space-y-2 mt-4">
-                        <label class="text-sm font-semibold text-gray-800">Tujuan Disposisi</label>
+                        <label class="text-sm font-semibold text-gray-800 label-tujuan-disposisi">Tujuan Disposisi</label>
                         <div class="relative">
                             <!-- Search Input -->
                             <div class="mb-2 relative">
                                 <input type="text" id="tujuan-search"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200"
-                                    placeholder="Cari nama atau jabatan...">
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200 input-tujuan-disposisi"
+                                    placeholder="Cari nama atau jabatan..."
+                                    autocomplete="off">
                                 <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
                                     <i class="ri-search-line"></i>
                                 </div>
@@ -364,7 +365,7 @@
                     
                     <!-- Keterangan Pengirim -->
                     <div class="space-y-2">
-                        <label class="text-sm font-semibold text-gray-800">Keterangan Pengirim</label>
+                        <label class="text-sm font-semibold text-gray-800 label-keterangan-pengirim">Keterangan Pengirim</label>
                         <textarea name="keterangan_pengirim"
                             class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200"
                             rows="3" placeholder="Tambahkan keterangan untuk penerima disposisi">{{ old('keterangan_pengirim') }}</textarea>
@@ -1562,6 +1563,51 @@
                 html: errorList.map(e => `<div style=\"text-align:left\">${e}</div>`).join(''),
                 confirmButtonText: 'Tutup',
                 confirmButtonColor: '#10B981'
+            });
+        }
+
+        // Daftar elemen yang perlu diubah labelnya
+        const disposisiToTembusan = [
+            {
+                selector: '.card-disposisi-title', // Judul card
+                textDisposisi: 'Disposisi Surat',
+                textTembusan: 'Tembusan Surat'
+            },
+            {
+                selector: '.label-tujuan-disposisi', // Label tujuan
+                textDisposisi: 'Tujuan Disposisi',
+                textTembusan: 'Tujuan Tembusan'
+            },
+            {
+                selector: '.label-keterangan-pengirim', // Label keterangan
+                textDisposisi: 'Keterangan Pengirim',
+                textTembusan: 'Keterangan Pengirim (untuk tembusan)'
+            },
+            {
+                selector: '.input-tujuan-disposisi', // Placeholder search
+                textDisposisi: 'Cari nama atau jabatan...',
+                textTembusan: 'Cari nama atau jabatan...'
+            }
+        ];
+        // Helper untuk update label
+        function updateDisposisiLabels(isTembusan) {
+            disposisiToTembusan.forEach(item => {
+                const el = document.querySelector(item.selector);
+                if (el) {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        el.placeholder = isTembusan ? item.textTembusan : item.textDisposisi;
+                    } else {
+                        el.textContent = isTembusan ? item.textTembusan : item.textDisposisi;
+                    }
+                }
+            });
+        }
+        // Inisialisasi label (untuk SSR)
+        updateDisposisiLabels(asDirutToggle && asDirutToggle.checked);
+        // Event listener toggle
+        if (asDirutToggle) {
+            asDirutToggle.addEventListener('change', function() {
+                updateDisposisiLabels(this.checked);
             });
         }
     });

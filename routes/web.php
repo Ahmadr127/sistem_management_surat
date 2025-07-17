@@ -144,6 +144,11 @@ Route::middleware(['auth', 'checkRole:1,2,5,7,8'])->group(function () {
         return view('home');
     })->name('app');
     
+    // Generate Nomor Surat (hanya untuk Sekretaris)
+    Route::get('/nomor/generate', function () {
+        return view('pages.nomor.generate');
+    })->name('nomor.generate');
+    
     // Disposisi
     Route::prefix('disposisi')->name('disposisi.')->group(function () {
         Route::get('/', [DisposisiController::class, 'index'])->name('index');
@@ -357,5 +362,9 @@ Route::middleware(['auth', 'checkRole:7'])->group(function () {
 
 Route::post('/api/disposisi/{id}/keterangan-penerima', [App\Http\Controllers\DisposisiController::class, 'updateKeteranganPenerima'])->name('api.disposisi.keterangan-penerima');
 Route::post('/api/disposisi/{id}/keterangan-pengirim', [App\Http\Controllers\DisposisiController::class, 'updateKeteranganPengirim'])->name('api.disposisi.keterangan-pengirim');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/api/surat-keluar/by-format', [App\Http\Controllers\SuratKeluarController::class, 'getByFormat'])->name('api.suratkeluar.byformat');
+});
 
 

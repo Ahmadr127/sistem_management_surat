@@ -155,6 +155,18 @@
                             </a>
                         @endif
 
+                        <!-- Generate Nomor Surat untuk Sekretaris -->
+                        @if (Auth::user()->role === 1)
+                            <a href="{{ route('nomor.generate') }}"
+                                class="flex items-center py-2 px-4 rounded-lg transition-all duration-200 {{ Request::is('nomor*') ? 'text-green-600 bg-green-50' : 'text-gray-600 hover:bg-gray-50' }}">
+                                <i class="ri-file-list-line text-lg mr-3"></i>
+                                <span class="font-medium">Generate Nomor Surat</span>
+                                @if (Request::is('nomor*'))
+                                    <div class="ml-auto h-2 w-2 rounded-full bg-green-600"></div>
+                                @endif
+                            </a>
+                        @endif
+
                         <!-- Surat Unit Manager untuk Unit dan Manager -->
                         @if (Auth::user()->role === 0)
                             <a href="{{ route('surat-unit-manager.index') }}"
