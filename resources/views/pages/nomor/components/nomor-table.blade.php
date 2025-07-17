@@ -34,26 +34,31 @@
             <div class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity"></div>
             <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full">
                 <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-800">Generate Nomor {{ $title }}</h3>
+                    <h3 class="text-lg font-semibold text-gray-800">Informasi Nomor Surat Selanjutnya</h3>
                 </div>
                 <div class="px-6 py-4">
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Surat</label>
-                            <input type="date" id="tanggal-{{ $jenis }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" value="{{ date('Y-m-d') }}">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Urut Berikutnya</label>
+                            <div id="next-nomor-{{ $jenis }}" class="text-2xl font-bold text-green-700">...</div>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Urut</label>
-                            <input type="number" id="nomor-{{ $jenis }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="001" min="1">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Format Nomor Surat Lengkap</label>
+                            <div id="next-nomor-lengkap-{{ $jenis }}" class="text-lg font-mono text-gray-800">...</div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Surat</label>
+                            <div id="next-tanggal-{{ $jenis }}" class="text-base text-gray-700">...</div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Kode</label>
+                            <div id="next-kode-{{ $jenis }}" class="text-base text-gray-700">{{ $kode }}</div>
                         </div>
                     </div>
                 </div>
                 <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
                     <button id="cancel-{{ $jenis }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
-                        Batal
-                    </button>
-                    <button id="confirm-{{ $jenis }}" class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                        Generate
+                        Tutup
                     </button>
                 </div>
             </div>
@@ -72,9 +77,8 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Waktu</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pengirim</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tujuan</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Perusahaan</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Perihal</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="tbody-{{ $jenis }}" class="bg-white divide-y divide-gray-200">
@@ -137,13 +141,8 @@
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.waktu}</td>
                 <td class="px-6 py-4 whitespace-normal break-words text-sm text-gray-900">${item.pengirim}</td>
                 <td class="px-6 py-4 whitespace-normal break-words text-sm text-gray-900">${item.tujuan}</td>
+                <td class="px-6 py-4 whitespace-normal break-words text-sm text-gray-900">${item.perusahaan || '-'}</td>
                 <td class="px-6 py-4 whitespace-normal break-words text-sm text-gray-900">${item.perihal}</td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">${item.status}</span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button class="text-green-600 hover:text-green-900 mr-3" title="Lihat"><i class="ri-eye-line"></i></button>
-                </td>
             `;
             tbody.appendChild(row);
         });
@@ -153,12 +152,14 @@
         let html = '';
         if (lastPage <= 1) { pagination.innerHTML = ''; return; }
         html += `<div class="flex gap-1">`;
+        // Tombol Previous
+        html += `<button class="px-3 py-1 rounded-l ${currentPage === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}>Prev</button>`;
         let pageNumbers = [];
-        if (lastPage <= 7) {
+        if (lastPage <= 5) {
             for (let i = 1; i <= lastPage; i++) pageNumbers.push(i);
         } else {
             pageNumbers.push(1);
-            if (currentPage > 4) pageNumbers.push('...');
+            if (currentPage > 3) pageNumbers.push('...');
             let start = Math.max(2, currentPage - 1);
             let end = Math.min(lastPage - 1, currentPage + 1);
             for (let i = start; i <= end; i++) pageNumbers.push(i);
@@ -172,12 +173,17 @@
                 html += `<button class="px-3 py-1 rounded ${i === currentPage ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'}" data-page="${i}">${i}</button>`;
             }
         });
+        // Tombol Next
+        html += `<button class="px-3 py-1 rounded-r ${currentPage === lastPage ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}" data-page="${currentPage + 1}" ${currentPage === lastPage ? 'disabled' : ''}>Next</button>`;
         html += `</div>`;
         pagination.innerHTML = html;
         // Event
         pagination.querySelectorAll('button[data-page]').forEach(btn => {
             btn.addEventListener('click', function() {
-                loadData(parseInt(this.getAttribute('data-page')));
+                const page = parseInt(this.getAttribute('data-page'));
+                if (!isNaN(page) && page >= 1 && page <= lastPage && page !== currentPage) {
+                    loadData(page);
+                }
             });
         });
     }
@@ -190,15 +196,22 @@
         fetch(`/api/surat-keluar/by-format?kode=${encodeURIComponent(kode)}&page=${page}&per_page=${currentPerPage}&search=${encodeURIComponent(currentSearch)}`)
             .then(res => res.json())
             .then(res => {
+                console.log('API response:', res);
                 if (res.success) {
-                    renderTable(res.data);
-                    renderPagination(res.total, res.last_page, res.current_page);
+                    try {
+                        renderTable(res.data);
+                        renderPagination(res.total, res.last_page, res.current_page);
+                    } catch (err) {
+                        console.error('Error in renderTable:', err);
+                        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-red-400">Error render data: ${err.message}</td></tr>`;
+                    }
                 } else {
                     tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-red-400">Gagal memuat data</td></tr>`;
                 }
             })
-            .catch(() => {
-                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-red-400">Gagal memuat data</td></tr>`;
+            .catch((err) => {
+                console.error('Fetch error:', err);
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-red-400">Gagal memuat data (fetch error)</td></tr>`;
             });
     }
 
@@ -211,77 +224,95 @@
     loadData(1);
 
     // Modal logic
-    generateBtn.addEventListener('click', function() {
-        modal.classList.remove('hidden');
-        setTimeout(() => tanggalInput.focus(), 100);
-    });
-    emptyGenerateBtn.addEventListener('click', function() {
-        modal.classList.remove('hidden');
-        setTimeout(() => tanggalInput.focus(), 100);
-    });
-    function hideModal() {
-        modal.classList.add('hidden');
-        tanggalInput.value = '{{ date('Y-m-d') }}';
-        nomorInput.value = '';
+    function getTodayStr() {
+        const today = new Date();
+        return today.toISOString().slice(0,10);
     }
-    cancelBtn.addEventListener('click', hideModal);
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            hideModal();
-        }
-    });
+    function formatDateIndo(dateStr) {
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
     function convertToRoman(num) {
-        const romanNumerals = {
-            1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI', 7: 'VII', 8: 'VIII', 9: 'IX', 10: 'X', 11: 'XI', 12: 'XII'
-        };
+        const romanNumerals = {1:'I',2:'II',3:'III',4:'IV',5:'V',6:'VI',7:'VII',8:'VIII',9:'IX',10:'X',11:'XI',12:'XII'};
         return romanNumerals[num];
     }
+    function buildNomorLengkap(nomorUrut, kode, tanggal) {
+        const d = new Date(tanggal);
+        const bulan = convertToRoman(d.getMonth() + 1);
+        const tahun = d.getFullYear();
+        if (jenis === 'diradm') {
+            return `${nomorUrut}/Dir.Adm.Keu/RSAZRA/${bulan}/${tahun}`;
+        }
+        return `${nomorUrut}/${kode}/${bulan}/${tahun}`;
+    }
+    generateBtn.addEventListener('click', function() {
+        const tanggal = getTodayStr();
+        fetch(`/suratkeluar/get-last-number?kode_jabatan=${encodeURIComponent(kode)}&tanggal_surat=${encodeURIComponent(tanggal)}`)
+            .then(res => res.json())
+            .then(res => {
+                let nextNomor = '001';
+                if (res.success && res.last_number !== undefined) {
+                    nextNomor = String(parseInt(res.last_number, 10) + 1).padStart(3, '0');
+                }
+                document.getElementById(`next-nomor-${jenis}`).textContent = nextNomor;
+                document.getElementById(`next-nomor-lengkap-${jenis}`).textContent = buildNomorLengkap(nextNomor, kode, tanggal);
+                document.getElementById(`next-tanggal-${jenis}`).textContent = formatDateIndo(tanggal);
+                document.getElementById(`next-kode-${jenis}`).textContent = kode;
+                modal.classList.remove('hidden');
+            })
+            .catch(() => {
+                document.getElementById(`next-nomor-${jenis}`).textContent = '001';
+                document.getElementById(`next-nomor-lengkap-${jenis}`).textContent = buildNomorLengkap('001', kode, getTodayStr());
+                document.getElementById(`next-tanggal-${jenis}`).textContent = formatDateIndo(getTodayStr());
+                document.getElementById(`next-kode-${jenis}`).textContent = kode;
+                modal.classList.remove('hidden');
+            });
+    });
+    emptyGenerateBtn.addEventListener('click', function() {
+        const tanggal = getTodayStr();
+        fetch(`/suratkeluar/get-last-number?kode_jabatan=${encodeURIComponent(kode)}&tanggal_surat=${encodeURIComponent(tanggal)}`)
+            .then(res => res.json())
+            .then(res => {
+                let nextNomor = '001';
+                if (res.success && res.last_number !== undefined) {
+                    nextNomor = String(parseInt(res.last_number, 10) + 1).padStart(3, '0');
+                }
+                document.getElementById(`next-nomor-${jenis}`).textContent = nextNomor;
+                document.getElementById(`next-nomor-lengkap-${jenis}`).textContent = buildNomorLengkap(nextNomor, kode, tanggal);
+                document.getElementById(`next-tanggal-${jenis}`).textContent = formatDateIndo(tanggal);
+                document.getElementById(`next-kode-${jenis}`).textContent = kode;
+                modal.classList.remove('hidden');
+            })
+            .catch(() => {
+                document.getElementById(`next-nomor-${jenis}`).textContent = '001';
+                document.getElementById(`next-nomor-lengkap-${jenis}`).textContent = buildNomorLengkap('001', kode, getTodayStr());
+                document.getElementById(`next-tanggal-${jenis}`).textContent = formatDateIndo(getTodayStr());
+                document.getElementById(`next-kode-${jenis}`).textContent = kode;
+                modal.classList.remove('hidden');
+            });
+    });
+
+    // Pastikan event listener tombol Tutup pada modal selalu aktif
+    cancelBtn.addEventListener('click', function() {
+        modal.classList.add('hidden');
+    });
+    // Juga tutup modal jika klik di luar konten modal (overlay)
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.classList.add('hidden');
+        }
+    });
+
+    // Tambahkan fungsi formatDate sebelum renderTable
     function formatDate(date) {
-        return new Date(date).toLocaleDateString('id-ID', {
+        if (!date) return '-';
+        const d = new Date(date);
+        if (isNaN(d)) return date;
+        return d.toLocaleDateString('id-ID', {
             day: 'numeric',
             month: 'short',
             year: 'numeric'
         });
     }
-    confirmBtn.addEventListener('click', function() {
-        const tanggal = tanggalInput.value;
-        const nomor = nomorInput.value;
-        if (!tanggal) {
-            Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Silakan pilih tanggal surat!', confirmButtonText: 'OK', confirmButtonColor: '#10B981' });
-            return;
-        }
-        if (!nomor) {
-            Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Silakan masukkan nomor urut!', confirmButtonText: 'OK', confirmButtonColor: '#10B981' });
-            return;
-        }
-        const dateObj = new Date(tanggal);
-        const bulan = convertToRoman(dateObj.getMonth() + 1);
-        const tahun = dateObj.getFullYear();
-        const nomorFormatted = String(nomor).padStart(3, '0');
-        const nomorSurat = `${nomorFormatted}/${kode}/${bulan}/${tahun}`;
-        const tanggalFormatted = formatDate(tanggal);
-        // Add new row to table
-        const newRow = document.createElement('tr');
-        newRow.className = 'hover:bg-gray-50';
-        newRow.innerHTML = `
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${tbody.children.length + 1}</td>
-            <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm font-medium text-gray-900">${nomorSurat}</div></td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${tanggalFormatted}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">-</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">-</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">-</td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Aktif</span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <button class="text-green-600 hover:text-green-900 mr-3" title="Lihat"><i class="ri-eye-line"></i></button>
-            </td>
-        `;
-        tbody.appendChild(newRow);
-        hideModal();
-        Swal.fire({ icon: 'success', title: 'Berhasil!', text: `Nomor surat ${nomorSurat} berhasil digenerate`, timer: 2000, showConfirmButton: false });
-        loadData(1); // reload data agar sinkron
-    });
 })();
-</script> 
+</script>

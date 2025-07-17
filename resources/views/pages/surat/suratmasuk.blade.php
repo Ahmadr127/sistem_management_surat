@@ -702,23 +702,14 @@
 
                 if (!Array.isArray(data) || data.length === 0) {
                     tableBody.innerHTML = `
-                        <td class="px-2 py-2 whitespace-nowrap text-sm font-medium">
-    <div class="flex flex-wrap gap-2">
-        <button onclick="showDetail(${surat.id})" class="inline-flex items-center px-2.5 py-1.5 bg-white border border-green-300 hover:bg-green-50 text-green-700 rounded-md shadow-sm transition-colors duration-200" title="Lihat Detail">
-            <i class="ri-eye-line mr-1"></i> Detail
-        </button>
-        ${(userRole === 1 || userRole === 2 || userRole === 5 || userRole === 8) ? `
-            <button onclick="editDisposisi(${surat.id})" class="inline-flex items-center px-2.5 py-1.5 bg-white border border-indigo-300 hover:bg-indigo-50 text-indigo-700 rounded-md shadow-sm transition-colors duration-200" title="Edit Disposisi">
-                <i class="ri-file-edit-line mr-1"></i> Disposisi
-            </button>
-        ` : ''}
-        ${(surat.user_adalah_penerima_disposisi && surat.disposisi_id) ? `
-            <button type="button" onclick="openKeteranganPenerimaModal(${surat.disposisi_id}, '${surat.keterangan_penerima ? surat.keterangan_penerima.replace(/'/g, "\\'") : ''}')" class="inline-flex items-center px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm transition-colors duration-200" title="Isi Keterangan Saya">
-                <i class='ri-edit-2-line mr-1'></i> Isi Keterangan Saya
-            </button>
-        ` : ''}
-    </div>
-</td>
+                        <tr>
+                            <td colspan="10" class="text-center py-8">
+                                <div class="flex flex-col items-center justify-center">
+                                    <i class="ri-inbox-line text-gray-400 text-3xl mb-2"></i>
+                                    <p class="text-gray-500">Tidak ada data yang ditemukan</p>
+                                </div>
+                            </td>
+                        </tr>
                     `;
                     paginationContainer.innerHTML = '';
                     return;

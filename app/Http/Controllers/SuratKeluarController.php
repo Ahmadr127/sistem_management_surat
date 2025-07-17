@@ -1162,28 +1162,35 @@ class SuratKeluarController extends Controller
         $search = $request->input('search');
         $perPage = (int) $request->input('per_page', 10);
         $page = (int) $request->input('page', 1);
+        \Log::info('[getByFormat] PARAM', compact('kode', 'search', 'perPage', 'page'));
         if (!$kode) {
+            \Log::warning('[getByFormat] Kode format nomor surat wajib diisi');
             return response()->json(['success' => false, 'message' => 'Kode format nomor surat wajib diisi'], 400);
         }
         try {
             $query = SuratKeluar::with(['creator', 'disposisi.tujuan']);
+            $driver = \DB::getDriverName();
+            $regexpOperator = $driver === 'pgsql' ? '~' : 'REGEXP';
+            \Log::info('[getByFormat] DB Driver', ['driver' => $driver, 'regexpOperator' => $regexpOperator]);
             // Filter khusus untuk kode RSAZRA (Umum)
             if ($kode === 'RSAZRA') {
-                $query->whereRaw("nomor_surat REGEXP '^[0-9]{3}/RSAZRA/(I{1,3}|IV|V?I{0,3}|VI{0,3}|VII|VIII|IX|X|XI|XII)/[0-9]{4}$'");
+                $query->whereRaw("nomor_surat $regexpOperator '^[0-9]{3}/RSAZRA/(I{1,3}|IV|V?I{0,3}|VI{0,3}|VII|VIII|IX|X|XI|XII)/[0-9]{4}(-[A-Z0-9]+)?$'");
             } else if ($kode === 'DIRRS') {
-                $query->whereRaw("nomor_surat REGEXP '^[0-9]{3}/DIRRS/RSAZRA/(I{1,3}|IV|V?I{0,3}|VI{0,3}|VII|VIII|IX|X|XI|XII)/[0-9]{4}$'");
+                $query->whereRaw("nomor_surat $regexpOperator '^[0-9]{3}/DIRRS/RSAZRA/(I{1,3}|IV|V?I{0,3}|VI{0,3}|VII|VIII|IX|X|XI|XII)/[0-9]{4}(-[A-Z0-9]+)?$'");
             } else if ($kode === 'Dir.Adm.Keu') {
-                $query->whereRaw("nomor_surat REGEXP '^[0-9]{3}/Dir\\.Adm\\.Keu/RSAZRA/(I{1,3}|IV|V?I{0,3}|VI{0,3}|VII|VIII|IX|X|XI|XII)/[0-9]{4}$'");
+                if ($driver === 'pgsql') {
+                    $query->whereRaw("nomor_surat ~ '^[0-9]{3}/Dir\\.Adm\\.Keu/(I{1,3}|IV|V?I{0,3}|VI{0,3}|VII|VIII|IX|X|XI|XII)/[0-9]{4}(-[A-Z0-9]+)?$' OR nomor_surat ~ '^[0-9]{3}/Dir\\.Adm\\.Keu/RSAZRA/(I{1,3}|IV|V?I{0,3}|VI{0,3}|VII|VIII|IX|X|XI|XII)/[0-9]{4}(-[A-Z0-9]+)?$'");
+                } else {
+                    $query->whereRaw("nomor_surat REGEXP '^[0-9]{3}/Dir\\.Adm\\.Keu/(I{1,3}|IV|V?I{0,3}|VI{0,3}|VII|VIII|IX|X|XI|XII)/[0-9]{4}(-[A-Z0-9]+)?$' OR nomor_surat REGEXP '^[0-9]{3}/Dir\\.Adm\\.Keu/RSAZRA/(I{1,3}|IV|V?I{0,3}|VI{0,3}|VII|VIII|IX|X|XI|XII)/[0-9]{4}(-[A-Z0-9]+)?$'");
+                }
             } else if ($kode === 'ASP') {
-                $query->whereRaw("nomor_surat REGEXP '^[0-9]{3}/ASP/(I{1,3}|IV|V?I{0,3}|VI{0,3}|VII|VIII|IX|X|XI|XII)/[0-9]{4}$'");
+                $query->whereRaw("nomor_surat $regexpOperator '^[0-9]{3}/ASP/(I{1,3}|IV|V?I{0,3}|VI{0,3}|VII|VIII|IX|X|XI|XII)/[0-9]{4}(-[A-Z0-9]+)?$'");
             } else {
                 $query->where('nomor_surat', 'like', "%/{$kode}/%");
             }
             $query->orderBy('tanggal_surat', 'desc');
             if ($search) {
-                // Escape karakter spesial untuk REGEXP
                 $searchSafe = preg_replace('/[^a-zA-Z0-9\s\-\/]/', '', $search);
-                // Jika search mengandung karakter spesial yang tidak diizinkan, fallback ke LIKE
                 if ($searchSafe !== $search) {
                     $query->where(function($q) use ($search) {
                         $q->where('nomor_surat', 'like', "%{$search}%")
@@ -1202,7 +1209,9 @@ class SuratKeluarController extends Controller
                     });
                 }
             }
+            \Log::info('[getByFormat] RAW SQL', ['sql' => $query->toSql(), 'bindings' => $query->getBindings()]);
             $paginator = $query->paginate($perPage, ['*'], 'page', $page);
+            \Log::info('[getByFormat] PAGINATE', ['total' => $paginator->total(), 'last_page' => $paginator->lastPage(), 'current_page' => $paginator->currentPage()]);
             $data = $paginator->getCollection()->map(function($item) {
                 return [
                     'id' => $item->id,
@@ -1210,12 +1219,13 @@ class SuratKeluarController extends Controller
                     'tanggal_surat' => $item->tanggal_surat,
                     'waktu' => $item->created_at->format('H:i'),
                     'tanggal' => $item->created_at->format('Y-m-d'),
-                    'status' => $item->disposisi->status_sekretaris ?? '-',
+                    'perusahaan' => $item->perusahaanData && $item->perusahaanData->nama_perusahaan ? $item->perusahaanData->nama_perusahaan : '-',
                     'perihal' => $item->perihal,
                     'pengirim' => $item->creator ? $item->creator->name : '-',
                     'tujuan' => $item->disposisi && $item->disposisi->tujuan ? $item->disposisi->tujuan->pluck('name')->implode(', ') : '-',
                 ];
             });
+            \Log::info('[getByFormat] DATA COUNT', ['count' => $data->count()]);
             return response()->json([
                 'success' => true,
                 'data' => $data,
@@ -1225,7 +1235,7 @@ class SuratKeluarController extends Controller
                 'per_page' => $paginator->perPage(),
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error in getByFormat: ' . $e->getMessage());
+            \Log::error('[getByFormat] ERROR', ['msg' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan pada server: ' . $e->getMessage()
