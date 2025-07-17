@@ -20,13 +20,10 @@
         <form action="{{ route('suratkeluar.store') }}" method="POST" enctype="multipart/form-data" class="p-8">
             @csrf
             <!-- Tambahkan hidden input di dalam form -->
-            <input type="hidden" name="perusahaan" value="RSAZRA">
+            <input type="hidden" name="perusahaan" id="perusahaan_hidden" value="">
 
             <!-- Hidden input untuk pengirim_id - selalu gunakan user yang login -->
             <input type="hidden" name="pengirim_id" id="pengirim_id" value="{{ auth()->id() }}">
-
-            <!-- Perusahaan Input - Hidden by default for internal surat -->
-            <input type="hidden" id="perusahaan_hidden" name="perusahaan" value="RSAZRA">
 
             <!-- Toggle untuk Sekretaris sebagai Dirut -->
             @if (auth()->user()->role === 1)
@@ -67,16 +64,42 @@
                             <div class="flex justify-between items-center">
                                 <label class="text-sm font-semibold text-gray-800">Nomor Surat</label>
                                 <div class="relative flex gap-2">
-                                    <button type="button" id="generateNomorBtn"
-                                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 group">
-                                        <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
-                                        Generate Nomor
-                                    </button>
-                                    <button type="button" id="generateNomorAspBtn"
-                                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 group">
-                                        <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
-                                        Generate Nomor ASP
-                                    </button>
+                                    @if (auth()->user()->role === 1)
+                                        <!-- Untuk Sekretaris (role 1): hanya tampilkan Generate Nomor biasa -->
+                                        <button type="button" id="generateNomorBtn"
+                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 group">
+                                            <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                                            Generate Nomor
+                                        </button>
+                                    @elseif (auth()->user()->role === 5)
+                                        <!-- Untuk Sekretaris ASP (role 5): hanya tampilkan Generate Nomor ASP -->
+                                        <button type="button" id="generateNomorAspBtn"
+                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 group">
+                                            <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                                            Generate Nomor ASP
+                                        </button>
+                                    @elseif (auth()->user()->role === 8)
+                                        <!-- Untuk Direktur ASP (role 8): hanya tampilkan Generate Nomor ASP -->
+                                        <button type="button" id="generateNomorAspBtn"
+                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 group">
+                                            <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                                            Generate Nomor ASP
+                                        </button>
+                                    @elseif (auth()->user()->role === 0 || auth()->user()->role === 3 || auth()->user()->role === 4)
+                                        <!-- Untuk Staff (role 0), Admin (role 3), atau Manager (role 4): tampilkan Generate Nomor biasa -->
+                                        <button type="button" id="generateNomorBtn"
+                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 group">
+                                            <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                                            Generate Nomor
+                                        </button>
+                                    @else
+                                        <!-- Untuk role lain: tampilkan Generate Nomor biasa -->
+                                        <button type="button" id="generateNomorBtn"
+                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 group">
+                                            <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                                            Generate Nomor
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                             <div class="relative">
@@ -107,24 +130,28 @@
                         </div>
 
                         <!-- Jenis Surat -->
-                        <div class="space-y-2">
-                            <label class="text-sm font-semibold text-gray-800">Jenis Surat</label>
-                            <div class="relative">
-                                <select name="jenis_surat" id="jenis_surat" required
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200 appearance-none bg-white">
-                                    <option value="internal" {{ old('jenis_surat') == 'internal' ? 'selected' : '' }}>
-                                        Internal
-                                    </option>
-                                    <option value="eksternal" {{ old('jenis_surat') == 'eksternal' ? 'selected' : '' }}>
-                                        Eksternal
-                                    </option>
-                                </select>
-                                <div
-                                    class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
-                                    <i class="ri-arrow-down-s-line"></i>
+                        @if (auth()->user()->role === 0 || auth()->user()->role === 3 || auth()->user()->role === 4)
+                            <input type="hidden" name="jenis_surat" id="jenis_surat" value="internal">
+                        @elseif (auth()->user()->role === 1 || auth()->user()->role === 5 || auth()->user()->role === 8)
+                            <div class="space-y-2">
+                                <label class="text-sm font-semibold text-gray-800">Jenis Surat</label>
+                                <div class="relative">
+                                    <select name="jenis_surat" id="jenis_surat" required
+                                        class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200 appearance-none bg-white">
+                                        <option value="internal" {{ old('jenis_surat') == 'internal' ? 'selected' : '' }}>
+                                            Internal
+                                        </option>
+                                        <option value="eksternal" {{ old('jenis_surat') == 'eksternal' ? 'selected' : '' }}>
+                                            Eksternal
+                                        </option>
+                                    </select>
+                                    <div
+                                        class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                                        <i class="ri-arrow-down-s-line"></i>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        @endif
 
                         <!-- Sifat Surat -->
                         <div class="space-y-2">
@@ -160,7 +187,6 @@
                                 class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200"
                                 placeholder="Cari atau tambah perusahaan baru..."
                                 autocomplete="off">
-                            <input type="hidden" name="perusahaan" id="perusahaan_id">
                             <div id="perusahaan-suggestions" class="suggestions-list">
                                 <!-- Suggestions will be populated here -->
                             </div>
@@ -231,7 +257,7 @@
             <!-- Card untuk Disposisi -->
             <div class="mt-6 bg-white rounded-xl border border-gray-200 overflow-hidden">
                 <div class="p-6 border-b border-gray-200 bg-gray-50">
-                    <h3 class="text-sm font-semibold text-gray-800">
+                    <h3 class="text-sm font-semibold text-gray-800 card-disposisi-title">
                         <i class="ri-share-forward-line mr-2 text-gray-600"></i>
                         Disposisi Surat
                     </h3>
@@ -241,81 +267,105 @@
                     <!-- Debug field to track disposisi data -->
                     <input type="hidden" id="debug_disposisi_field" name="debug_disposisi_field" value="disposisi_data_tracking">
                     
+                    <!-- Hidden input untuk status default Sekretaris ASP -->
+                    @if (auth()->user()->role === 5)
+                        <input type="hidden" name="status_sekretaris_default" value="approved">
+                    @endif
+                    
+                    <!-- Hidden input untuk status default Direktur ASP -->
+                    @if (auth()->user()->role === 8)
+                        <input type="hidden" name="status_sekretaris_default" value="approved">
+                    @endif
+                    
                     <!-- Tujuan Disposisi (Multiple Select dengan Search) -->
-                    @if (false)
-                        <div class="space-y-2">
-                            <label class="text-sm font-semibold text-gray-800">Tujuan Disposisi</label>
+                    <div class="space-y-2 mt-4">
+                        <label class="text-sm font-semibold text-gray-800 label-tujuan-disposisi">Tujuan Disposisi</label>
+                        <div class="relative">
+                            <!-- Search Input -->
+                            <div class="mb-2 relative">
+                                <input type="text" id="tujuan-search"
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200 input-tujuan-disposisi"
+                                    placeholder="Cari nama atau jabatan..."
+                                    autocomplete="off">
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                                    <i class="ri-search-line"></i>
+                                </div>
+                            </div>
+                            <!-- Selection Box -->
                             <div class="relative">
-                                <!-- Search Input -->
-                                <div class="mb-2 relative">
-                                    <input type="text" id="tujuan-search"
-                                        class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200"
-                                        placeholder="Cari nama atau jabatan...">
-                                    <div
-                                        class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
-                                        <i class="ri-search-line"></i>
+                                <div class="flex justify-between mb-2 items-center">
+                                    <div class="text-xs text-gray-500" id="selection-counter">0 dipilih</div>
+                                    <div class="space-x-2">
+                                        <button type="button" id="select-all-btn"
+                                            class="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors duration-200">
+                                            Pilih Semua
+                                        </button>
+                                        <button type="button" id="clear-all-btn"
+                                            class="px-2 py-1 text-xs bg-gray-50 text-gray-600 rounded hover:bg-gray-100 transition-colors duration-200">
+                                            Hapus Semua
+                                        </button>
                                     </div>
                                 </div>
-
-                                <!-- Selection Box -->
-                                <div class="relative">
-                                    <div class="flex justify-between mb-2 items-center">
-                                        <div class="text-xs text-gray-500" id="selection-counter">0 dipilih</div>
-                                        <div class="space-x-2">
-                                            <button type="button" id="select-all-btn"
-                                                class="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors duration-200">
-                                                Pilih Semua
-                                            </button>
-                                            <button type="button" id="clear-all-btn"
-                                                class="px-2 py-1 text-xs bg-gray-50 text-gray-600 rounded hover:bg-gray-100 transition-colors duration-200">
-                                                Hapus Semua
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div id="tujuan-selection-container"
-                                        class="border border-gray-200 rounded-lg p-3 max-h-60 overflow-y-auto">
-                                        <div class="space-y-2">
-                                            @foreach ($users as $user)
-                                                <div
-                                                    class="flex items-center py-1.5 px-2 hover:bg-gray-50 rounded-md user-selection-item">
+                                <div id="tujuan-selection-container"
+                                    class="border border-gray-200 rounded-lg p-3 max-h-60 overflow-y-auto">
+                                    <div class="space-y-2">
+                                        @php
+                                            $allowedRolesAsp = [1, 2, 6, 7]; // Sekretaris, Dirut, GM, Keuangan
+                                        @endphp
+                                        @foreach ($users as $user)
+                                            @if ((auth()->user()->role === 5 && in_array($user->role, $allowedRolesAsp)) || auth()->user()->role !== 5 && in_array($user->role, [1,2,4,5,7,8]))
+                                                <div class="flex items-center py-1.5 px-2 hover:bg-gray-50 rounded-md user-selection-item">
                                                     <input type="checkbox" id="user-{{ $user->id }}"
                                                         name="tujuan_disposisi[]" value="{{ $user->id }}"
-                                                        class="tujuan-checkbox h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                                                        class="tujuan-checkbox h-4 w-4 border-gray-300 rounded"
+                                                        @if ($user->role == 2) checked @endif>
                                                     <label for="user-{{ $user->id }}"
                                                         class="ml-3 block text-sm text-gray-700 cursor-pointer truncate">
                                                         {{ $user->name }}
-                                                        @if ($user->name == 'Direktur Utama' || strpos(strtolower($user->name), 'direktur') !== false)
-                                                            <span class="text-gray-500">({{ $user->name }})</span>
-                                                        @elseif ($user->jabatan)
-                                                            <span
-                                                                class="text-gray-500">({{ $user->jabatan->nama_jabatan }})</span>
+                                                        @if ($user->jabatan)
+                                                            <span class="text-gray-500">({{ $user->jabatan->nama_jabatan }})</span>
                                                         @else
                                                             <span class="text-gray-500">(Tidak ada jabatan)</span>
                                                         @endif
                                                     </label>
                                                 </div>
-                                            @endforeach
-                                        </div>
+                                            @endif
+                                        @endforeach
+                                        {{-- Tambahkan GM ke list jika user login adalah manager dan punya general_manager_id --}}
+                                        @php
+                                            $authUser = auth()->user();
+                                            $gmUser = null;
+                                            if ($authUser->role === 4 && $authUser->general_manager_id) {
+                                                $gmUser = $users->first(function($u) use ($authUser) {
+                                                    return $u->role === 6 && $u->id == $authUser->general_manager_id;
+                                                });
+                                            }
+                                        @endphp
+                                        @if ($gmUser)
+                                            <div class="flex items-center py-1.5 px-2 hover:bg-gray-50 rounded-md user-selection-item">
+                                                <input type="checkbox" id="user-{{ $gmUser->id }}"
+                                                    name="tujuan_disposisi[]" value="{{ $gmUser->id }}"
+                                                    class="tujuan-checkbox h-4 w-4 border-gray-300 rounded">
+                                                <label for="user-{{ $gmUser->id }}"
+                                                    class="ml-3 block text-sm text-gray-700 cursor-pointer truncate">
+                                                    {{ $gmUser->name }}
+                                                    @if ($gmUser->jabatan)
+                                                        <span class="text-gray-500">({{ $gmUser->jabatan->nama_jabatan }})</span>
+                                                    @else
+                                                        <span class="text-gray-500">(General Manager)</span>
+                                                    @endif
+                                                </label>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    @endif
+                    </div>
                     
-                    <!-- Hidden input untuk tujuan disposisi default ke Direktur (untuk semua role) -->
-                        @php
-                            // Cari ID direktur dari database
-                            $direktur = App\Models\User::where('name', 'like', '%Direktur Utama%')
-                                ->orWhere('role', 2)
-                                ->first();
-                            $direktur_id = $direktur ? $direktur->id : null;
-                        @endphp
-                        <input type="hidden" name="tujuan_disposisi[]" value="{{ $direktur_id }}">
-
                     <!-- Keterangan Pengirim -->
                     <div class="space-y-2">
-                        <label class="text-sm font-semibold text-gray-800">Keterangan Pengirim</label>
+                        <label class="text-sm font-semibold text-gray-800 label-keterangan-pengirim">Keterangan Pengirim</label>
                         <textarea name="keterangan_pengirim"
                             class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200"
                             rows="3" placeholder="Tambahkan keterangan untuk penerima disposisi">{{ old('keterangan_pengirim') }}</textarea>
@@ -378,9 +428,18 @@
     </div>
 @endsection
 
+@if(session('validationErrors'))
+<script>
+    window.validationErrors = @json(session('validationErrors'));
+</script>
+@endif
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Deklarasi variabel global untuk autocomplete perusahaan
+        let suggestionsContainer = document.getElementById('perusahaan-suggestions');
+        let searchTimeout;
         // Get DOM elements - declare all variables just once
         const fileInput = document.getElementById('file-input');
         const uploadText = document.getElementById('upload-text');
@@ -397,7 +456,7 @@
         const tujuanCheckboxes = document.querySelectorAll('.tujuan-checkbox');
         const perusahaanContainer = document.getElementById('perusahaan-container');
         const perusahaanHidden = document.getElementById('perusahaan_hidden');
-        const perusahaanSelect = document.getElementById('perusahaan_select');
+        const perusahaanSearch = document.getElementById('perusahaan_search');
         const tujuanSearch = document.getElementById('tujuan-search');
         const selectAllBtn = document.getElementById('select-all-btn');
         const clearAllBtn = document.getElementById('clear-all-btn');
@@ -418,8 +477,16 @@
                 const generateNomorBtn = document.getElementById('generateNomorBtn');
                 const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
                 
-                if (this.value === 'eksternal' && userRole === 1) {
-                    console.log("Conditions met for External (AZRA/ASP) generate buttons.");
+                // Set perusahaan otomatis untuk internal
+                if (this.value === 'internal') {
+                    perusahaanHidden.value = 'RSAZRA';
+                } else {
+                    perusahaanHidden.value = '';
+                }
+                
+                // Untuk role sekretaris (1)
+                if (userRole === 1) {
+                    if (this.value === 'eksternal') {
                     if (generateNomorBtn) {
                         generateNomorBtn.style.display = 'inline-flex';
                         generateNomorBtn.innerHTML = `
@@ -444,18 +511,37 @@
                             Jangan menekan Generate Nomor Azra jika Perusahaan Bukan RS AZRA
                         `;
                     }
-                } else if (this.value === 'internal' && userRole === 1) {
-                    console.log("Conditions met for Internal generate button.");
+                    } else if (this.value === 'internal') {
+                        if (generateNomorBtn) {
+                            generateNomorBtn.style.display = 'inline-flex';
+                            //generateNomorBtn.onclick = generateNomorSurat;
+                        }
+                        if (generateNomorAspBtn) {
+                            generateNomorAspBtn.style.display = 'none';
+                        }
+                        nomorSuratInput.readOnly = false;
+                        nomorSuratInput.placeholder = "Nomor surat akan digenerate otomatis";
+                        nomorSuratInput.value = "";
+                        nomorSuratInput.classList.remove('bg-gray-50');
+                        nomorSuratInput.classList.add('bg-white');
+                        // Info text
+                        const nomorSuratContainer = nomorSuratInput.closest('.space-y-2');
+                        let infoText = nomorSuratContainer?.querySelector('.text-xs.text-gray-500');
+                        if (infoText) {
+                            infoText.innerHTML = `
+                                <i class="ri-information-line mr-1"></i>
+                                Gunakan tanda strip (-) jika ingin menggunakan nomor surat yang sama dengan surat lain.
+                            `;
+                        }
+                    }
+                } else if (userRole === 5) { // Sekretaris ASP (role 5)
+                    // Untuk Sekretaris ASP: selalu tampilkan Generate Nomor ASP
                     if (generateNomorBtn) {
-                        generateNomorBtn.style.display = 'inline-flex';
-                        generateNomorBtn.innerHTML = `
-                            <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
-                            Generate Nomor
-                        `;
-                        generateNomorBtn.onclick = generateNomorSurat;
+                        generateNomorBtn.style.display = 'none'; // Sembunyikan Generate Nomor biasa
                     }
                     if (generateNomorAspBtn) {
-                        generateNomorAspBtn.style.display = 'none';
+                        generateNomorAspBtn.style.display = 'inline-flex';
+                        //generateNomorAspBtn.onclick = generateNomorAsp;
                     }
                     nomorSuratInput.readOnly = false;
                     nomorSuratInput.placeholder = "Nomor surat akan digenerate otomatis";
@@ -468,14 +554,88 @@
                     if (infoText) {
                         infoText.innerHTML = `
                             <i class="ri-information-line mr-1"></i>
-                            Gunakan tanda strip (-) jika ingin menggunakan nomor surat yang sama dengan surat lain.
+                            Gunakan Generate Nomor ASP untuk membuat nomor surat ASP.
                         `;
                     }
-                } else {
+                    
+                    // Set perusahaan otomatis untuk ASP
+                    if (this.value === 'internal') {
+                        perusahaanHidden.value = 'ASP';
+                    } else {
+                        perusahaanHidden.value = '';
+                    }
+                } else if (userRole === 8) { // Direktur ASP (role 8)
+                    // Untuk Direktur ASP: selalu tampilkan Generate Nomor ASP
                     if (generateNomorBtn) {
-                        generateNomorBtn.style.display = 'none';
+                        generateNomorBtn.style.display = 'none'; // Sembunyikan Generate Nomor biasa
                     }
                     if (generateNomorAspBtn) {
+                        generateNomorAspBtn.style.display = 'inline-flex';
+                        //generateNomorAspBtn.onclick = generateNomorAsp;
+                    }
+                    nomorSuratInput.readOnly = false;
+                    nomorSuratInput.placeholder = "Nomor surat akan digenerate otomatis";
+                    nomorSuratInput.value = "";
+                    nomorSuratInput.classList.remove('bg-gray-50');
+                    nomorSuratInput.classList.add('bg-white');
+                    // Info text
+                    const nomorSuratContainer = nomorSuratInput.closest('.space-y-2');
+                    let infoText = nomorSuratContainer?.querySelector('.text-xs.text-gray-500');
+                    if (infoText) {
+                        infoText.innerHTML = `
+                            <i class="ri-information-line mr-1"></i>
+                            Gunakan Generate Nomor ASP untuk membuat nomor surat ASP.
+                        `;
+                    }
+                    
+                    // Set perusahaan otomatis untuk ASP
+                    if (this.value === 'internal') {
+                        perusahaanHidden.value = 'ASP';
+                    } else {
+                        perusahaanHidden.value = '';
+                    }
+                } else if (userRole === 0 || userRole === 3 || userRole === 4) { // Staff/unit, Admin, atau Manager
+                    if (this.value === 'internal') {
+                        if (generateNomorBtn) {
+                            generateNomorBtn.style.display = 'inline-flex';
+                            //generateNomorBtn.onclick = generateNomorSurat;
+                        }
+                        if (generateNomorAspBtn) {
+                            generateNomorAspBtn.style.display = 'none';
+                        }
+                        nomorSuratInput.readOnly = false;
+                        nomorSuratInput.placeholder = "Nomor surat akan digenerate otomatis";
+                        nomorSuratInput.value = "";
+                        nomorSuratInput.classList.remove('bg-gray-50');
+                        nomorSuratInput.classList.add('bg-white');
+                        // Info text
+                        const nomorSuratContainer = nomorSuratInput.closest('.space-y-2');
+                        let infoText = nomorSuratContainer?.querySelector('.text-xs.text-gray-500');
+                        if (infoText) {
+                            infoText.innerHTML = `
+                                <i class="ri-information-line mr-1"></i>
+                                Gunakan tanda strip (-) jika ingin menggunakan nomor surat yang sama dengan surat lain.
+                            `;
+                        }
+                    } else {
+                        if (generateNomorBtn) {
+                            generateNomorBtn.style.display = 'none';
+                        }
+                        if (generateNomorAspBtn) {
+                            generateNomorAspBtn.style.display = 'none';
+                        }
+                        nomorSuratInput.readOnly = false;
+                        nomorSuratInput.placeholder = "Masukkan nomor surat eksternal";
+                        nomorSuratInput.value = "";
+                        nomorSuratInput.classList.remove('bg-gray-50');
+                        nomorSuratInput.classList.add('bg-white');
+                    }
+                } else {
+                    // Untuk role lain, hide tombol (kecuali role 5)
+                    if (generateNomorBtn && userRole !== 5) {
+                        generateNomorBtn.style.display = 'none';
+                    }
+                    if (generateNomorAspBtn && userRole !== 5) {
                         generateNomorAspBtn.style.display = 'none';
                     }
                     nomorSuratInput.readOnly = false;
@@ -487,6 +647,71 @@
             });
             // Trigger change event on load to set the initial state
             jenisSuratSelect.dispatchEvent(new Event('change'));
+            
+            // Set perusahaan otomatis untuk internal saat halaman dimuat
+            if (jenisSuratSelect.value === 'internal') {
+                if (userRole === 5) {
+                    perusahaanHidden.value = 'ASP'; // Untuk Sekretaris ASP
+                } else if (userRole === 8) {
+                    perusahaanHidden.value = 'ASP'; // Untuk Direktur ASP
+                } else {
+                    perusahaanHidden.value = 'RSAZRA'; // Untuk role lain
+                }
+            }
+            
+            // Logic khusus untuk role 5 (Sekretaris ASP)
+            if (userRole === 5) {
+                // Pastikan Generate Nomor ASP selalu terlihat untuk Sekretaris ASP
+                const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
+                if (generateNomorAspBtn) {
+                    generateNomorAspBtn.style.display = 'inline-flex';
+                    //generateNomorAspBtn.onclick = generateNomorAsp;
+                }
+                
+                // Sembunyikan Generate Nomor biasa untuk Sekretaris ASP
+                const generateNomorBtn = document.getElementById('generateNomorBtn');
+                if (generateNomorBtn) {
+                    generateNomorBtn.style.display = 'none';
+                }
+                
+                console.log("Sekretaris ASP configuration applied - Generate Nomor ASP button enabled");
+            }
+            
+            // Logic khusus untuk role 8 (Direktur ASP)
+            if (userRole === 8) {
+                // Pastikan Generate Nomor ASP selalu terlihat untuk Direktur ASP
+                const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
+                if (generateNomorAspBtn) {
+                    generateNomorAspBtn.style.display = 'inline-flex';
+                    //generateNomorAspBtn.onclick = generateNomorAsp;
+                }
+                
+                // Sembunyikan Generate Nomor biasa untuk Direktur ASP
+                const generateNomorBtn = document.getElementById('generateNomorBtn');
+                if (generateNomorBtn) {
+                    generateNomorBtn.style.display = 'none';
+                }
+                
+                console.log("Direktur ASP configuration applied - Generate Nomor ASP button enabled");
+            }
+            
+            // Logic khusus untuk role 4 (Manager)
+            if (userRole === 4) {
+                // Pastikan Generate Nomor selalu terlihat untuk Manager
+                const generateNomorBtn = document.getElementById('generateNomorBtn');
+                if (generateNomorBtn) {
+                    generateNomorBtn.style.display = 'inline-flex';
+                    //generateNomorBtn.onclick = generateNomorSurat;
+                }
+                
+                // Sembunyikan Generate Nomor ASP untuk Manager
+                const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
+                if (generateNomorAspBtn) {
+                    generateNomorAspBtn.style.display = 'none';
+                }
+                
+                console.log("Manager configuration applied - Generate Nomor button enabled");
+            }
         }
 
         if (asDirutToggle) {
@@ -649,14 +874,15 @@
                 `;
                 }
 
-                // Get current job title
-                let namaJabatan = isAsDirut ? "DIRUT" : "{{ auth()->user()->jabatan->nama_jabatan ?? 'UMUM' }}";
+                // Get current job title and code
+                let namaJabatan = isAsDirut ? "Direktur Utama" : "{{ auth()->user()->jabatan->nama_jabatan ?? 'UMUM' }}";
+                let kodeJabatan = isAsDirut ? "DIRUT" : "{{ auth()->user()->jabatan->kode_jabatan ?? 'UMUM' }}";
 
-                console.log('Generate nomor surat untuk jabatan:', namaJabatan);
+                console.log('Generate nomor surat untuk jabatan:', namaJabatan, 'dengan kode:', kodeJabatan);
 
                 // Create FormData object for request
                 const formData = new FormData();
-                formData.append('nama_jabatan', namaJabatan);
+                formData.append('kode_jabatan', kodeJabatan);
                 formData.append('is_as_dirut', isAsDirut ? '1' : '0');
                 formData.append('_token', '{{ csrf_token() }}');
 
@@ -718,7 +944,7 @@
                     const tahun = date.getFullYear();
 
                     // Generate nomor surat with desired format
-                    const nomorSurat = `${nextNumber}/${namaJabatan}/AZRA/${convertToRoman(bulan)}/${tahun}`;
+                    const nomorSurat = `${nextNumber}/${kodeJabatan}/RSAZRA/${convertToRoman(bulan)}/${tahun}`;
 
                     // Set value to nomor surat input
                     if (nomorSuratInput) {
@@ -765,7 +991,6 @@
         // Event listener for generate button
         if (generateNomorBtn) {
             generateNomorBtn.addEventListener('click', generateNomorSurat);
-            console.log("Event listener attached to Generate Nomor AZRA button.");
         }
 
         // Tambahkan event listener untuk tombol Generate Nomor ASP
@@ -773,6 +998,20 @@
         if (generateNomorAspBtn) {
             generateNomorAspBtn.addEventListener('click', generateNomorAsp);
             console.log("Event listener attached to Generate Nomor ASP button.");
+            
+            // Untuk role 5 (Sekretaris ASP), pastikan button selalu terlihat dan berfungsi
+            if (userRole === 5) {
+                generateNomorAspBtn.style.display = 'inline-flex';
+                //generateNomorAspBtn.onclick = generateNomorAsp;
+                console.log("Generate Nomor ASP button configured for Sekretaris ASP role.");
+            }
+            
+            // Untuk role 8 (Direktur ASP), pastikan button selalu terlihat dan berfungsi
+            if (userRole === 8) {
+                generateNomorAspBtn.style.display = 'inline-flex';
+                //generateNomorAspBtn.onclick = generateNomorAsp;
+                console.log("Generate Nomor ASP button configured for Direktur ASP role.");
+            }
         }
 
         // Event listener for date change
@@ -905,272 +1144,6 @@
             return romanNumerals[num];
         }
 
-        // Setup for staff role (0)
-        if (userRole === 0 || userRole === 3) {
-            try {
-                console.log('Setting up UI for Staff/Admin role');
-
-                // Hide jenis surat input if exists
-                const jenisSuratContainer = document.querySelector('select[name="jenis_surat"]')?.closest(
-                    '.space-y-2');
-                if (jenisSuratContainer) {
-                    console.log('Hiding jenis surat container');
-                    jenisSuratContainer.style.display = 'none';
-                    } else {
-                    console.log('Jenis surat container not found');
-                }
-
-                // Set default value to "internal"
-                if (jenisSuratSelect) {
-                    console.log('Setting jenis surat value to internal');
-                    jenisSuratSelect.value = 'internal';
-                }
-            } catch (error) {
-                console.error('Error setting up Staff/Admin UI:', error);
-            }
-        }
-
-        // Basic validation for form submission
-        if (form) {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                console.log('Form is being submitted');
-
-                // Log form data
-                const formData = new FormData(this);
-                for (let [key, value] of formData.entries()) {
-                    console.log(`${key}:`, value);
-                }
-
-                // Check for tujuan_disposisi
-                    const hasTujuanDisposisi = formData.has('tujuan_disposisi[]');
-                console.log('Has tujuan_disposisi data:', hasTujuanDisposisi);
-                
-                // Update debug field
-                const debugField = document.getElementById('debug_disposisi_field');
-                if (debugField) {
-                    debugField.value = `Submission at ${new Date().toISOString()} - tujuan_disposisi: ${hasTujuanDisposisi}`;
-                }
-
-                // Validate form
-                let isValid = true;
-                const requiredFields = form.querySelectorAll('[required]');
-                const errorMessages = [];
-
-                requiredFields.forEach(field => {
-                    if (!field.value) {
-                        isValid = false;
-                        field.classList.add('border-red-500');
-                        errorMessages.push(`Field ${field.name} harus diisi`);
-                    } else {
-                        field.classList.remove('border-red-500');
-                    }
-                });
-
-                // Check for nomor surat for internal letters
-                if (formData.get('jenis_surat') === 'internal' && !formData.get('nomor_surat')) {
-                        isValid = false;
-                    errorMessages.push('Nomor surat harus digenerate untuk surat internal');
-                }
-
-                if (!isValid) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Oops...',
-                        html: errorMessages.join('<br>'),
-                        confirmButtonColor: '#10B981'
-                    });
-                    return;
-                }
-
-                // Show loading indicator
-                Swal.fire({
-                    title: 'Menyimpan...',
-                    text: 'Mohon tunggu sebentar',
-                    allowOutsideClick: false,
-                    allowEscapeKey: false,
-                    allowEnterKey: false,
-                    showConfirmButton: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
-
-                // Submit form using fetch API
-                fetch(form.action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    })
-                    .then(response => {
-                        console.log('Response status:', response.status);
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Response data:', data);
-
-                        if (data.success) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Berhasil!',
-                                text: 'Surat berhasil disimpan',
-                                confirmButtonColor: '#10B981'
-                            }).then((result) => {
-                            // Redirect to index page using the URL from the response
-                            if (data.redirect_url) {
-                                window.location.href = data.redirect_url;
-                            } else {
-                                window.location.href = '{{ route('suratkeluar.index') }}';
-                                }
-                            });
-                        } else {
-                        throw new Error(data.message || 'Terjadi kesalahan saat menyimpan surat');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error submitting form:', error);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Oops...',
-                            text: error.message || 'Terjadi kesalahan saat menyimpan surat',
-                            confirmButtonColor: '#10B981'
-                        });
-                    });
-            });
-        }
-
-        // SweetAlert for success message
-        @if (session('success'))
-        Swal.fire({
-            icon: 'success',
-            title: 'Berhasil!',
-            text: '{{ session('success') }}',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#10B981'
-        });
-        @endif
-
-        // Perusahaan Autocomplete
-        const perusahaanSearch = document.getElementById('perusahaan_search');
-        const perusahaanId = document.getElementById('perusahaan_id');
-        const suggestionsContainer = document.getElementById('perusahaan-suggestions');
-        let searchTimeout;
-
-        if (perusahaanSearch) {
-            perusahaanSearch.addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                const query = this.value.trim();
-                
-                if (query.length < 2) {
-                    suggestionsContainer.style.display = 'none';
-                    return;
-                }
-
-                searchTimeout = setTimeout(() => {
-                    fetch(`/api/perusahaan/search?query=${encodeURIComponent(query)}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success && data.data.length > 0) {
-                                suggestionsContainer.innerHTML = data.data.map(perusahaan => `
-                                    <div class="suggestion-item p-2 hover:bg-gray-100 cursor-pointer" 
-                                         data-kode="${perusahaan.kode}"
-                                         data-nama="${perusahaan.nama_perusahaan}">
-                                        ${perusahaan.nama_perusahaan}
-                        </div>
-                                `).join('');
-                                suggestionsContainer.style.display = 'block';
-                            } else {
-                                suggestionsContainer.innerHTML = `
-                                    <div class="suggestion-item p-2 hover:bg-gray-100 cursor-pointer text-green-600" id="add-new-company">
-                                        <i class="ri-add-line mr-2"></i>Tambah "${query}" sebagai perusahaan baru
-                        </div>
-                    `;
-                                suggestionsContainer.style.display = 'block';
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                        });
-                }, 300);
-            });
-        }
-
-        // Handle suggestion click dengan delegasi event yang lebih baik
-        if (suggestionsContainer) {
-            suggestionsContainer.addEventListener('click', function(e) {
-                const target = e.target.closest('.suggestion-item');
-                if (!target) return;
-
-                if (target.id === 'add-new-company') {
-                    const newCompanyName = perusahaanSearch.value.trim();
-                    if (newCompanyName) {
-                        fetch('/api/perusahaan/quick-store', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: JSON.stringify({ nama_perusahaan: newCompanyName })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                perusahaanSearch.value = data.data.nama_perusahaan;
-                                perusahaanId.value = data.data.kode;
-                                suggestionsContainer.style.display = 'none';
-                                
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Berhasil',
-                                    text: 'Perusahaan baru berhasil ditambahkan',
-                                    showConfirmButton: false,
-                                    timer: 1500
-                                });
-                        } else {
-                                throw new Error(data.message);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Gagal',
-                                text: 'Gagal menambahkan perusahaan baru'
-                            });
-                        });
-                    }
-                } else {
-                    const kode = target.dataset.kode;
-                    const nama = target.dataset.nama;
-                    perusahaanSearch.value = nama;
-                    perusahaanId.value = kode;
-                    suggestionsContainer.style.display = 'none';
-                }
-            });
-        }
-
-        // Hide suggestions when clicking outside
-        document.addEventListener('click', function(e) {
-            if (suggestionsContainer && !perusahaanSearch?.contains(e.target) && !suggestionsContainer.contains(e.target)) {
-                suggestionsContainer.style.display = 'none';
-            }
-        });
-
-        function togglePerusahaanInput() {
-            if (jenisSuratSelect.value === 'eksternal') {
-                perusahaanContainer.style.display = 'block';
-                } else {
-                perusahaanContainer.style.display = 'none';
-            }
-        }
-
-        if (jenisSuratSelect && perusahaanContainer) {
-            togglePerusahaanInput();
-            jenisSuratSelect.addEventListener('change', togglePerusahaanInput);
-        }
-
         // Function to generate nomor surat for external AZRA
         async function generateNomorAzra() {
             console.log("generateNomorAzra function called.");
@@ -1242,7 +1215,7 @@
                         <div class="text-left">
                             <p class="mb-2">Informasi nomor surat:</p>
                             <ul class="list-disc list-inside space-y-1">
-                                <li>Perusahaan: <span class="font-semibold">RSAZRA</span></li>
+                                <li>Perusahaan: <span class="font-semibold">AZRA</span></li>
                                 <li>Nomor urut terakhir: <span class="font-semibold">${data.last_number}</span></li>
                                 <li>Nomor urut berikutnya: <span class="font-semibold">${String(parseInt(data.last_number) + 1).padStart(3, '0')}</span></li>
                             </ul>
@@ -1393,7 +1366,7 @@
                             <ul class="list-disc list-inside space-y-1">
                                 <li>Perusahaan: <span class="font-semibold">ASP</span></li>
                                 <li>Nomor urut terakhir: <span class="font-semibold">${lastNumber}</span></li>
-                                <li>Nomor urut berikutnya: <span class="font-semibold">${nextNumber}</span></li>
+                                <li>Nomor urut berikutnya: <span class="font-semibold">${String(nextNumber).padStart(3, '0')}</span></li>
                             </ul>
                             <p class="mt-4">Apakah Anda ingin menggunakan nomor surat ini?</p>
                         </div>
@@ -1454,6 +1427,188 @@
                     `;
                 }
             }
+        }
+
+        // --- FIX: Tampilkan input perusahaan saat eksternal untuk role sekretaris ---
+        function togglePerusahaanInput() {
+            if (jenisSuratSelect && jenisSuratSelect.value === 'eksternal') {
+                perusahaanContainer.style.display = 'block';
+            } else {
+                perusahaanContainer.style.display = 'none';
+                if (perusahaanSearch) perusahaanSearch.value = '';
+            }
+        }
+        if (jenisSuratSelect && perusahaanContainer) {
+            togglePerusahaanInput();
+            jenisSuratSelect.addEventListener('change', togglePerusahaanInput);
+        }
+        // --- Pastikan autocomplete tetap aktif ---
+        if (perusahaanSearch) {
+            perusahaanSearch.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                const query = this.value.trim();
+                if (query.length < 2) {
+                    suggestionsContainer.style.display = 'none';
+                    return;
+                }
+                searchTimeout = setTimeout(() => {
+                    fetch(`/api/perusahaan/search?query=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.data.length > 0) {
+                                suggestionsContainer.innerHTML = data.data.map(perusahaan => `
+                                    <div class="suggestion-item p-2 hover:bg-gray-100 cursor-pointer" 
+                                         data-kode="${perusahaan.kode}"
+                                         data-nama="${perusahaan.nama_perusahaan}">${perusahaan.nama_perusahaan}</div>
+                                `).join('');
+                                suggestionsContainer.style.display = 'block';
+                            } else {
+                                suggestionsContainer.innerHTML = `
+                                    <div class="suggestion-item p-2 hover:bg-gray-100 cursor-pointer text-green-600" id="add-new-company"><i class="ri-add-line mr-2"></i>Tambah "${query}" sebagai perusahaan baru</div>
+                                `;
+                                suggestionsContainer.style.display = 'block';
+                            }
+                        })
+                        .catch(error => {
+                            suggestionsContainer.style.display = 'none';
+                        });
+                }, 300);
+            });
+        }
+        // --- Pilih suggestion atau tambah perusahaan baru ---
+        if (suggestionsContainer) {
+            suggestionsContainer.addEventListener('click', function(e) {
+                const target = e.target.closest('.suggestion-item');
+                if (!target) return;
+                if (target.id === 'add-new-company') {
+                    const newCompanyName = perusahaanSearch.value.trim();
+                    if (newCompanyName) {
+                        fetch('/api/perusahaan/quick-store', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({ nama_perusahaan: newCompanyName })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                perusahaanSearch.value = data.data.nama_perusahaan;
+                                perusahaanHidden.value = data.data.kode;
+                                suggestionsContainer.style.display = 'none';
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil',
+                                    text: 'Perusahaan baru berhasil ditambahkan',
+                                    showConfirmButton: false,
+                                    timer: 1500
+                                });
+                            }
+                        });
+                    }
+                } else {
+                    const kode = target.dataset.kode;
+                    const nama = target.dataset.nama;
+                    perusahaanSearch.value = nama;
+                    perusahaanHidden.value = kode;
+                    suggestionsContainer.style.display = 'none';
+                }
+            });
+        }
+
+        // Validasi frontend sebelum submit
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                let errors = [];
+                // Validasi nomor surat
+                if (!nomorSuratInput.value.trim()) {
+                    errors.push('Silakan isi nomor surat terlebih dahulu.');
+                }
+                // Validasi tanggal surat
+                if (!tanggalSuratInput.value.trim()) {
+                    errors.push('Silakan pilih tanggal surat.');
+                }
+                // Validasi perusahaan (hanya untuk eksternal)
+                if (jenisSuratSelect && jenisSuratSelect.value === 'eksternal') {
+                    if (!perusahaanHidden.value.trim()) {
+                        errors.push('Perusahaan tujuan surat eksternal belum dipilih. Silakan pilih dari daftar.');
+                    }
+                }
+                // Validasi perihal
+                const perihalInput = document.querySelector('textarea[name="perihal"]');
+                if (!perihalInput.value.trim()) {
+                    errors.push('Silakan isi perihal surat.');
+                }
+                if (errors.length > 0) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Validasi Gagal',
+                        html: errors.map(e => `<div style=\"text-align:left\">${e}</div>`).join(''),
+                        confirmButtonText: 'Tutup',
+                        confirmButtonColor: '#10B981'
+                    });
+                    return false;
+                }
+            });
+        }
+
+        // Handler error validasi backend (AJAX/JSON)
+        if (window.validationErrors) {
+            let errorList = Object.values(window.validationErrors).flat();
+            Swal.fire({
+                icon: 'error',
+                title: 'Validasi Gagal',
+                html: errorList.map(e => `<div style=\"text-align:left\">${e}</div>`).join(''),
+                confirmButtonText: 'Tutup',
+                confirmButtonColor: '#10B981'
+            });
+        }
+
+        // Daftar elemen yang perlu diubah labelnya
+        const disposisiToTembusan = [
+            {
+                selector: '.card-disposisi-title', // Judul card
+                textDisposisi: 'Disposisi Surat',
+                textTembusan: 'Tembusan Surat'
+            },
+            {
+                selector: '.label-tujuan-disposisi', // Label tujuan
+                textDisposisi: 'Tujuan Disposisi',
+                textTembusan: 'Tujuan Tembusan'
+            },
+            {
+                selector: '.label-keterangan-pengirim', // Label keterangan
+                textDisposisi: 'Keterangan Pengirim',
+                textTembusan: 'Keterangan Pengirim (untuk tembusan)'
+            },
+            {
+                selector: '.input-tujuan-disposisi', // Placeholder search
+                textDisposisi: 'Cari nama atau jabatan...',
+                textTembusan: 'Cari nama atau jabatan...'
+            }
+        ];
+        // Helper untuk update label
+        function updateDisposisiLabels(isTembusan) {
+            disposisiToTembusan.forEach(item => {
+                const el = document.querySelector(item.selector);
+                if (el) {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        el.placeholder = isTembusan ? item.textTembusan : item.textDisposisi;
+                    } else {
+                        el.textContent = isTembusan ? item.textTembusan : item.textDisposisi;
+                    }
+                }
+            });
+        }
+        // Inisialisasi label (untuk SSR)
+        updateDisposisiLabels(asDirutToggle && asDirutToggle.checked);
+        // Event listener toggle
+        if (asDirutToggle) {
+            asDirutToggle.addEventListener('change', function() {
+                updateDisposisiLabels(this.checked);
+            });
         }
     });
 </script>
@@ -1574,14 +1729,17 @@
     /* User selection item hover effect */
     .user-selection-item {
         transition: all 0.2s ease;
+        background-color: unset !important;
     }
 
     .user-selection-item:hover {
         background-color: #f3f4f6;
     }
 
-    .user-selection-item label {
-        width: 100%;
+    .user-selection-item input[type="checkbox"]:checked ~ label,
+    .user-selection-item input[type="checkbox"]:checked {
+        background-color: unset !important;
+        color: unset !important;
     }
 
     /* Styling untuk suggestions container */

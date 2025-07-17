@@ -464,7 +464,7 @@
 
                 async fetchUsers() {
                     try {
-                        const response = await fetch('/api/users');
+                        const response = await fetch('/api/users/disposisi-list');
                         const data = await response.json();
                         const currentUserId = {{ Auth::id() }};
 

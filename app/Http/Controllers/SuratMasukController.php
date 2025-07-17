@@ -17,7 +17,41 @@ class SuratMasukController extends Controller
             return redirect()->route('login');
         }
         
-        return view('pages.surat.suratmasuk');
+        $user = auth()->user();
+        // Ambil semua surat masuk yang terkait user
+        $suratList = \App\Models\SuratKeluar::with(['disposisi.tujuan'])
+            ->whereHas('disposisi.tujuan', function($q) use ($user) {
+                $q->where('users.id', $user->id);
+            })
+            ->latest()
+            ->get();
+
+        $suratMasuk = [];
+        foreach ($suratList as $surat) {
+            $userAdalahPenerimaDisposisi = false;
+            $disposisiId = null;
+            $keteranganPenerima = null;
+            if ($surat->disposisi) {
+                foreach ($surat->disposisi->tujuan as $tujuan) {
+                    if ($tujuan->id == $user->id) {
+                        $userAdalahPenerimaDisposisi = true;
+                        $disposisiId = $surat->disposisi->id;
+                        $keteranganPenerima = $tujuan->pivot->keterangan_penerima ?? null;
+                        break;
+                    }
+                }
+            }
+            $suratMasuk[] = [
+                'surat' => $surat,
+                'userAdalahPenerimaDisposisi' => $userAdalahPenerimaDisposisi,
+                'disposisiId' => $disposisiId,
+                'keteranganPenerima' => $keteranganPenerima,
+            ];
+        }
+
+        return view('pages.surat.suratmasuk', [
+            'suratMasuk' => $suratMasuk,
+        ]);
     }
     
     public function getSuratMasuk(Request $request)
@@ -33,19 +67,43 @@ class SuratMasukController extends Controller
                 'perusahaanData'
             ]);
             
-            // Filter untuk role 0 (staff)
+            // Filter untuk role 0 (staff) atau role 5 (Sekretaris ASP)
             if ($request->has('user_id')) {
                 $userId = $request->user_id;
                 Log::info('Filtering surat for user_id: ' . $userId);
                 
-                $query->whereHas('disposisi.tujuan', function($q) use ($userId) {
-                    $q->where('users.id', $userId);
-                });
+                // Jika include_created = true, tambahkan surat yang dibuat oleh user
+                if ($request->has('include_created') && $request->include_created === 'true') {
+                    $query->where(function($q) use ($userId) {
+                        // Surat yang ditujukan kepada user
+                        $q->whereHas('disposisi.tujuan', function($subq) use ($userId) {
+                            $subq->where('users.id', $userId);
+                        });
+                        // Atau surat yang dibuat oleh user
+                        $q->orWhere('created_by', $userId);
+                    });
+                } else {
+                    // Hanya surat yang ditujukan kepada user
+                    $query->whereHas('disposisi.tujuan', function($q) use ($userId) {
+                        $q->where('users.id', $userId);
+                    });
+                }
             } 
+            // Filter untuk role 1 (Sekretaris) - semua data
+            else if ($request->has('all') && $request->all === 'true') {
+                Log::info('Showing all surat for Sekretaris');
+                // Tidak ada filter tambahan, tampilkan semua
+            }
             // Filter untuk role 2 (direktur)
             else if ($request->has('status_sekretaris')) {
                 $query->whereHas('disposisi', function($q) use ($request) {
                     $q->where('status_sekretaris', $request->status_sekretaris);
+                });
+            }
+            // Filter untuk role 8 (Direktur ASP) - sama seperti direktur
+            else if ($request->has('status_sekretaris_asp')) {
+                $query->whereHas('disposisi', function($q) use ($request) {
+                    $q->where('status_sekretaris', $request->status_sekretaris_asp);
                 });
             }
             
@@ -80,6 +138,20 @@ class SuratMasukController extends Controller
             
             // Transform response agar ada perusahaanData (kode dan nama_perusahaan)
             $transformed = $suratMasuk->map(function($surat) {
+                $user = auth()->user();
+                $userAdalahPenerimaDisposisi = false;
+                $disposisiId = null;
+                $keteranganPenerima = null;
+                if ($surat->disposisi) {
+                    foreach ($surat->disposisi->tujuan as $tujuan) {
+                        if ($tujuan->id == $user->id) {
+                            $userAdalahPenerimaDisposisi = true;
+                            $disposisiId = $surat->disposisi->id;
+                            $keteranganPenerima = $tujuan->pivot->keterangan_penerima ?? null;
+                            break;
+                        }
+                    }
+                }
                 return [
                     'id' => $surat->id,
                     'nomor_surat' => $surat->nomor_surat,
@@ -97,6 +169,10 @@ class SuratMasukController extends Controller
                     'creator' => $surat->creator,
                     'disposisi' => $surat->disposisi,
                     'files' => $surat->files,
+                    // Tambahan untuk fitur keterangan penerima
+                    'user_adalah_penerima_disposisi' => $userAdalahPenerimaDisposisi,
+                    'disposisi_id' => $disposisiId,
+                    'keterangan_penerima' => $keteranganPenerima,
                 ];
             });
             

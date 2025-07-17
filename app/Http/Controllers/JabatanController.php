@@ -38,6 +38,7 @@ class JabatanController extends Controller
         try {
             $validated = $request->validate([
                 'nama_jabatan' => 'required|string|max:255|unique:tbl_jabatan,nama_jabatan',
+                'kode_jabatan' => 'required|string|max:255',
                 'status' => 'required|in:aktif,nonaktif'
             ]);
 
@@ -69,6 +70,11 @@ class JabatanController extends Controller
                     'string',
                     'max:255',
                     Rule::unique('tbl_jabatan')->ignore($id)
+                ],
+                'kode_jabatan' => [
+                    'required',
+                    'string',
+                    'max:255',
                 ],
                 'status' => 'required|in:aktif,nonaktif'
             ]);

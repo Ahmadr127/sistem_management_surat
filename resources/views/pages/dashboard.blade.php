@@ -26,7 +26,7 @@
                     </div>
                 </div>
                 <h3 class="text-2xl font-bold text-gray-800" x-text="stats.totalSurat || 0"></h3>
-                <p class="text-sm text-gray-500 mt-1">Total Surat</p>
+                <p class="text-sm text-gray-500 mt-1">Total Surat Masuk</p>
             </div>
 
             <!-- Total Disposisi -->
@@ -66,10 +66,10 @@
         <!-- Recent Activity & Charts Section -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <!-- Recent Activity -->
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex-1">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-lg font-semibold text-gray-800">Aktivitas Terbaru</h2>
-                    <a href="{{ url('/laporan/disposisi') }}" class="text-sm text-green-600 hover:text-green-700">
+                    <a href="{{ url('/suratmasuk') }}" class="text-sm text-green-600 hover:text-green-700">
                         Lihat Semua
                     </a>
                 </div>
@@ -79,9 +79,9 @@
                             <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mr-4">
                                 <i class="ri-mail-send-line text-blue-600"></i>
                             </div>
-                            <div class="flex-1">
+                            <div class="flex-1 min-w-0 max-w-xs md:max-w-md">
                                 <h4 class="text-sm font-medium text-gray-800" x-text="activity.nomor_surat"></h4>
-                                <p class="text-xs text-gray-500" x-text="activity.perihal"></p>
+                                <p class="text-xs text-gray-500 block w-full truncate" x-text="activity.perihal"></p>
                             </div>
                             <span class="text-xs text-gray-400" x-text="formatDate(activity.created_at)"></span>
                         </div>
@@ -97,7 +97,7 @@
             </div>
 
             <!-- Quick Actions -->
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex-1">
                 <h2 class="text-lg font-semibold text-gray-800 mb-6">Aksi Cepat</h2>
                 <div class="grid grid-cols-2 gap-4">
                     @if (Auth::user()->role === 'admin')
@@ -144,6 +144,8 @@
                     disposisiSelesai: 0
                 },
                 recentActivities: [],
+                loading: true,
+                error: null,
 
                 init() {
                     this.loadStats();
@@ -151,14 +153,31 @@
                 },
 
                 async loadStats() {
+                    this.loading = true;
+                    this.error = null;
                     try {
                         const response = await fetch('/api/dashboard/stats');
-                        if (!response.ok) throw new Error('Network response was not ok');
                         const data = await response.json();
+                        
+                        if (!response.ok) {
+                            throw new Error(data.message || 'Gagal mengambil data statistik');
+                        }
+
                         console.log('Stats data:', data); // Debug log
-                        this.stats = data;
+                        
+                        if (data.error) {
+                            throw new Error(data.message);
+                        }
+
+                        this.stats = {
+                            totalSurat: parseInt(data.totalSurat) || 0,
+                            totalDisposisi: parseInt(data.totalDisposisi) || 0,
+                            disposisiBelumSelesai: parseInt(data.disposisiBelumSelesai) || 0,
+                            disposisiSelesai: parseInt(data.disposisiSelesai) || 0
+                        };
                     } catch (error) {
                         console.error('Error loading stats:', error);
+                        this.error = error.message;
                         // Set default values on error
                         this.stats = {
                             totalSurat: 0,
@@ -166,16 +185,22 @@
                             disposisiBelumSelesai: 0,
                             disposisiSelesai: 0
                         };
+                    } finally {
+                        this.loading = false;
                     }
                 },
 
                 async loadRecentActivities() {
                     try {
                         const response = await fetch('/api/dashboard/recent-activities');
-                        if (!response.ok) throw new Error('Network response was not ok');
                         const data = await response.json();
+                        
+                        if (!response.ok) {
+                            throw new Error(data.message || 'Gagal mengambil data aktivitas');
+                        }
+
                         console.log('Activities data:', data); // Debug log
-                        this.recentActivities = data;
+                        this.recentActivities = Array.isArray(data) ? data : [];
                     } catch (error) {
                         console.error('Error loading activities:', error);
                         this.recentActivities = [];

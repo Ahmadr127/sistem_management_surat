@@ -13,27 +13,23 @@ class JabatanSeeder extends Seeder
      */
     public function run(): void
     {
-        $jabatan = [
-            [
-                'nama_jabatan' => 'STAFF',
-                'status' => 'aktif'
-            ],
-            [
-                'nama_jabatan' => 'DIREKTUR UTAMA',
-                'status' => 'aktif'
-            ],
-            [
-                'nama_jabatan' => 'SEKRETARIS',
-                'status' => 'aktif'
-            ],
-            [
-                'nama_jabatan' => 'IT',
-                'status' => 'aktif'
-            ]
+        // Perbaiki data lama yang mungkin memiliki timestamp NULL
+        Jabatan::whereNull('created_at')->update(['created_at' => now(), 'updated_at' => now()]);
+        
+        $jabatans = [
+            ['nama_jabatan' => 'Direktur Utama', 'kode_jabatan' => 'DIRUT', 'status' => 'aktif'],
+            ['nama_jabatan' => 'Sekretaris', 'kode_jabatan' => 'SEKRE', 'status' => 'aktif'],
+            ['nama_jabatan' => 'Manager', 'kode_jabatan' => 'MNGR', 'status' => 'aktif'],
+            ['nama_jabatan' => 'Staff', 'kode_jabatan' => 'STAFF', 'status' => 'aktif'],
+            ['nama_jabatan' => 'IT', 'kode_jabatan' => 'IT', 'status' => 'aktif'],
+            ['nama_jabatan' => 'Super Admin', 'kode_jabatan' => 'SADMIN', 'status' => 'aktif'],
         ];
 
-        foreach ($jabatan as $jab) {
-            Jabatan::create($jab);
+        foreach ($jabatans as $jabatan) {
+            Jabatan::updateOrInsert(
+                ['nama_jabatan' => $jabatan['nama_jabatan']],
+                ['kode_jabatan' => $jabatan['kode_jabatan'], 'status' => $jabatan['status']]
+            );
         }
     }
 }

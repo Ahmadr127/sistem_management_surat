@@ -52,6 +52,8 @@
                             <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Nama Jabatan</th>
                             <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Kode Jabatan</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Status</th>
                             <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Tanggal Dibuat</th>
@@ -66,6 +68,9 @@
                                     <div class="text-sm font-medium text-gray-900" x-text="jabatan.nama_jabatan"></div>
                                 </td>
                                 <td class="px-6 py-4">
+                                    <div class="text-sm font-mono text-gray-600" x-text="jabatan.kode_jabatan"></div>
+                                </td>
+                                <td class="px-6 py-4">
                                     <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
                                         :class="{
                                             'bg-green-100 text-green-800': jabatan.status === 'aktif',
@@ -74,7 +79,6 @@
                                         x-text="jabatan.status">
                                     </span>
                                 </td>
-
                                 <td class="px-6 py-4">
                                     <div class="text-sm text-gray-900" x-text="formatDate(jabatan.created_at)"></div>
                                 </td>
@@ -153,6 +157,14 @@
                                     placeholder="Masukkan nama jabatan">
                             </div>
 
+                            <!-- Kode Jabatan -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Kode Jabatan</label>
+                                <input type="text" x-model="formData.kode_jabatan" required
+                                    class="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    placeholder="e.g., DIRUT, MNGR">
+                            </div>
+
                             <!-- Status -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
@@ -195,6 +207,7 @@
                 formData: {
                     id: null,
                     nama_jabatan: '',
+                    kode_jabatan: '',
                     status: 'aktif'
                 },
                 currentPage: 1,
@@ -241,7 +254,7 @@
                     return this.jabatan.filter(jabatan => {
                         const matchSearch = jabatan.nama_jabatan.toLowerCase().includes(this
                             .searchQuery
-                            .toLowerCase());
+                            .toLowerCase()) || (jabatan.kode_jabatan && jabatan.kode_jabatan.toLowerCase().includes(this.searchQuery.toLowerCase()));
                         const matchStatus = this.statusFilter === '' || jabatan.status ===
                             this
                             .statusFilter;
@@ -268,6 +281,7 @@
                     this.formData = {
                         id: jabatan.id,
                         nama_jabatan: jabatan.nama_jabatan,
+                        kode_jabatan: jabatan.kode_jabatan,
                         status: jabatan.status
                     };
                     this.showModal = true;
@@ -338,6 +352,7 @@
                     this.formData = {
                         id: null,
                         nama_jabatan: '',
+                        kode_jabatan: '',
                         status: 'aktif'
                     };
                 },

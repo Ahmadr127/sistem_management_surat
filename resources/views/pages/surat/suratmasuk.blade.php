@@ -65,7 +65,7 @@
                         <option value="">Semua Status Sekretaris</option>
                         <option value="pending">Menunggu</option>
                         <option value="review">Sedang Ditinjau</option>
-                        <option value="approved">Disetujui</option>
+                        <option value="approved">Diterima</option>
                         <option value="rejected">Ditolak</option>
                     </select>
 
@@ -97,53 +97,51 @@
             </div>
 
             <!-- Table -->
-            <div class="relative rounded-lg shadow-sm overflow-hidden m-4 border border-gray-100">
-                <div class="overflow-x-auto md:rounded-lg scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                    <div class="inline-block min-w-full align-middle">
-                        <table class="min-w-full divide-y divide-gray-200" id="suratMasukTable">
-                    <thead class="bg-green-600">
-                        <tr>
-                            <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                No. Disposisi
-                            </th>
-                            <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Tanggal Surat
-                            </th>
-                            <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                No. Surat
-                            </th>
-                            <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Nama Perusahaan
-                            </th>
-                            <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Perihal
-                            </th>
-                            <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Jenis
-                            </th>
-                            <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Pengirim
-                            </th>
-                            <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Status Sekretaris
-                            </th>
-                            <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Status Direktur
-                            </th>
-                            <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-                                Aksi
-                            </th>
-                        </tr>
-                    </thead>
-                            <tbody id="surat-table-body" class="bg-white divide-y divide-gray-200">
-                        <!-- Data akan diisi melalui JavaScript -->
-                    </tbody>
-                </table>
+            <div class="p-4">
+                <div class="overflow-x-auto relative rounded-lg shadow-sm border border-gray-100 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                    <table class="min-w-full divide-y divide-gray-200" id="suratMasukTable">
+                        <thead class="bg-green-600">
+                            <tr>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    No. Disposisi
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Tanggal Surat
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    No. Surat
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Nama Perusahaan
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Perihal
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Jenis
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Pengirim
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Status Sekretaris
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Status Direktur
+                                </th>
+                                <th class="px-2 py-2 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                                    Aksi
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="surat-table-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Data akan diisi melalui JavaScript -->
+                        </tbody>
+                    </table>
+                    <!-- Scroll indicator visible only on small screens -->
+                    <div class="md:hidden absolute bottom-0 right-6 bg-gradient-to-l from-white via-white to-transparent px-4 py-1 text-xs text-gray-500 flex items-center pointer-events-none">
+                        <span>Geser <i class="ri-arrow-right-line ml-1"></i></span>
                     </div>
-                </div>
-                <!-- Scroll indicator visible only on small screens -->
-                <div class="md:hidden absolute bottom-0 right-6 bg-gradient-to-l from-white via-white to-transparent px-4 py-1 text-xs text-gray-500 flex items-center">
-                    <span>Geser <i class="ri-arrow-right-line ml-1"></i></span>
                 </div>
             </div>
 
@@ -257,10 +255,34 @@
                             </div>
                         </div>
 
+                        <!-- Keterangan Penerima Disposisi -->
+                        <div class="bg-gray-50 rounded-lg p-4 space-y-2">
+                            <p class="text-sm font-medium text-gray-500">Keterangan Penerima Disposisi</p>
+                            <div id="detail-keterangan-penerima-list" class="text-sm text-gray-700">
+                                <p>Belum ada keterangan dari penerima disposisi</p>
+                            </div>
+                        </div>
+
                         <!-- Keterangan Pengirim -->
                         <div class="bg-gray-50 rounded-lg p-4 space-y-2">
                             <p class="text-sm font-medium text-gray-500">Keterangan Pengirim</p>
-                            <p class="text-sm text-gray-700" id="detail-keterangan-pengirim">-</p>
+                            <div class="flex items-center space-x-2">
+                                <p class="text-sm text-gray-700 mb-0" id="detail-keterangan-pengirim">-</p>
+                                <button type="button" id="btn-edit-keterangan-pengirim" class="inline-flex items-center px-2 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 rounded-md text-xs font-medium shadow-sm transition-colors duration-200 ml-2 hidden">
+                                    <i class="ri-edit-2-line mr-1"></i> Isi Keterangan Pengirim
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Modal/Edit Inline Keterangan Pengirim -->
+                        <div id="modal-keterangan-pengirim" class="fixed inset-0 z-50 hidden bg-black bg-opacity-40 flex items-center justify-center">
+                            <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+                                <h3 class="text-lg font-semibold mb-4">Keterangan Anda sebagai Pengirim</h3>
+                                <textarea id="keterangan-pengirim-input" rows="4" class="w-full border rounded p-2 mb-4" placeholder="Tulis keterangan Anda di sini..."></textarea>
+                                <div class="flex justify-end space-x-2">
+                                    <button type="button" onclick="closeKeteranganPengirimModal()" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Batal</button>
+                                    <button type="button" onclick="simpanKeteranganPengirim()" class="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700">Simpan</button>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- File Attachment -->
@@ -268,10 +290,9 @@
                             <div class="flex items-center justify-between mb-2">
                                 <p class="text-sm font-medium text-gray-500">File Surat</p>
                                 <div class="flex space-x-2">
-                                    <button id="detail-preview-button" class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 transition-colors duration-200">
-                                        <i class="ri-file-search-line mr-1.5"></i>
-                                        Preview
-                                    </button>
+                                    <a id="detail-preview-link" href="#" target="_blank" class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 transition-colors duration-200">
+                                        <i class="ri-file-search-line mr-1.5"></i> Preview
+                                    </a>
                                     <a href="#" id="detail-file-link" class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 transition-colors duration-200">
                                         <i class="ri-download-line mr-1.5"></i>
                                         Download
@@ -292,50 +313,6 @@
                         onclick="document.getElementById('detail-modal').classList.add('hidden')">
                         Tutup
                     </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Preview File -->
-    <div id="file-preview-modal" class="fixed inset-0 z-50 hidden overflow-hidden">
-        <div class="flex items-center justify-center min-h-screen p-0 text-center">
-            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-                <div class="absolute inset-0 bg-gray-900 opacity-90"></div>
-            </div>
-            <div
-                class="inline-block align-middle bg-white rounded-lg text-left overflow-hidden shadow-2xl transform transition-all my-0 w-full max-w-full sm:max-w-full md:max-w-full lg:max-w-full xl:max-w-full h-screen">
-                <div class="bg-white px-3 py-3 flex justify-between items-center border-b border-gray-200">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900 truncate max-w-[70%]" id="preview-modal-title">
-                        Preview File Surat
-                    </h3>
-                    <div class="flex space-x-2">
-                        <a href="#" id="preview-download-link"
-                            class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                            <i class="ri-download-line mr-1"></i> Download
-                        </a>
-                        <button type="button" id="close-preview-modal"
-                            class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                            <i class="ri-close-line mr-1"></i> Tutup
-                        </button>
-                    </div>
-                </div>
-                <div style="height: calc(100vh - 49px);" class="bg-gray-100">
-                    <div id="file-preview-container" class="w-full h-full">
-                        <iframe id="pdf-preview" class="w-full h-full hidden border-0" style="display: none;"></iframe>
-                        <img id="img-preview" class="max-h-full max-w-full mx-auto hidden" style="object-fit: contain; padding: 20px; height: calc(100vh - 89px); display: none; margin: 0 auto;" />
-                        <div id="loading-preview" class="flex flex-col justify-center items-center h-full w-full">
-                            <i class="ri-loader-4-line animate-spin text-5xl text-green-600"></i>
-                            <p class="mt-4 text-gray-600">Memuat file...</p>
-                        </div>
-                        <div id="error-preview" class="hidden">
-                            <div class="flex flex-col justify-center items-center h-full w-full">
-                                <i class="ri-error-warning-line text-5xl text-red-600"></i>
-                                <p class="mt-4 text-gray-600 font-medium">File tidak dapat ditampilkan</p>
-                                <p class="mt-1 text-gray-500">Silahkan download file untuk melihatnya</p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -476,6 +453,18 @@
         </div>
     </div>
 
+    <!-- Modal Keterangan Penerima Disposisi -->
+    <div id="keterangan-penerima-modal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-40 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+            <h3 class="text-lg font-semibold mb-4">Keterangan Anda sebagai Penerima Disposisi</h3>
+            <textarea id="keterangan-penerima-input" rows="4" class="w-full border rounded p-2 mb-4" placeholder="Tulis keterangan Anda di sini..."></textarea>
+            <div class="flex justify-end space-x-2">
+                <button type="button" onclick="closeKeteranganPenerimaModal()" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Batal</button>
+                <button type="button" onclick="simpanKeteranganPenerima()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Simpan</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript untuk mengelola data dan interaksi -->
     <script>
         // Definisikan suratData sebagai variabel global
@@ -509,14 +498,14 @@
             }
         }
 
-        function getStatusLabel(status) {
+        function getStatusLabel(status, isSekretaris = false) {
             switch (status) {
                 case 'pending':
                     return 'Menunggu';
                 case 'review':
                     return 'Sedang Ditinjau';
                 case 'approved':
-                    return 'Disetujui';
+                    return isSekretaris ? 'Diterima' : 'Disetujui';
                 case 'rejected':
                     return 'Ditolak';
                 default:
@@ -556,9 +545,28 @@
                 } else if (userRole === 1) { // Sekretaris
                     console.log('Role Sekretaris: Mengambil semua data');
                     params.append('all', 'true');
+                } else if (userRole === 4) { // Manager
+                    console.log('Role Manager: Menampilkan surat yang ditujukan pada dia dan surat yang dia buat');
+                    params.append('user_id', {{ auth()->id() }});
+                    params.append('include_created', 'true');
+                } else if (userRole === 5) { // Sekretaris ASP
+                    console.log('Role Sekretaris ASP: Menampilkan surat yang ditujukan pada dia dan surat yang dia buat');
+                    params.append('user_id', {{ auth()->id() }});
+                    params.append('include_created', 'true');
+                } else if (userRole === 6) { // General Manager
+                    console.log('Role General Manager: Menampilkan surat yang ditujukan pada dia dan surat yang dia buat');
+                    params.append('user_id', {{ auth()->id() }});
+                    params.append('include_created', 'true');
+                } else if (userRole === 7) { // Manager Keuangan
+                    console.log('Role Manager Keuangan: Menampilkan surat yang ditujukan pada dia dan surat yang dia buat');
+                    params.append('user_id', {{ auth()->id() }});
+                    params.append('include_created', 'true');
                 } else if (userRole === 2) { // Direktur
                     console.log('Role Direktur: Mengambil data dengan status sekretaris approved');
                     params.append('status_sekretaris', 'approved');
+                } else if (userRole === 8) { // Direktur ASP
+                    console.log('Role Direktur ASP: Mengambil data dengan status sekretaris approved');
+                    params.append('status_sekretaris_asp', 'approved');
                 }
 
                 url = `${url}?${params.toString()}`;
@@ -600,6 +608,67 @@
 
                                 return isTujuanDisposisi || isCreatedAndApproved;
                             });
+                        } else if (userRole === 4) { // Manager
+                            console.log('Filtering data for Manager');
+                            filteredData = data.filter(surat => {
+                                // Cek apakah user adalah tujuan disposisi
+                                const isTujuanDisposisi = surat.disposisi?.tujuan?.some(
+                                    tujuan => tujuan.id === {{ auth()->id() }}
+                                );
+
+                                // Cek apakah surat dibuat oleh user
+                                const isCreatedByUser = surat.created_by === {{ auth()->id() }};
+
+                                return isTujuanDisposisi || isCreatedByUser;
+                            });
+                        } else if (userRole === 5) { // Sekretaris ASP
+                            console.log('Filtering data for Sekretaris ASP');
+                            filteredData = data.filter(surat => {
+                                // Cek apakah user adalah tujuan disposisi
+                                const isTujuanDisposisi = surat.disposisi?.tujuan?.some(
+                                    tujuan => tujuan.id === {{ auth()->id() }}
+                                );
+
+                                // Cek apakah surat dibuat oleh user
+                                const isCreatedByUser = surat.created_by === {{ auth()->id() }};
+
+                                return isTujuanDisposisi || isCreatedByUser;
+                            });
+                        } else if (userRole === 6) { // General Manager
+                            console.log('Filtering data for General Manager');
+                            // Untuk General Manager, data dari API sudah benar, tidak perlu filter lagi
+                            filteredData = data;
+                            console.log('Using all data for General Manager (no additional filtering)');
+                        } else if (userRole === 7) { // Manager Keuangan
+                            console.log('Filtering data for Manager Keuangan');
+                            // Untuk Manager Keuangan, data dari API sudah benar, tidak perlu filter lagi
+                            filteredData = data;
+                        } else if (userRole === 2) { // Direktur
+                            console.log('Filtering data for Direktur');
+                            filteredData = data.filter(surat => {
+                                // Cek apakah user adalah tujuan disposisi
+                                const isTujuanDisposisi = surat.disposisi?.tujuan?.some(
+                                    tujuan => tujuan.id === {{ auth()->id() }}
+                                );
+
+                                // Cek apakah surat dibuat oleh user
+                                const isCreatedByUser = surat.created_by === {{ auth()->id() }};
+
+                                return isTujuanDisposisi || isCreatedByUser;
+                            });
+                        } else if (userRole === 8) { // Direktur ASP
+                            console.log('Filtering data for Direktur ASP');
+                            filteredData = data.filter(surat => {
+                                // Cek apakah user adalah tujuan disposisi
+                                const isTujuanDisposisi = surat.disposisi?.tujuan?.some(
+                                    tujuan => tujuan.id === {{ auth()->id() }}
+                                );
+
+                                // Cek apakah surat dibuat oleh user
+                                const isCreatedByUser = surat.created_by === {{ auth()->id() }};
+
+                                return isTujuanDisposisi || isCreatedByUser;
+                            });
                         }
 
                         console.log('Filtered data:', filteredData);
@@ -633,15 +702,23 @@
 
                 if (!Array.isArray(data) || data.length === 0) {
                     tableBody.innerHTML = `
-                        <tr>
-                            <td colspan="9" class="text-center py-10">
-                                <div class="flex flex-col items-center justify-center">
-                                    <i class="ri-inbox-line text-gray-400 text-3xl mb-3"></i>
-                                    <p class="text-gray-500 font-medium">Belum ada surat masuk</p>
-                                    <p class="text-gray-400 text-sm mt-1">Surat masuk akan muncul di sini</p>
-                                </div>
-                            </td>
-                        </tr>
+                        <td class="px-2 py-2 whitespace-nowrap text-sm font-medium">
+    <div class="flex flex-wrap gap-2">
+        <button onclick="showDetail(${surat.id})" class="inline-flex items-center px-2.5 py-1.5 bg-white border border-green-300 hover:bg-green-50 text-green-700 rounded-md shadow-sm transition-colors duration-200" title="Lihat Detail">
+            <i class="ri-eye-line mr-1"></i> Detail
+        </button>
+        ${(userRole === 1 || userRole === 2 || userRole === 5 || userRole === 8) ? `
+            <button onclick="editDisposisi(${surat.id})" class="inline-flex items-center px-2.5 py-1.5 bg-white border border-indigo-300 hover:bg-indigo-50 text-indigo-700 rounded-md shadow-sm transition-colors duration-200" title="Edit Disposisi">
+                <i class="ri-file-edit-line mr-1"></i> Disposisi
+            </button>
+        ` : ''}
+        ${(surat.user_adalah_penerima_disposisi && surat.disposisi_id) ? `
+            <button type="button" onclick="openKeteranganPenerimaModal(${surat.disposisi_id}, '${surat.keterangan_penerima ? surat.keterangan_penerima.replace(/'/g, "\\'") : ''}')" class="inline-flex items-center px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm transition-colors duration-200" title="Isi Keterangan Saya">
+                <i class='ri-edit-2-line mr-1'></i> Isi Keterangan Saya
+            </button>
+        ` : ''}
+    </div>
+</td>
                     `;
                     paginationContainer.innerHTML = '';
                     return;
@@ -705,7 +782,7 @@
                             </td>
                             <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-500">
                                 <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(statusSekretaris)}">
-                                    ${getStatusLabel(statusSekretaris)}
+                                    ${getStatusLabel(statusSekretaris, true)}
                                 </span>
                             </td>
                             <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-500">
@@ -715,15 +792,21 @@
                             </td>
                             <td class="px-2 py-2 whitespace-nowrap text-sm font-medium">
                                 <div class="flex flex-wrap gap-2">
-                                    <button onclick="showDetail(${surat.id})" class="inline-flex items-center px-2.5 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 rounded-md transition-colors duration-200" title="Lihat Detail">
+                                    <button onclick="showDetail(${surat.id})" class="inline-flex items-center px-2.5 py-1.5 bg-white border border-green-300 hover:bg-green-50 text-green-700 rounded-md shadow-sm transition-colors duration-200" title="Lihat Detail">
                                         <i class="ri-eye-line mr-1"></i> Detail
                                     </button>
 
-                                    ${(userRole === 1 || userRole === 2) ? `
-                                        <button onclick="editDisposisi(${surat.id})" class="inline-flex items-center px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md transition-colors duration-200" title="Edit Disposisi">
+                                    ${(userRole === 1 || userRole === 2 || userRole === 5 || userRole === 8) ? `
+                                        <button onclick="editDisposisi(${surat.id})" class="inline-flex items-center px-2.5 py-1.5 bg-white border border-indigo-300 hover:bg-indigo-50 text-indigo-700 rounded-md shadow-sm transition-colors duration-200" title="Edit Disposisi">
                                             <i class="ri-file-edit-line mr-1"></i> Disposisi
-                                                                                    </button>
-                                                                                ` : ''}
+                                        </button>
+                                    ` : ''}
+                                    
+                                    ${(surat.user_adalah_penerima_disposisi && surat.disposisi_id) ? `
+                                        <button type="button" onclick="openKeteranganPenerimaModal(${surat.disposisi_id}, '${surat.keterangan_penerima ? surat.keterangan_penerima.replace(/'/g, "\\'") : ''}')" class="inline-flex items-center px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm transition-colors duration-200" title="Isi Keterangan Saya">
+                                            <i class='ri-edit-2-line mr-1'></i> Isi Keterangan Saya
+                                        </button>
+                                    ` : ''}
                                 </div>
                             </td>
                         </tr>
@@ -745,9 +828,20 @@
                 html += `<nav class="inline-flex rounded-md shadow-sm" aria-label="Pagination">`;
                 // Tombol prev
                 html += `<button class="px-3 py-1 border border-gray-300 bg-white text-gray-700 text-sm font-medium rounded-l-md ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}" ${currentPage === 1 ? 'disabled' : ''} data-page="${currentPage - 1}">&laquo;</button>`;
-                // Nomor halaman
+                // Nomor halaman dengan ellipsis
                 for (let i = 1; i <= totalPages; i++) {
-                    html += `<button class="px-3 py-1 border-t border-b border-gray-300 bg-white text-gray-700 text-sm font-medium ${currentPage === i ? 'bg-green-100 text-green-700 font-bold' : 'hover:bg-gray-50'}" data-page="${i}">${i}</button>`;
+                    if (
+                        i === 1 ||
+                        i === totalPages ||
+                        (i >= currentPage - 1 && i <= currentPage + 1)
+                    ) {
+                        html += `<button class="px-3 py-1 border-t border-b border-gray-300 bg-white text-gray-700 text-sm font-medium ${currentPage === i ? 'bg-green-100 text-green-700 font-bold' : 'hover:bg-gray-50'}" data-page="${i}">${i}</button>`;
+                    } else if (
+                        i === currentPage - 2 ||
+                        i === currentPage + 2
+                    ) {
+                        html += `<span class="px-3 py-1 border-t border-b border-gray-300 bg-white text-gray-400 text-sm font-medium">...</span>`;
+                    }
                 }
                 // Tombol next
                 html += `<button class="px-3 py-1 border border-gray-300 bg-white text-gray-700 text-sm font-medium rounded-r-md ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}" ${currentPage === totalPages ? 'disabled' : ''} data-page="${currentPage + 1}">&raquo;</button>`;
@@ -955,7 +1049,7 @@
                                 document.getElementById('edit-disposisi-id').value = data.disposisi.id;
 
                                 // Atur bagian yang ditampilkan berdasarkan role
-                                if (userRole === 1) { // Sekretaris
+                                if (userRole === 1 || userRole === 5) { // Sekretaris atau Sekretaris ASP
                                     document.getElementById('sekretaris-section').classList.remove(
                                         'hidden');
                                     document.getElementById('direktur-section').classList.add('hidden');
@@ -973,12 +1067,21 @@
 
                                     // Setup event listener untuk status_dirut
                                     setupStatusDirectorChangeHandler();
+                                } else if (userRole === 8) { // Direktur ASP
+                                    document.getElementById('sekretaris-section').classList.add('hidden');
+                                    document.getElementById('direktur-section').classList.remove('hidden');
 
-                                    // Initial visibility setup based on current status
-                                    toggleTujuanDisposisiVisibility(statusDirut);
+                                    // Isi field direktur
+                                    const statusDirut = data.disposisi.status_dirut || 'pending';
+                                    document.getElementById('status_dirut').value = statusDirut;
 
-                                    // Muat tujuan disposisi
-                                    loadDisposisiUsers(data.disposisi.id);
+                                    // Setup event listener untuk status_dirut
+                                    setupStatusDirectorChangeHandler();
+
+                                    // Panggil loadDisposisiUsers agar tujuan disposisi tampil
+                                    if (data.disposisi.id) {
+                                        loadDisposisiUsers(data.disposisi.id);
+                                    }
                                 }
                             } else {
                                 alert('Data disposisi tidak ditemukan');
@@ -1137,6 +1240,21 @@
                                 break;
                             case 3:
                                 roleLabel = '<span class="inline-flex px-2 text-xs font-semibold bg-purple-100 text-purple-800 rounded-full ml-1">Admin</span>';
+                                break;
+                            case 4:
+                                roleLabel = '<span class="inline-flex px-2 text-xs font-semibold bg-orange-100 text-orange-800 rounded-full ml-1">Manager</span>';
+                                break;
+                            case 5:
+                                roleLabel = '<span class="inline-flex px-2 text-xs font-semibold bg-pink-100 text-pink-800 rounded-full ml-1">Sekretaris ASP</span>';
+                                break;
+                            case 6:
+                                roleLabel = '<span class="inline-flex px-2 text-xs font-semibold bg-indigo-100 text-indigo-800 rounded-full ml-1">General Manager</span>';
+                                break;
+                            case 7:
+                                roleLabel = '<span class="inline-flex px-2 text-xs font-semibold bg-red-100 text-red-800 rounded-full ml-1">Manager Keuangan</span>';
+                                break;
+                            case 8:
+                                roleLabel = '<span class="inline-flex px-2 text-xs font-semibold bg-teal-100 text-teal-800 rounded-full ml-1">Direktur ASP</span>';
                                 break;
                         }
                     }
@@ -1332,7 +1450,7 @@
                 // Kumpulkan data berdasarkan role
                 let formData = new FormData();
 
-                if (userRole === 1) { // Sekretaris
+                if (userRole === 1 || userRole === 5) { // Sekretaris atau Sekretaris ASP
                     const sekretarisStatus = document.getElementById('status_sekretaris').value;
                     formData.append('status_sekretaris', sekretarisStatus);
                     console.log('Sekretaris Status:', sekretarisStatus);
@@ -1345,6 +1463,48 @@
 
                     console.log('Direktor Status:', direktorStatus);
                     console.log('Direktor Keterangan:', direktorKeterangan);
+
+                    // Debug tujuan disposisi container
+                    const container = document.getElementById('tujuan-disposisi-container');
+                    console.log('Tujuan container exists:', !!container);
+                    if (container) {
+                        console.log('Tujuan container HTML:', container.innerHTML.substring(0, 100) + '...');
+                    }
+
+                    // Ambil tujuan disposisi yang dipilih
+                    const allCheckboxes = document.querySelectorAll('.tujuan-disposisi-checkbox');
+                    const tujuanCheckboxes = document.querySelectorAll('.tujuan-disposisi-checkbox:checked');
+
+                    console.log('All checkboxes selector:', '.tujuan-disposisi-checkbox');
+                    console.log('Total checkboxes found:', allCheckboxes.length);
+                    console.log('All checkboxes IDs:', Array.from(allCheckboxes).map(cb => cb.id));
+                    console.log('Checked checkboxes found:', tujuanCheckboxes.length);
+                    console.log('Checked checkboxes IDs:', Array.from(tujuanCheckboxes).map(cb => cb.id));
+
+                    // Gunakan tujuanCheckboxes untuk disposisi jika ada, jika tidak gunakan window.selectedUserIds
+                    let tujuanIds = Array.from(tujuanCheckboxes).map(cb => cb.value);
+
+                    // Fallback ke window.selectedUserIds jika tidak ada checkbox yang dipilih tetapi ada selectedUserIds
+                    if (tujuanIds.length === 0 && window.selectedUserIds && window.selectedUserIds.length > 0) {
+                        console.log('Menggunakan window.selectedUserIds sebagai fallback:', window.selectedUserIds);
+                        tujuanIds = window.selectedUserIds;
+                    }
+
+                    // Tambahkan setiap ID tujuan ke formData
+                    tujuanIds.forEach(id => {
+                        formData.append('tujuan_disposisi[]', id);
+                    });
+
+                    console.log('Tujuan disposisi yang dipilih:', tujuanIds);
+                } else if (userRole === 8) { // Direktur ASP
+                    const direktorStatus = document.getElementById('status_dirut').value;
+                    const direktorKeterangan = document.getElementById('keterangan_dirut').value;
+
+                    formData.append('status_dirut', direktorStatus);
+                    formData.append('keterangan_dirut', direktorKeterangan);
+
+                    console.log('Direktur ASP Status:', direktorStatus);
+                    console.log('Direktur ASP Keterangan:', direktorKeterangan);
 
                     // Debug tujuan disposisi container
                     const container = document.getElementById('tujuan-disposisi-container');
@@ -1471,14 +1631,19 @@
             const surat = suratData.find(s => s.id === id);
             if (!surat) return;
 
-                // Save current surat ID for preview
-                currentSuratId = id;
+            console.log('Opening detail for surat ID:', id);
+            console.log('Surat data:', surat);
 
-            // Tampilkan loading state
+            // Save current surat ID for preview
+            currentSuratId = id;
+
+            // Reset semua data terlebih dahulu
             document.getElementById('detail-keterangan-pengirim').textContent = 'Memuat...';
             document.getElementById('detail-keterangan-sekretaris').textContent = 'Memuat...';
             document.getElementById('detail-keterangan-dirut').textContent = 'Memuat...';
             document.getElementById('detail-tujuan-disposisi').innerHTML = '<p>Memuat data tujuan disposisi...</p>';
+            document.getElementById('detail-keterangan-penerima-list').innerHTML = '<p>Memuat data keterangan penerima...</p>';
+            document.getElementById('btn-edit-keterangan-pengirim').classList.add('hidden');
             document.getElementById('detail-pengirim').textContent = 'Memuat...';
             document.getElementById('detail-perusahaan').textContent = 'Memuat...';
                 
@@ -1497,6 +1662,8 @@
                 })
                 .then(response => response.json())
                 .then(data => {
+                    console.log('Disposisi data for surat ID', id, ':', data);
+                    
                     if (data.success && data.disposisi) {
                         document.getElementById('detail-keterangan-pengirim').textContent = data.disposisi
                             .keterangan_pengirim || '-';
@@ -1510,35 +1677,51 @@
                         document.getElementById('detail-status-dirut').innerHTML = getStatusHTML(data.disposisi
                             .status_dirut);
                                 
-                            // Tampilkan ID disposisi
-                            document.getElementById('detail-disposisi-id').textContent = data.disposisi.id || '-';
-                            
-                            // Tampilkan tanggal disposisi (waktu_review_dirut)
-                            if (data.disposisi.waktu_review_dirut) {
-                                const disposisiDate = new Date(data.disposisi.waktu_review_dirut);
-                                document.getElementById('detail-disposisi-tanggal').textContent = disposisiDate.toLocaleDateString(
-                                    'id-ID', {
-                                        day: '2-digit',
-                                        month: 'long',
-                                        year: 'numeric'
-                                    });
-                            } else {
-                                document.getElementById('detail-disposisi-tanggal').textContent = '-';
-                            }
+                        // Tampilkan ID disposisi
+                        document.getElementById('detail-disposisi-id').textContent = data.disposisi.id || '-';
+                        
+                        // Tampilkan tanggal disposisi (waktu_review_dirut)
+                        if (data.disposisi.waktu_review_dirut) {
+                            const disposisiDate = new Date(data.disposisi.waktu_review_dirut);
+                            document.getElementById('detail-disposisi-tanggal').textContent = disposisiDate.toLocaleDateString(
+                                'id-ID', {
+                                    day: '2-digit',
+                                    month: 'long',
+                                    year: 'numeric'
+                                });
+                        } else {
+                            document.getElementById('detail-disposisi-tanggal').textContent = '-';
+                        }
 
                         // Jika ada data disposisi, ambil data tujuan disposisi
                         if (data.disposisi.id) {
+                            console.log('Fetching tujuan disposisi for disposisi ID:', data.disposisi.id);
                             fetchTujuanDisposisi(data.disposisi.id);
                         } else {
                             document.getElementById('detail-tujuan-disposisi').innerHTML =
-                                '<p>Belum ada tujuan disposisi</p>';
+                                '<p class="text-gray-500">Belum ada tujuan disposisi</p>';
+                            document.getElementById('detail-keterangan-penerima-list').innerHTML =
+                                '<p class="text-gray-500 italic">Belum ada keterangan dari penerima disposisi</p>';
                         }
+                    } else {
+                        document.getElementById('detail-keterangan-pengirim').textContent = '-';
+                        document.getElementById('detail-keterangan-sekretaris').textContent = '-';
+                        document.getElementById('detail-keterangan-dirut').textContent = '-';
+                        document.getElementById('detail-tujuan-disposisi').innerHTML =
+                            '<p class="text-gray-500">Belum ada tujuan disposisi</p>';
+                        document.getElementById('detail-keterangan-penerima-list').innerHTML =
+                            '<p class="text-gray-500 italic">Belum ada keterangan dari penerima disposisi</p>';
                     }
                 })
                 .catch(error => {
-                    console.error('Error fetching disposisi:', error);
+                    console.error('Error fetching disposisi for surat ID', id, ':', error);
+                    document.getElementById('detail-keterangan-pengirim').textContent = '-';
+                    document.getElementById('detail-keterangan-sekretaris').textContent = '-';
+                    document.getElementById('detail-keterangan-dirut').textContent = '-';
                     document.getElementById('detail-tujuan-disposisi').innerHTML =
                         '<p class="text-red-500">Gagal memuat data tujuan disposisi</p>';
+                    document.getElementById('detail-keterangan-penerima-list').innerHTML =
+                        '<p class="text-red-500">Gagal memuat data keterangan penerima</p>';
                 });
 
             // Isi informasi surat lainnya
@@ -1612,7 +1795,7 @@
             }
 
             // Set download link and preview button visibility
-            const previewButton = document.getElementById('detail-preview-button');
+            const previewButton = document.getElementById('detail-preview-link');
             const downloadLink = document.getElementById('detail-file-link');
             
             if (surat.file_path) {
@@ -1631,8 +1814,14 @@
             renderDetailFiles(surat.files || []);
         };
 
-        // Fungsi untuk mengambil data tujuan disposisi
-        function fetchTujuanDisposisi(disposisiId) {
+        // Fungsi untuk mengambil data tujuan disposisi (Global scope)
+        window.fetchTujuanDisposisi = function(disposisiId) {
+            console.log('Fetching tujuan disposisi untuk disposisi ID:', disposisiId);
+            
+            // Reset data terlebih dahulu
+            document.getElementById('detail-tujuan-disposisi').innerHTML = '<p>Memuat data tujuan disposisi...</p>';
+            document.getElementById('detail-keterangan-penerima-list').innerHTML = '<p>Memuat data keterangan penerima...</p>';
+            
             fetch(`/api/disposisi/${disposisiId}/tujuan`, {
                     headers: {
                         'Accept': 'application/json',
@@ -1642,57 +1831,121 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Tujuan disposisi data:', data);
+                    console.log('Tujuan disposisi data untuk disposisi ID', disposisiId, ':', data);
                     
                     if (data.success && data.tujuan && data.tujuan.length > 0) {
-                        console.log('Tujuan users:', data.tujuan);
+                        console.log('Tujuan users untuk disposisi ID', disposisiId, ':', data.tujuan);
                         
                         let tujuanHTML = '<ul class="list-disc pl-5 space-y-1">';
+                        let keteranganPenerimaHTML = '<ul class="list-disc pl-5 space-y-1">';
+                        let hasKeteranganPenerima = false;
+                        
                         data.tujuan.forEach(user => {
-                            console.log('User data:', user);
-                            console.log('User jabatan:', user.jabatan, typeof user.jabatan);
+                            console.log('Processing user for disposisi ID', disposisiId, ':', user);
+                            console.log('User pivot data:', user.pivot);
                             
                             // Handle different jabatan formats
                             let jabatanText = '';
                             if (user.jabatan) {
                                 if (typeof user.jabatan === 'object' && user.jabatan.nama_jabatan) {
                                     jabatanText = user.jabatan.nama_jabatan;
-                                    console.log('Using nama_jabatan:', jabatanText);
                                 } else {
                                     jabatanText = user.jabatan;
-                                    console.log('Using direct jabatan string:', jabatanText);
                                 }
                             }
                             
+                            // Build tujuan disposisi list (semua user yang dituju)
                             tujuanHTML += `
                                 <li>
                                     <span class="font-medium">${user.name}</span>
                                     ${jabatanText ? `<span class="text-sm font-normal text-gray-600 ml-1">(${jabatanText})</span>` : ''}
                                 </li>`;
+                            
+                            // Build keterangan penerima list (hanya yang sudah mengisi keterangan)
+                            if (user.pivot?.keterangan_penerima && user.pivot.keterangan_penerima.trim() !== '') {
+                                hasKeteranganPenerima = true;
+                                keteranganPenerimaHTML += `
+                                    <li class="mb-2">
+                                        <div class="flex items-start">
+                                            <div class="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3"></div>
+                                            <div class="flex-1">
+                                                <div class="font-medium text-gray-900">${user.name}</div>
+                                                ${jabatanText ? `<div class="text-sm text-gray-600">${jabatanText}</div>` : ''}
+                                                <div class="text-sm text-gray-700 mt-1 italic">"${user.pivot.keterangan_penerima}"</div>
+                                            </div>
+                                        </div>
+                                    </li>`;
+                            }
                         });
+                        
                         tujuanHTML += '</ul>';
+                        keteranganPenerimaHTML += '</ul>';
+                        
+                        // Update tujuan disposisi section
                         document.getElementById('detail-tujuan-disposisi').innerHTML = tujuanHTML;
+                        
+                        // Update keterangan penerima section
+                        if (hasKeteranganPenerima) {
+                            document.getElementById('detail-keterangan-penerima-list').innerHTML = keteranganPenerimaHTML;
+                        } else {
+                            document.getElementById('detail-keterangan-penerima-list').innerHTML = '<p class="text-gray-500 italic">Belum ada keterangan dari penerima disposisi</p>';
+                        }
+                        
+                        // Show/hide edit keterangan pengirim button if current user is the creator
+                        const editPengirimButton = document.getElementById('btn-edit-keterangan-pengirim');
+                        const currentSurat = suratData.find(s => s.id === currentSuratId);
+                        if (currentSurat && currentSurat.created_by == {{ auth()->id() }}) {
+                            editPengirimButton.classList.remove('hidden');
+                        } else {
+                            editPengirimButton.classList.add('hidden');
+                        }
+                        
                     } else {
-                        document.getElementById('detail-tujuan-disposisi').innerHTML =
-                            '<p>Belum ada tujuan disposisi</p>';
+                        document.getElementById('detail-tujuan-disposisi').innerHTML = '<p class="text-gray-500">Belum ada tujuan disposisi</p>';
+                        document.getElementById('detail-keterangan-penerima-list').innerHTML = '<p class="text-gray-500 italic">Belum ada keterangan dari penerima disposisi</p>';
+                        document.getElementById('btn-edit-keterangan-pengirim').classList.add('hidden');
                     }
                 })
                 .catch(error => {
-                    console.error('Error fetching tujuan disposisi:', error);
-                    document.getElementById('detail-tujuan-disposisi').innerHTML =
-                        '<p class="text-red-500">Gagal memuat data tujuan disposisi</p>';
+                    console.error('Error fetching tujuan disposisi for disposisi ID', disposisiId, ':', error);
+                    document.getElementById('detail-tujuan-disposisi').innerHTML = '<p class="text-red-500">Gagal memuat data tujuan disposisi</p>';
+                    document.getElementById('detail-keterangan-penerima-list').innerHTML = '<p class="text-red-500">Gagal memuat data keterangan penerima</p>';
+                    document.getElementById('btn-edit-keterangan-pengirim').classList.add('hidden');
                 });
-        }
+        };
 
             // Tambahkan event listener untuk tombol preview pada detail surat
-            document.getElementById('detail-preview-button').addEventListener('click', function() {
-                previewFileInDetail();
-            });
+            const detailPreviewLink = document.getElementById('detail-preview-link');
+            if (detailPreviewLink) {
+                detailPreviewLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    // Ambil data surat
+                    if (!currentSuratId) return;
+                    const surat = suratData.find(s => s.id === currentSuratId);
+                    if (!surat) return;
+                    let previewUrl = '';
+                    if (surat.files && surat.files.length > 0) {
+                        previewUrl = '/' + surat.files[0].file_path;
+                    } else if (surat.file_path) {
+                        previewUrl = `/suratkeluar/${currentSuratId}/preview`;
+                    } else {
+                        alert('File tidak tersedia');
+                        return;
+                    }
+                    window.open(previewUrl, '_blank');
+                });
+            }
 
             // Tambahkan event listener untuk tombol close preview
-            document.getElementById('close-detail-preview')?.addEventListener('click', function() {
-                document.getElementById('detail-preview-container')?.classList.add('hidden');
-            });
+            const closeDetailPreview = document.getElementById('close-detail-preview');
+            if (closeDetailPreview) {
+                closeDetailPreview.addEventListener('click', function() {
+                    const detailPreviewContainer = document.getElementById('detail-preview-container');
+                    if (detailPreviewContainer) {
+                        detailPreviewContainer.classList.add('hidden');
+                    }
+                });
+            }
 
             // Fungsi untuk preview file di dalam modal full screen
             function previewFileInDetail() {
@@ -1770,8 +2023,10 @@
             }
 
             // Event handler for close modal to reset modal positioning
-        document.getElementById('close-detail-modal').addEventListener('click', function() {
-            document.getElementById('detail-modal').classList.add('hidden');
+        const closeDetailModalBtn = document.getElementById('close-detail-modal');
+        if (closeDetailModalBtn) {
+            closeDetailModalBtn.addEventListener('click', function() {
+                document.getElementById('detail-modal').classList.add('hidden');
                 // Tidak perlu mereset preview container karena sudah dihapus
                 
                 // Reset modal positioning
@@ -1789,11 +2044,17 @@
                 }
                 
                 currentSuratId = null;
-        });
+            });
+        }
 
-        document.getElementById('close-preview-modal').addEventListener('click', function() {
-            document.getElementById('file-preview-modal').classList.add('hidden');
-                
+        const closePreviewModal = document.getElementById('close-preview-modal');
+        if (closePreviewModal) {
+            closePreviewModal.addEventListener('click', function() {
+                const filePreviewModal = document.getElementById('file-preview-modal');
+                if (filePreviewModal) {
+                    filePreviewModal.classList.add('hidden');
+                }
+                    
                 // Reset source untuk iframe dan img untuk menghindari memory leak
                 const pdfPreview = document.getElementById('pdf-preview');
                 if (pdfPreview) pdfPreview.src = '';
@@ -1804,17 +2065,27 @@
                     imgPreview.style.display = 'none';
                 }
             });
-            
-            // Add event listener for detail preview button
-            document.getElementById('detail-preview-button').addEventListener('click', function() {
+        }
+
+        // Add event listener for detail preview button
+        const detailPreviewLink2 = document.getElementById('detail-preview-link');
+        if (detailPreviewLink2) {
+            detailPreviewLink2.addEventListener('click', function() {
                 previewFileInDetail();
             });
-            
-            // Add event listener for closing detail preview
-            document.getElementById('close-detail-preview')?.addEventListener('click', function() {
-                document.getElementById('detail-preview-container')?.classList.add('hidden');
+        }
+        
+        // Add event listener for closing detail preview
+        const closeDetailPreview2 = document.getElementById('close-detail-preview');
+        if (closeDetailPreview2) {
+            closeDetailPreview2.addEventListener('click', function() {
+                const detailPreviewContainer = document.getElementById('detail-preview-container');
+                if (detailPreviewContainer) {
+                    detailPreviewContainer.classList.add('hidden');
+                }
             });
-        });
+        }
+    });
 
         // Tambahkan fungsi renderDetailFiles yang menangani event preview dengan benar
         function renderDetailFiles(files) {
@@ -1830,8 +2101,8 @@
                     const ext = file.file_path.split('.').pop().toLowerCase();
                     let previewBtn = '';
                     
-                    if(['pdf','jpg','jpeg','png'].includes(ext)) {
-                        previewBtn = `<button type="button" class="ml-2 text-xs text-blue-600 underline preview-file-btn" data-url="/${file.file_path}" data-ext="${ext}" data-name="${file.original_name || file.file_path.split('/').pop()}">Preview</button>`;
+                    if(['pdf','jpg','jpeg','png','doc','docx','xls','xlsx','ppt','pptx','txt','zip','rar'].includes(ext)) {
+                        previewBtn = `<a href="/${file.file_path}" target="_blank" class="ml-2 text-xs text-blue-600 underline">Preview</a>`;
                     }
                     
                     filesList.innerHTML += `
@@ -1843,61 +2114,192 @@
                         </div>
                     `;
                 });
-
-                // Tambahkan event listeners untuk tombol preview
-                document.querySelectorAll('.preview-file-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const url = this.getAttribute('data-url');
-                        const ext = this.getAttribute('data-ext');
-                        const name = this.getAttribute('data-name');
-                        
-                        // Show fullscreen preview
-                        const previewModal = document.getElementById('file-preview-modal');
-                        const pdfPreview = document.getElementById('pdf-preview');
-                        const imgPreview = document.getElementById('img-preview');
-                        const loadingPreview = document.getElementById('loading-preview');
-                        const errorPreview = document.getElementById('error-preview');
-                        
-                        // Reset tampilan awal
-                        previewModal.classList.remove('hidden');
-                        document.getElementById('preview-modal-title').textContent = 'Preview: ' + name;
-                        document.getElementById('preview-download-link').href = url;
-                        
-                        // Sembunyikan semua, tampilkan loading
-                        pdfPreview.classList.add('hidden');
-                        imgPreview.classList.add('hidden');
-                        errorPreview.classList.add('hidden');
-                        loadingPreview.classList.remove('hidden');
-                        
-                        if (ext === 'pdf') {
-                            // Preview PDF
-                            pdfPreview.src = url;
-                            pdfPreview.classList.remove('hidden');
-                            pdfPreview.style.display = 'block';
-                            loadingPreview.classList.add('hidden');
-                        } else if (['jpg', 'jpeg', 'png'].includes(ext)) {
-                            // Preview gambar
-                            imgPreview.src = url;
-                            imgPreview.onload = function() {
-                                // Setelah gambar loaded, sembunyikan loading dan tampilkan gambar
-                                loadingPreview.classList.add('hidden');
-                                imgPreview.classList.remove('hidden');
-                                imgPreview.style.display = 'block';
-                            };
-                            imgPreview.onerror = function() {
-                                loadingPreview.classList.add('hidden');
-                                errorPreview.classList.remove('hidden');
-                            };
-            } else {
-                            // Format tidak didukung
-                            loadingPreview.classList.add('hidden');
-                            errorPreview.classList.remove('hidden');
-                        }
-                    });
-                });
             } else {
                 noFileText.style.display = 'inline';
             }
         }
+
+        // Modal Keterangan Penerima Disposisi (Global scope)
+        let currentDisposisiId = null;
+        window.openKeteranganPenerimaModal = function(disposisiId, keteranganLama = '') {
+            console.log('Opening keterangan penerima modal for disposisi ID:', disposisiId);
+            console.log('Keterangan lama:', keteranganLama);
+            
+            currentDisposisiId = disposisiId;
+            
+            // Reset input terlebih dahulu
+            document.getElementById('keterangan-penerima-input').value = '';
+            
+            // Set keterangan lama jika ada
+            if (keteranganLama && keteranganLama.trim() !== '') {
+                document.getElementById('keterangan-penerima-input').value = keteranganLama;
+                console.log('Using provided keterangan lama:', keteranganLama);
+            } else {
+                // Ambil keterangan lama dari API jika tidak ada parameter
+                console.log('Fetching keterangan from API for disposisi ID:', disposisiId);
+                fetch(`/api/disposisi/${disposisiId}/tujuan`)
+                    .then(res => res.json())
+                    .then(data => {
+                        console.log('API response for keterangan:', data);
+                        if (data.success && data.tujuan) {
+                            const currentUserId = {{ auth()->id() }};
+                            const user = data.tujuan.find(u => u.id == currentUserId);
+                            console.log('Found user in tujuan:', user);
+                            
+                            if (user && user.pivot && user.pivot.keterangan_penerima) {
+                                const keterangan = user.pivot.keterangan_penerima.trim();
+                                document.getElementById('keterangan-penerima-input').value = keterangan;
+                                console.log('Set keterangan from API:', keterangan);
+                            } else {
+                                console.log('No keterangan found for current user');
+                                document.getElementById('keterangan-penerima-input').value = '';
+                            }
+                        } else {
+                            console.log('API response not successful');
+                            document.getElementById('keterangan-penerima-input').value = '';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching keterangan from API:', error);
+                        document.getElementById('keterangan-penerima-input').value = '';
+                    });
+            }
+            
+            
+            document.getElementById('keterangan-penerima-modal').classList.remove('hidden');
+        };
+        
+        window.closeKeteranganPenerimaModal = function() {
+            console.log('Closing keterangan penerima modal');
+            document.getElementById('keterangan-penerima-modal').classList.add('hidden');
+            document.getElementById('keterangan-penerima-input').value = '';
+            currentDisposisiId = null;
+        };
+        
+        window.simpanKeteranganPenerima = function() {
+            const keterangan = document.getElementById('keterangan-penerima-input').value.trim();
+            
+            console.log('Saving keterangan penerima for disposisi ID:', currentDisposisiId);
+            console.log('Keterangan to save:', keterangan);
+            
+            if (!currentDisposisiId) {
+                alert('ID disposisi tidak valid');
+                return;
+            }
+            
+            // Simpan disposisi ID sebelum menutup modal
+            const disposisiIdToRefresh = currentDisposisiId;
+            
+            // Tampilkan loading state
+            const saveButton = document.querySelector('#keterangan-penerima-modal button:last-child');
+            const originalText = saveButton.textContent;
+            saveButton.disabled = true;
+            saveButton.textContent = 'Menyimpan...';
+            
+            fetch(`/api/disposisi/${currentDisposisiId}/keterangan-penerima`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ keterangan_penerima: keterangan })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('Save keterangan response:', data);
+                if (data.success) {
+                    alert('Keterangan berhasil disimpan!');
+                    closeKeteranganPenerimaModal();
+                    
+                    // Refresh data keterangan penerima tanpa reload halaman
+                    console.log('Refreshing keterangan data for disposisi ID:', disposisiIdToRefresh);
+                    fetchTujuanDisposisi(disposisiIdToRefresh);
+                } else {
+                    alert('Gagal menyimpan keterangan: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error saving keterangan:', error);
+                alert('Gagal menyimpan keterangan (network error)');
+            })
+            .finally(() => {
+                // Kembalikan button ke state awal
+                saveButton.disabled = false;
+                saveButton.textContent = originalText;
+            });
+        };
+
+        // JS: KETERANGAN PENGIRIM (Global scope)
+        // Event listener tombol edit keterangan pengirim di modal detail
+        $(document).on('click', '#btn-edit-keterangan-pengirim', function() {
+            const currentKeterangan = document.getElementById('detail-keterangan-pengirim').textContent;
+            document.getElementById('keterangan-pengirim-input').value = currentKeterangan !== '-' ? currentKeterangan : '';
+            document.getElementById('modal-keterangan-pengirim').classList.remove('hidden');
+        });
+        
+        window.closeKeteranganPengirimModal = function() {
+            console.log('Closing keterangan pengirim modal');
+            document.getElementById('modal-keterangan-pengirim').classList.add('hidden');
+            document.getElementById('keterangan-pengirim-input').value = '';
+        };
+        
+        window.simpanKeteranganPengirim = function() {
+            const keterangan = document.getElementById('keterangan-pengirim-input').value.trim();
+            
+            console.log('Saving keterangan pengirim for surat ID:', currentSuratId);
+            console.log('Keterangan to save:', keterangan);
+            
+            if (!currentSuratId) {
+                alert('ID surat tidak valid');
+                return;
+            }
+            
+            // Ambil disposisi id dari data surat
+            const surat = suratData.find(s => s.id === currentSuratId);
+            if (!surat || !surat.disposisi || !surat.disposisi.id) {
+                alert('Data disposisi tidak ditemukan');
+                return;
+            }
+            const disposisiId = surat.disposisi.id;
+            
+            console.log('Disposisi ID for keterangan pengirim:', disposisiId);
+            
+            // Tampilkan loading state
+            const saveButton = document.querySelector('#modal-keterangan-pengirim button:last-child');
+            const originalText = saveButton.textContent;
+            saveButton.disabled = true;
+            saveButton.textContent = 'Menyimpan...';
+            
+            fetch(`/api/disposisi/${disposisiId}/keterangan-pengirim`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ keterangan_pengirim: keterangan })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('Save keterangan pengirim response:', data);
+                if (data.success) {
+                    alert('Keterangan pengirim berhasil disimpan!');
+                    document.getElementById('detail-keterangan-pengirim').textContent = keterangan || '-';
+                    closeKeteranganPengirimModal();
+                } else {
+                    alert('Gagal menyimpan keterangan: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error saving keterangan pengirim:', error);
+                alert('Gagal menyimpan keterangan (network error)');
+            })
+            .finally(() => {
+                saveButton.disabled = false;
+                saveButton.textContent = originalText;
+            });
+        };
     </script>
 @endsection
+

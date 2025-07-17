@@ -92,11 +92,6 @@ class SuratKeluarController extends Controller
                 $activeCodes[] = 'RSAZRA';
             }
             
-            // Automatically set perusahaan to RSAZRA for internal letters
-            if ($request->jenis_surat === 'internal') {
-                $request->merge(['perusahaan' => 'RSAZRA']);
-            }
-            
             \Log::info('SuratKeluarController@store: Beginning validation', [
                 'input' => $request->all()
             ]);
@@ -130,11 +125,18 @@ class SuratKeluarController extends Controller
                 \Log::warning('SuratKeluarController@store: Validation failed', [
                     'errors' => $validator->errors()->toArray()
                 ]);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi gagal',
-                    'errors' => $validator->errors()
-                ], 422);
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Validasi gagal',
+                        'errors' => $validator->errors()
+                    ], 422);
+                } else {
+                    // Untuk request biasa, redirect back dengan error ke view
+                    return back()
+                        ->withInput()
+                        ->with('validationErrors', $validator->errors());
+                }
             }
             
             DB::beginTransaction();
@@ -183,26 +185,54 @@ class SuratKeluarController extends Controller
                         $disposisi = new Disposisi();
                         $disposisi->surat_keluar_id = $suratKeluar->id;
                         
-                        // Set status_sekretaris to 'approved' if creator is a secretary (role 1)
-                        if (auth()->user()->role == 1) { // Sekretaris has role 1
-                            $disposisi->status_sekretaris = 'approved';
-                            \Log::info('SuratKeluarController@store: Secretary detected (role 1 = Sekretaris), setting status_sekretaris to approved', [
-                                'user_id' => auth()->id(),
-                                'user_role' => auth()->user()->role,
-                                'user_name' => auth()->user()->name,
-                                'status_sekretaris' => $disposisi->status_sekretaris
-                            ]);
-                        } else {
-                            $disposisi->status_sekretaris = 'pending';
-                            \Log::info('SuratKeluarController@store: Non-secretary detected (roles: 0=Staff, 2=Direktur, 3=Super Admin), setting status_sekretaris to pending', [
-                                'user_id' => auth()->id(),
-                                'user_role' => auth()->user()->role,
-                                'user_name' => auth()->user()->name,
-                                'status_sekretaris' => $disposisi->status_sekretaris
-                            ]);
+                        // --- LOGIKA BARU: Surat antar manager/sekretaris tanpa approval ---
+                        $tujuanIds = (array) $request->tujuan_disposisi;
+                        $tujuanRoles = User::whereIn('id', $tujuanIds)->pluck('role', 'id')->toArray();
+                        $pengirimRole = auth()->user()->role;
+                        $pengirim = auth()->user();
+
+                        // Cek logika khusus manager ke GM atau manager keuangan
+                        $isManagerToGMKeu = false;
+                        if ($pengirimRole == 4 && $pengirim->general_manager_id) {
+                            $hasGM = false;
+                            $hasKeuangan = false;
+                            foreach ($tujuanRoles as $id => $role) {
+                                if ($role == 6 && $id == $pengirim->general_manager_id) {
+                                    $hasGM = true;
+                                }
+                                if ($role == 7) {
+                                    $hasKeuangan = true;
+                                }
+                            }
+                            if ($hasGM || $hasKeuangan) {
+                                $isManagerToGMKeu = true;
+                            }
                         }
+
+                        $isAntarManSek = in_array($pengirimRole, [1,4]) && collect($tujuanRoles)->every(fn($r) => in_array($r, [1,4]));
                         
-                        $disposisi->status_dirut = 'pending';
+                        if ($pengirimRole == 5) { // Sekretaris ASP
+                            $disposisi->status_sekretaris = 'approved';
+                            $disposisi->status_dirut = 'pending';
+                        } elseif ($pengirimRole == 8) { // Direktur ASP
+                            $disposisi->status_sekretaris = 'approved';
+                            $disposisi->status_dirut = 'pending';
+                        } elseif ($isManagerToGMKeu) {
+                            $disposisi->status_sekretaris = 'approved';
+                            $disposisi->status_dirut = 'approved';
+                        } elseif ($isAntarManSek) {
+                            $disposisi->status_sekretaris = 'approved';
+                            $disposisi->status_dirut = 'approved';
+                        } else {
+                            // Alur lama
+                            if ($pengirimRole == 1) { // Sekretaris
+                                $disposisi->status_sekretaris = 'approved';
+                            } else {
+                                $disposisi->status_sekretaris = 'pending';
+                            }
+                            $disposisi->status_dirut = 'pending';
+                        }
+                        // --- END LOGIKA BARU ---
                         $disposisi->keterangan_pengirim = $request->keterangan_pengirim ?? null;
                         $disposisi->created_by = auth()->id();
             
@@ -214,7 +244,6 @@ class SuratKeluarController extends Controller
                         ]);
                         
                         // Attach users to the disposisi
-                        $tujuanIds = (array) $request->tujuan_disposisi;
                         $disposisi->tujuan()->attach($tujuanIds);
                         
                         \Log::info('SuratKeluarController@store: Attached tujuan to disposisi', [
@@ -349,10 +378,9 @@ class SuratKeluarController extends Controller
                 $activeCodes[] = 'RSAZRA';
             }
             
-            // Automatically set perusahaan to RSAZRA for internal letters
-            if ($request->jenis_surat === 'internal') {
-                $request->merge(['perusahaan' => 'RSAZRA']);
-            }
+            \Log::info('SuratKeluarController@store: Beginning validation', [
+                'input' => $request->all()
+            ]);
                           
             $validator = Validator::make($request->all(), [
                 'nomor_surat' => [
@@ -435,12 +463,19 @@ class SuratKeluarController extends Controller
                 $disposisi->keterangan_pengirim = $request->keterangan_pengirim;
                 
                 // Set status based on user role
-                if (auth()->user()->role == 1) { // Sekretaris
+                if (auth()->user()->role == 5) { // Sekretaris ASP
                     $disposisi->status_sekretaris = 'approved';
+                    $disposisi->status_dirut = 'pending';
+                } elseif (auth()->user()->role == 8) { // Direktur ASP
+                    $disposisi->status_sekretaris = 'approved';
+                    $disposisi->status_dirut = 'pending';
+                } elseif (auth()->user()->role == 1) { // Sekretaris
+                    $disposisi->status_sekretaris = 'approved';
+                    $disposisi->status_dirut = 'pending';
                 } else {
                     $disposisi->status_sekretaris = 'pending';
+                    $disposisi->status_dirut = 'pending';
                 }
-                $disposisi->status_dirut = 'pending';
                 
                 $disposisi->save();
                 
@@ -520,72 +555,154 @@ class SuratKeluarController extends Controller
     }
 
     /**
-     * Download file surat keluar
+     * Download file surat keluar.
+     * If there are multiple files, it creates a zip archive.
+     * If there is one file, it downloads directly.
      */
     public function download(SuratKeluar $suratKeluar)
     {
         try {
-            if (empty($suratKeluar->file_path)) {
-                \Log::warning('Path file kosong untuk surat ID: ' . $suratKeluar->id);
-                return redirect()
-                    ->back()
-                    ->with('error', 'Path file tidak ditemukan');
+            \Log::info('Download request for surat_keluar_id: ' . $suratKeluar->id);
+            $suratKeluar->load('files');
+            $files = $suratKeluar->files;
+
+            if ($files->isEmpty()) {
+                \Log::warning('No files to download for surat_keluar_id: ' . $suratKeluar->id);
+                return redirect()->back()->with('error', 'Tidak ada lampiran untuk diunduh.');
             }
 
-            $filePath = null;
-            
-            // Check if file exists in public path
-            if (file_exists(public_path($suratKeluar->file_path))) {
-            $filePath = public_path($suratKeluar->file_path);
-                \Log::info('File ditemukan di public_path untuk download: ' . $filePath);
+            if ($files->count() === 1) {
+                $file = $files->first();
+                $path = public_path($file->file_path);
+                \Log::info('Single file download.', ['path' => $path]);
+
+                if (!file_exists($path)) {
+                    \Log::error('File not found on disk.', ['path' => $path]);
+                    return redirect()->back()->with('error', 'File tidak ditemukan di server.');
+                }
+                return response()->download($path, $file->original_name);
             }
-            // Try storage path if the path starts with /storage/
-            else if (Str::startsWith($suratKeluar->file_path, '/storage/')) {
-                $normalizedPath = str_replace('/storage/', 'public/', $suratKeluar->file_path);
-                if (Storage::exists($normalizedPath)) {
-                    $filePath = Storage::path($normalizedPath);
-                    \Log::info('File ditemukan di storage path untuk download: ' . $filePath);
+
+            // Multiple files: create and download a zip file
+            \Log::info('Multiple files found. Creating zip archive.', ['count' => $files->count()]);
+            $zip = new \ZipArchive();
+            $zipFileName = 'surat-keluar-' . $suratKeluar->id . '-' . time() . '.zip';
+            
+            // Create a temporary directory for the zip file
+            $tempDir = storage_path('app/temp');
+            if (!is_dir($tempDir)) {
+                mkdir($tempDir, 0755, true);
+            }
+            $zipPath = $tempDir . '/' . $zipFileName;
+
+            if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== TRUE) {
+                \Log::error('Cannot create zip archive.', ['path' => $zipPath]);
+                return redirect()->back()->with('error', 'Gagal membuat arsip ZIP.');
+            }
+
+            foreach ($files as $file) {
+                $filePath = public_path($file->file_path);
+                if (file_exists($filePath)) {
+                    $zip->addFile($filePath, $file->original_name);
+                    \Log::info('Added file to zip.', ['file_path' => $filePath, 'zip_name' => $file->original_name]);
+                } else {
+                    \Log::warning('File skipped (not found).', ['file_path' => $filePath]);
                 }
             }
-            
-            // If still not found, try with filename only
-            if (!$filePath || !file_exists($filePath)) {
-                $fileName = basename($suratKeluar->file_path);
-                
-                // Try in uploads directory
-                $uploadsPath = public_path('uploads/surat_keluar/' . $fileName);
-                if (file_exists($uploadsPath)) {
-                    $filePath = $uploadsPath;
-                    \Log::info('File ditemukan di uploads/surat_keluar dengan nama file untuk download: ' . $filePath);
-                }
-                // Try in storage directory
-                else {
-                    $storagePath = 'public/surat_keluar/' . $fileName;
-                    if (Storage::exists($storagePath)) {
-                        $filePath = Storage::path($storagePath);
-                        \Log::info('File ditemukan di storage/app/public/surat_keluar dengan nama file untuk download: ' . $filePath);
-                    }
-                }
-            }
-            
-            // If file not found, return error
-            if (!$filePath || !file_exists($filePath)) {
-                \Log::error('File download tidak ditemukan untuk surat ID: ' . $suratKeluar->id);
-                return redirect()
-                    ->back()
-                    ->with('error', 'File tidak ditemukan di server');
-            }
-            
-            \Log::info('Mengunduh file: ' . $filePath);
-            
-            return response()->download($filePath, basename($filePath));
+
+            $zip->close();
+            \Log::info('Zip archive created successfully.', ['path' => $zipPath]);
+
+            return response()->download($zipPath)->deleteFileAfterSend(true);
         } catch (\Exception $e) {
-            \Log::error('Error saat download file: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            \Log::error('Error during file download: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat mengunduh file.');
+        }
+    }
+
+    /**
+     * Preview file surat keluar. Redirects to preview the first file.
+     */
+    public function preview(SuratKeluar $suratKeluar)
+    {
+        try {
+            \Log::info('Preview request for surat_keluar_id: ' . $suratKeluar->id);
+            $suratKeluar->load('files');
+            $file = $suratKeluar->files->first();
+
+            if (!$file) {
+                \Log::warning('No file found for preview.', ['surat_keluar_id' => $suratKeluar->id]);
+                return response('Tidak ada file untuk ditampilkan.', 404);
+            }
+
+            // Redirect to the new previewFile route for cleaner implementation
+            \Log::info('File found, redirecting to previewFile route.', ['file_id' => $file->id]);
+            return redirect()->route('suratkeluar.preview-file', ['suratId' => $suratKeluar->id, 'fileId' => $file->id]);
             
-            return redirect()
-                ->back()
-                ->with('error', 'Terjadi kesalahan saat mengunduh file: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            \Log::error('Error creating preview redirect: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response('Terjadi kesalahan saat menampilkan file.', 500);
+        }
+    }
+
+    /**
+     * Download an individual file from a surat keluar.
+     */
+    public function downloadFile($suratId, $fileId)
+    {
+        try {
+            \Log::info('Individual file download request.', ['surat_id' => $suratId, 'file_id' => $fileId]);
+            $suratKeluar = SuratKeluar::findOrFail($suratId);
+            $file = $suratKeluar->files()->findOrFail($fileId);
+            $path = public_path($file->file_path);
+
+            if (!file_exists($path)) {
+                \Log::error('File not found on disk for download.', ['path' => $path]);
+                return redirect()->back()->with('error', 'File tidak ditemukan di server.');
+            }
+            
+            \Log::info('Downloading individual file.', ['path' => $path, 'original_name' => $file->original_name]);
+            return response()->download($path, $file->original_name);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::error('Model not found for file download.', ['surat_id' => $suratId, 'file_id' => $fileId, 'error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Data surat atau file tidak ditemukan.');
+        } catch (\Exception $e) {
+            \Log::error('Error downloading individual file: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return redirect()->back()->with('error', 'Gagal mengunduh file.');
+        }
+    }
+
+    /**
+     * Preview an individual file from a surat keluar.
+     */
+    public function previewFile($suratId, $fileId)
+    {
+        try {
+            \Log::info('Individual file preview request.', ['surat_id' => $suratId, 'file_id' => $fileId]);
+            $suratKeluar = SuratKeluar::findOrFail($suratId);
+            $file = $suratKeluar->files()->findOrFail($fileId);
+            $path = public_path($file->file_path);
+
+            if (!file_exists($path)) {
+                \Log::error('File not found on disk for preview.', ['path' => $path]);
+                return response('File tidak ditemukan di server.', 404);
+            }
+
+            $mime = mime_content_type($path);
+            \Log::info('Serving file for preview.', ['path' => $path, 'mime' => $mime]);
+
+            return response()->file($path, [
+                'Content-Type' => $mime,
+                'Content-Disposition' => 'inline; filename="' . $file->original_name . '"'
+            ]);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::error('Model not found for file preview.', ['surat_id' => $suratId, 'file_id' => $fileId, 'error' => $e->getMessage()]);
+            return response('Data surat atau file tidak ditemukan.', 404);
+        } catch (\Exception $e) {
+            \Log::error('Error previewing individual file: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response('Terjadi kesalahan saat menampilkan file.', 500);
         }
     }
 
@@ -595,278 +712,154 @@ class SuratKeluarController extends Controller
     public function getSuratKeluar(Request $request)
     {
         try {
-            $userId = auth()->id();
-            $userRole = auth()->user()->role;
-            
-            \Log::info('Accessing getSuratKeluar', [
-                'user_id' => $userId,
-                'user_role' => $userRole,
-                'request' => $request->all()
-            ]);
-            
-            // Secara default hanya ambil yang tidak di-soft delete
-            $query = SuratKeluar::query();
-            
-            // Tambahkan eager loading untuk relasi yang diperlukan
-            $query->with([
-                'disposisi' => function($q) {
-                    $q->select('id', 'surat_keluar_id', 'status_sekretaris', 'status_dirut', 'keterangan_pengirim', 'keterangan_sekretaris', 'keterangan_dirut');
-                },
-                'disposisi.tujuan' => function($q) {
-                    $q->select('users.id', 'users.name', 'jabatan_id')
-                      ->with('jabatan:id,nama_jabatan');
-                },
-                'creator' => function($q) {
-                    $q->select('id', 'name', 'jabatan_id')
-                      ->with('jabatan:id,nama_jabatan');
-                },
-                'files'
-            ]);
+            $query = SuratKeluar::with(['disposisi.tujuan', 'creator.jabatan', 'perusahaanData', 'files']);
 
-            // Filter berdasarkan role
-            if ($userRole == 0 || $userRole == 1 || $userRole == 3) { // Staff, Sekretaris, atau Admin
-                \Log::info('Applying filter for Staff/Sekretaris/Admin');
-                $query->where('created_by', $userId);
-            }
+            $user = auth()->user();
+            
+            // Semua role hanya menampilkan data yang dibuat oleh user yang sedang login
+            $query->where('created_by', $user->id);
 
-            // Terapkan filter pencarian jika ada
-            if ($request->has('search')) {
-                $searchTerm = $request->search;
-                $isPgsql = config('database.default') === 'pgsql';
-                \Log::info('Applying search filter', ['term' => $searchTerm, 'pgsql' => $isPgsql]);
-                $query->where(function($q) use ($searchTerm, $isPgsql) {
-                    if ($isPgsql) {
-                        $q->whereRaw('nomor_surat ILIKE ?', ["%{$searchTerm}%"])
-                          ->orWhereRaw('perihal ILIKE ?', ["%{$searchTerm}%"])
-                          ->orWhereRaw('perusahaan ILIKE ?', ["%{$searchTerm}%"]);
-                    } else {
-                        $q->where('nomor_surat', 'like', "%{$searchTerm}%")
-                          ->orWhere('perihal', 'like', "%{$searchTerm}%")
-                          ->orWhere('perusahaan', 'like', "%{$searchTerm}%");
-                    }
-                    // Relasi perusahaanData
-                    $q->orWhereHas('perusahaanData', function($subquery) use ($searchTerm, $isPgsql) {
-                        if ($isPgsql) {
-                            $subquery->whereRaw('nama_perusahaan ILIKE ?', ["%{$searchTerm}%"]);
-                        } else {
-                            $subquery->where('nama_perusahaan', 'like', "%{$searchTerm}%");
-                        }
-                    });
-                    // Relasi creator
-                    $q->orWhereHas('creator', function($subquery) use ($searchTerm, $isPgsql) {
-                        if ($isPgsql) {
-                            $subquery->whereRaw('name ILIKE ?', ["%{$searchTerm}%"])
-                                     ->orWhereHas('jabatan', function($q2) use ($searchTerm) {
-                                         $q2->whereRaw('nama_jabatan ILIKE ?', ["%{$searchTerm}%"]);
-                                     });
-                        } else {
-                            $subquery->where('name', 'like', "%{$searchTerm}%")
-                                     ->orWhereHas('jabatan', function($q2) use ($searchTerm) {
-                                         $q2->where('nama_jabatan', 'like', "%{$searchTerm}%");
-                                     });
-                        }
-                    });
-                    // Relasi disposisi
-                    $q->orWhereHas('disposisi', function($subquery) use ($searchTerm, $isPgsql) {
-                        if ($isPgsql) {
-                            $subquery->whereRaw('status_sekretaris ILIKE ?', ["%{$searchTerm}%"])
-                                     ->orWhereRaw('status_dirut ILIKE ?', ["%{$searchTerm}%"])
-                                     ->orWhereHas('tujuan', function($q2) use ($searchTerm) {
-                                         $q2->whereRaw('name ILIKE ?', ["%{$searchTerm}%"]);
-                                     });
-                        } else {
-                            $subquery->where('status_sekretaris', 'like', "%{$searchTerm}%")
-                                     ->orWhere('status_dirut', 'like', "%{$searchTerm}%")
-                                     ->orWhereHas('tujuan', function($q2) use ($searchTerm) {
-                                         $q2->where('name', 'like', "%{$searchTerm}%");
-                                     });
-                        }
-                    });
+            // Filter status disposisi
+            if ($request->filled('status_sekretaris')) {
+                $query->whereHas('disposisi', function ($q) use ($request) {
+                    $q->where('status_sekretaris', $request->status_sekretaris);
                 });
             }
 
-            // Filter tanggal
-            if ($request->has('start_date') && $request->has('end_date')) {
-                \Log::info('Applying date filter', [
-                    'start' => $request->start_date,
-                    'end' => $request->end_date
-                ]);
-                
-                $query->whereBetween('tanggal_surat', [
-                    $request->start_date,
-                    $request->end_date
-                ]);
+            if ($request->filled('status_dirut')) {
+                $query->whereHas('disposisi', function ($q) use ($request) {
+                    $q->where('status_dirut', $request->status_dirut);
+                });
             }
 
-            // Filter lainnya
-            if ($request->has('jenis_surat')) {
+            // Filter berdasarkan tanggal
+            if ($request->filled('start_date')) {
+                $query->whereDate('tanggal_surat', '>=', $request->start_date);
+            }
+            if ($request->filled('end_date')) {
+                $query->whereDate('tanggal_surat', '<=', $request->end_date);
+            }
+            
+            // Filter berdasarkan jenis surat
+            if ($request->filled('jenis_surat')) {
                 $query->where('jenis_surat', $request->jenis_surat);
             }
-            if ($request->has('sifat_surat')) {
+            
+            // Filter berdasarkan sifat surat
+            if ($request->filled('sifat_surat')) {
                 $query->where('sifat_surat', $request->sifat_surat);
             }
-            if ($request->has('perusahaan')) {
+            
+            // Filter berdasarkan perusahaan
+            if ($request->filled('perusahaan')) {
                 $query->where('perusahaan', $request->perusahaan);
             }
-
-            // Get data ordered by newest records first
+            
+            // Filter pencarian
+            if ($request->filled('search')) {
+                $searchTerm = $request->search;
+                $query->where(function ($q) use ($searchTerm) {
+                    $q->where('nomor_surat', 'like', "%{$searchTerm}%")
+                      ->orWhere('perihal', 'like', "%{$searchTerm}%")
+                      ->orWhereHas('creator', function ($subq) use ($searchTerm) {
+                          $subq->where('name', 'like', "%{$searchTerm}%");
+                      })
+                      ->orWhereHas('perusahaanData', function ($subq) use ($searchTerm) {
+                        $subq->where('nama_perusahaan', 'like', "%{$searchTerm}%");
+                    });
+                });
+            }
+            
+            // Urutkan data
             $suratKeluar = $query->orderBy('tanggal_surat', 'desc')
                                  ->orderBy('created_at', 'desc')
                                  ->get();
-            
-            \Log::info('Total surat found', ['count' => $suratKeluar->count()]);
-            
-            // Transform data untuk response
-            $transformedData = $suratKeluar->map(function ($surat) {
-                $data = [
-                    'id' => $surat->id,
-                    'nomor_surat' => $surat->nomor_surat,
-                    'tanggal_surat' => $surat->tanggal_surat,
-                    'jenis_surat' => $surat->jenis_surat,
-                    'sifat_surat' => $surat->sifat_surat,
-                    'perihal' => $surat->perihal,
-                    'perusahaan' => $surat->perusahaan,
-                    'perusahaanData' => $surat->perusahaanData ? [
-                        'kode' => $surat->perusahaanData->kode,
-                        'nama_perusahaan' => $surat->perusahaanData->nama_perusahaan
-                    ] : null,
-                    'file_path' => $surat->file_path,
-                    'created_by' => $surat->created_by,
-                    'creator' => [
-                        'id' => $surat->creator->id,
-                        'name' => $surat->creator->name,
-                        'jabatan' => optional($surat->creator->jabatan)->nama_jabatan
-                    ],
-                    'created_at' => $surat->created_at,
-                    'disposisi' => null,
-                    'files' => $surat->files->map(function($file) {
-                        return [
-                            'id' => $file->id,
-                            'file_path' => $file->file_path,
-                            'file_type' => $file->file_type,
-                            'original_name' => $file->original_name,
-                        ];
-                    })
-                ];
 
-                if ($surat->disposisi) {
-                    $data['disposisi'] = [
-                        'id' => $surat->disposisi->id,
-                        'status_sekretaris' => $surat->disposisi->status_sekretaris,
-                        'status_dirut' => $surat->disposisi->status_dirut,
-                        'keterangan_pengirim' => $surat->disposisi->keterangan_pengirim,
-                        'keterangan_sekretaris' => $surat->disposisi->keterangan_sekretaris,
-                        'keterangan_dirut' => $surat->disposisi->keterangan_dirut,
-                        'tujuan' => $surat->disposisi->tujuan->map(function($user) {
-                            return [
-                                'id' => $user->id,
-                                'name' => $user->name,
-                                'jabatan' => optional($user->jabatan)->nama_jabatan
-                            ];
-                        })
-                    ];
-                }
-
-                return $data;
-            });
-            
-            return response()->json($transformedData);
-            
+            return response()->json($suratKeluar);
         } catch (\Exception $e) {
-            \Log::error('Error in getSuratKeluar: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
-            
-            return response()->json([
-                'error' => 'Terjadi kesalahan saat memuat data surat keluar',
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ], 500);
+            \Log::error('Error fetching surat keluar: ' . $e->getMessage());
+            return response()->json(['error' => 'Gagal memuat data surat keluar'], 500);
         }
     }
 
     public function getLastNumber(Request $request)
     {
         try {
-            // Cek apakah request untuk nomor surat ASP
-            if ($request->is_asp) {
-                \Log::info('Generating ASP number for date: ' . ($request->tanggal_surat ?? date('Y-m-d')));
-                
-                // Gunakan tanggal dari request atau default ke tahun sekarang
-                $tanggalSurat = $request->tanggal_surat ? date('Y', strtotime($request->tanggal_surat)) : date('Y');
-                
-                // Ambil nomor urut terakhir untuk surat ASP
-                $lastSurat = SuratKeluar::where('jenis_surat', 'eksternal')
-                    ->where('perusahaan', 'ASP')
-                    ->whereYear('tanggal_surat', $tanggalSurat)
-                    ->orderBy('id', 'desc')
-                    ->first();
+            // Logic untuk nomor surat internal maupun eksternal
+            $isEksternalAzra = $request->is_eksternal_azra ?? false;
+            $isAsp = $request->is_asp ?? false;
+            $tahun = $request->tanggal_surat ? date('Y', strtotime($request->tanggal_surat)) : date('Y');
 
-                if ($lastSurat) {
-                    // Extract nomor urut dari nomor surat terakhir
-                    $parts = explode('/', $lastSurat->nomor_surat);
-                    $lastNumber = (int)$parts[0];
-                    \Log::info('Last ASP number found: ' . $lastNumber);
-                } else {
-                    $lastNumber = 0;
-                    \Log::info('No previous ASP number found, starting from 0');
+            if ($isEksternalAzra) {
+                // Eksternal AZRA
+                $nomorList = SuratKeluar::where('nomor_surat', 'like', '%/RSAZRA/%')
+                    ->whereYear('tanggal_surat', $tahun)
+                    ->pluck('nomor_surat')
+                    ->toArray();
+                \Log::info('Tahun yang diambil:', [$tahun]);
+                \Log::info('Nomor surat AZRA ditemukan:', $nomorList);
+                $maxNumber = 0;
+                foreach ($nomorList as $nomor) {
+                    if (preg_match('/^(\\d{3})\/RSAZRA\//', $nomor, $matches)) {
+                        $num = intval($matches[1]);
+                        if ($num > $maxNumber) {
+                            $maxNumber = $num;
+                        }
+                    }
                 }
-
+                $lastNumber = str_pad($maxNumber, 3, '0', STR_PAD_LEFT); // hanya angka terakhir
                 return response()->json([
                     'success' => true,
                     'last_number' => $lastNumber
                 ]);
             }
 
-            // Cek apakah request untuk nomor surat eksternal AZRA
-            if ($request->is_eksternal_azra) {
-                // Ambil nomor urut terakhir untuk surat eksternal AZRA
-                $lastSurat = SuratKeluar::where('jenis_surat', 'eksternal')
-                    ->where('perusahaan', 'RSAZRA')
-                    ->whereYear('tanggal_surat', date('Y'))
-                    ->orderBy('id', 'desc')
-                ->first();
-
-            if ($lastSurat) {
-                    // Extract nomor urut dari nomor surat terakhir
-                $parts = explode('/', $lastSurat->nomor_surat);
-                    $lastNumber = (int)$parts[0];
-                } else {
-                    $lastNumber = 0;
+            if ($isAsp) {
+                // ASP
+                $nomorList = SuratKeluar::where('nomor_surat', 'like', '%/ASP/%')
+                    ->whereYear('tanggal_surat', $tahun)
+                    ->pluck('nomor_surat')
+                    ->toArray();
+                $maxNumber = 0;
+                foreach ($nomorList as $nomor) {
+                    if (preg_match('/^(\\d{3})\/ASP\//', $nomor, $matches)) {
+                        $num = intval($matches[1]);
+                        if ($num > $maxNumber) {
+                            $maxNumber = $num;
+                        }
+                    }
                 }
-
+                $lastNumber = str_pad($maxNumber, 3, '0', STR_PAD_LEFT); // hanya angka terakhir
                 return response()->json([
                     'success' => true,
                     'last_number' => $lastNumber
                 ]);
             }
 
-            // Logic untuk nomor surat internal (tidak diubah)
-            $namaJabatan = $request->nama_jabatan;
+            // Logic untuk nomor surat internal (default)
+            $kodeJabatan = $request->kode_jabatan;
             $isAsDirut = $request->is_as_dirut;
-
-            // Jika as dirut, gunakan DIRUT sebagai nama jabatan
             if ($isAsDirut) {
-                $namaJabatan = 'DIRUT';
+                $kodeJabatan = 'DIRUT';
             }
-
-            // Ambil nomor urut terakhir untuk jabatan tersebut
-            $lastSurat = SuratKeluar::where('jenis_surat', 'internal')
-                ->whereYear('tanggal_surat', date('Y'))
-                ->where(function ($query) use ($namaJabatan) {
-                    $query->where('nomor_surat', 'like', "%/{$namaJabatan}/%")
-                        ->orWhere('nomor_surat', 'like', "%/{$namaJabatan}/%");
+            $nomorList = SuratKeluar::whereYear('tanggal_surat', $tahun)
+                ->where(function ($query) use ($kodeJabatan) {
+                    $query->where('nomor_surat', 'like', "%/{$kodeJabatan}/%")
+                        ->orWhere('nomor_surat', 'like', "%/{$kodeJabatan}/%\-");
                 })
-                ->orderBy('id', 'desc')
-                ->first();
-
-            if ($lastSurat) {
-                // Extract nomor urut dari nomor surat terakhir
-                $parts = explode('/', $lastSurat->nomor_surat);
-                $lastNumber = (int)$parts[0];
-            } else {
-                $lastNumber = 0;
+                ->pluck('nomor_surat')
+                ->toArray();
+            \Log::info('Nomor surat internal ditemukan:', $nomorList);
+            $maxNumber = 0;
+            foreach ($nomorList as $nomor) {
+                if (preg_match('/^(\\d{3})\/' . preg_quote($kodeJabatan, '/') . '\//', $nomor, $matches)) {
+                    $num = intval($matches[1]);
+                    if ($num > $maxNumber) {
+                        $maxNumber = $num;
+                    }
+                }
             }
-
+            $lastNumber = $maxNumber; // hanya angka terakhir
             return response()->json([
                 'success' => true,
                 'last_number' => $lastNumber
@@ -939,144 +932,6 @@ class SuratKeluarController extends Controller
             \Log::error('Error in SuratKeluarController@create: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat halaman');
         }
-    }
-
-    /**
-     * Preview file surat keluar
-     */
-    public function preview(SuratKeluar $suratKeluar)
-    {
-        try {
-            \Log::info('Preview file untuk surat ID: ' . $suratKeluar->id . ', file_path: ' . $suratKeluar->file_path);
-            
-            if (empty($suratKeluar->file_path)) {
-                \Log::warning('File path kosong untuk surat ID: ' . $suratKeluar->id);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'File belum diunggah'
-                ], 404);
-            }
-
-            // Normalize path - handle both uploads/surat_keluar and /storage/surat_keluar paths
-            $filePath = null;
-            
-            // Check if file exists in public path
-            if (file_exists(public_path($suratKeluar->file_path))) {
-                $filePath = public_path($suratKeluar->file_path);
-                \Log::info('File ditemukan di public_path: ' . $filePath);
-            }
-            // Try storage path if the path starts with /storage/
-            else if (Str::startsWith($suratKeluar->file_path, '/storage/')) {
-                $normalizedPath = str_replace('/storage/', 'public/', $suratKeluar->file_path);
-                if (Storage::exists($normalizedPath)) {
-                    $filePath = Storage::path($normalizedPath);
-                    \Log::info('File ditemukan di storage path: ' . $filePath);
-                }
-            }
-            
-            // If still not found, try with filename only
-            if (!$filePath || !file_exists($filePath)) {
-                $fileName = basename($suratKeluar->file_path);
-                
-                // Try in uploads directory
-                $uploadsPath = public_path('uploads/surat_keluar/' . $fileName);
-                if (file_exists($uploadsPath)) {
-                    $filePath = $uploadsPath;
-                    \Log::info('File ditemukan di uploads/surat_keluar dengan nama file: ' . $filePath);
-                }
-                // Try in storage directory
-                else {
-                    $storagePath = 'public/surat_keluar/' . $fileName;
-                    if (Storage::exists($storagePath)) {
-                        $filePath = Storage::path($storagePath);
-                        \Log::info('File ditemukan di storage/app/public/surat_keluar dengan nama file: ' . $filePath);
-                    }
-                }
-            }
-            
-            // If file still not found, return 404
-            if (!$filePath || !file_exists($filePath)) {
-                \Log::error('File tidak ditemukan di semua jalur yang dicoba untuk ID: ' . $suratKeluar->id);
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'File tidak ditemukan di server'
-                    ], 404);
-            }
-            
-            // Tentukan content type dari ekstensi file
-            $fileExtension = pathinfo($filePath, PATHINFO_EXTENSION);
-            $contentType = $this->getContentTypeFromExtension($fileExtension);
-            
-            \Log::info('Menampilkan file dari path: ' . $filePath . ' dengan content type: ' . $contentType);
-            
-            // Kembalikan file sebagai response
-            return response()->file($filePath, [
-                'Content-Type' => $contentType,
-                'Content-Disposition' => 'inline; filename="' . basename($filePath) . '"',
-                'Access-Control-Allow-Origin' => '*',
-                'Access-Control-Allow-Methods' => 'GET',
-                'X-Content-Type-Options' => 'nosniff'
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('Error saat preview file: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat membuka file: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Mendapatkan ID Direktur untuk keperluan form
-     */
-    public function getDirekturId()
-    {
-        try {
-            $direktur = User::where('role', 2)->first();
-            
-            if (!$direktur) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Direktur tidak ditemukan'
-                ], 404);
-            }
-            
-            return response()->json([
-                'success' => true,
-                'direktur_id' => $direktur->id
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Error dalam getDirekturId: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat mengambil ID Direktur'
-            ], 500);
-        }
-    }
-
-    private function getContentTypeFromExtension($fileExtension)
-    {
-        $contentType = '';
-
-        // Tentukan content type berdasarkan ekstensi file
-        switch(strtolower($fileExtension)) {
-            case 'pdf':
-                $contentType = 'application/pdf';
-                break;
-            case 'doc':
-                $contentType = 'application/msword';
-                break;
-            case 'docx':
-                $contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-                break;
-            default:
-                $contentType = 'application/octet-stream';
-        }
-
-        return $contentType;
     }
 
     /**
@@ -1292,6 +1147,88 @@ class SuratKeluarController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat menghapus file: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * API: Get surat keluar berdasarkan kode format nomor surat
+     * Param: ?kode=RSAZRA|DIRRS|Dir.Adm.Keu|ASP&search=...&page=1&per_page=10
+     * Return: JSON data lengkap + pagination
+     */
+    public function getByFormat(Request $request)
+    {
+        $kode = $request->input('kode');
+        $search = $request->input('search');
+        $perPage = (int) $request->input('per_page', 10);
+        $page = (int) $request->input('page', 1);
+        if (!$kode) {
+            return response()->json(['success' => false, 'message' => 'Kode format nomor surat wajib diisi'], 400);
+        }
+        try {
+            $query = SuratKeluar::with(['creator', 'disposisi.tujuan']);
+            // Filter khusus untuk kode RSAZRA (Umum)
+            if ($kode === 'RSAZRA') {
+                $query->whereRaw("nomor_surat REGEXP '^[0-9]{3}/RSAZRA/(I{1,3}|IV|V?I{0,3}|VI{0,3}|VII|VIII|IX|X|XI|XII)/[0-9]{4}$'");
+            } else if ($kode === 'DIRRS') {
+                $query->whereRaw("nomor_surat REGEXP '^[0-9]{3}/DIRRS/RSAZRA/(I{1,3}|IV|V?I{0,3}|VI{0,3}|VII|VIII|IX|X|XI|XII)/[0-9]{4}$'");
+            } else if ($kode === 'Dir.Adm.Keu') {
+                $query->whereRaw("nomor_surat REGEXP '^[0-9]{3}/Dir\\.Adm\\.Keu/RSAZRA/(I{1,3}|IV|V?I{0,3}|VI{0,3}|VII|VIII|IX|X|XI|XII)/[0-9]{4}$'");
+            } else if ($kode === 'ASP') {
+                $query->whereRaw("nomor_surat REGEXP '^[0-9]{3}/ASP/(I{1,3}|IV|V?I{0,3}|VI{0,3}|VII|VIII|IX|X|XI|XII)/[0-9]{4}$'");
+            } else {
+                $query->where('nomor_surat', 'like', "%/{$kode}/%");
+            }
+            $query->orderBy('tanggal_surat', 'desc');
+            if ($search) {
+                // Escape karakter spesial untuk REGEXP
+                $searchSafe = preg_replace('/[^a-zA-Z0-9\s\-\/]/', '', $search);
+                // Jika search mengandung karakter spesial yang tidak diizinkan, fallback ke LIKE
+                if ($searchSafe !== $search) {
+                    $query->where(function($q) use ($search) {
+                        $q->where('nomor_surat', 'like', "%{$search}%")
+                          ->orWhere('perihal', 'like', "%{$search}%")
+                          ->orWhereHas('creator', function($qc) use ($search) {
+                              $qc->where('name', 'like', "%{$search}%");
+                          });
+                    });
+                } else {
+                    $query->where(function($q) use ($searchSafe) {
+                        $q->where('nomor_surat', 'like', "%{$searchSafe}%")
+                          ->orWhere('perihal', 'like', "%{$searchSafe}%")
+                          ->orWhereHas('creator', function($qc) use ($searchSafe) {
+                              $qc->where('name', 'like', "%{$searchSafe}%");
+                          });
+                    });
+                }
+            }
+            $paginator = $query->paginate($perPage, ['*'], 'page', $page);
+            $data = $paginator->getCollection()->map(function($item) {
+                return [
+                    'id' => $item->id,
+                    'nomor_surat' => $item->nomor_surat,
+                    'tanggal_surat' => $item->tanggal_surat,
+                    'waktu' => $item->created_at->format('H:i'),
+                    'tanggal' => $item->created_at->format('Y-m-d'),
+                    'status' => $item->disposisi->status_sekretaris ?? '-',
+                    'perihal' => $item->perihal,
+                    'pengirim' => $item->creator ? $item->creator->name : '-',
+                    'tujuan' => $item->disposisi && $item->disposisi->tujuan ? $item->disposisi->tujuan->pluck('name')->implode(', ') : '-',
+                ];
+            });
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
+                'current_page' => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in getByFormat: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan pada server: ' . $e->getMessage()
             ], 500);
         }
     }

@@ -23,11 +23,13 @@ class Disposisi extends Model
      */
     protected $fillable = [
         'surat_keluar_id',
+        'status_manager',
         'status_sekretaris',
         'status_dirut',
         'keterangan_pengirim',
         'keterangan_sekretaris',
         'keterangan_dirut',
+        'waktu_review_manager',
         'waktu_review_sekretaris',
         'waktu_review_dirut',
         'created_by'
@@ -39,6 +41,7 @@ class Disposisi extends Model
      * @var array
      */
     protected $casts = [
+        'waktu_review_manager' => 'datetime',
         'waktu_review_sekretaris' => 'datetime',
         'waktu_review_dirut' => 'datetime',
         'created_at' => 'datetime',
@@ -59,7 +62,8 @@ class Disposisi extends Model
     public function tujuan()
     {
         return $this->belongsToMany(User::class, 'tbl_disposisi_user', 'disposisi_id', 'user_id')
-            ->withTimestamps();
+            ->withTimestamps()
+            ->withPivot('keterangan_penerima');
     }
 
     /**
@@ -83,5 +87,71 @@ class Disposisi extends Model
                 $disposisi->created_by = auth()->id();
             }
         });
+    }
+
+    /**
+     * Check if manager approval is pending
+     */
+    public function isManagerPending()
+    {
+        return $this->status_manager === 'pending';
+    }
+
+    /**
+     * Check if manager has approved
+     */
+    public function isManagerApproved()
+    {
+        return $this->status_manager === 'approved';
+    }
+
+    /**
+     * Check if secretary approval is pending
+     */
+    public function isSecretaryPending()
+    {
+        return $this->status_sekretaris === 'pending';
+    }
+
+    /**
+     * Check if secretary has approved
+     */
+    public function isSecretaryApproved()
+    {
+        return $this->status_sekretaris === 'approved';
+    }
+
+    /**
+     * Check if director approval is pending
+     */
+    public function isDirectorPending()
+    {
+        return $this->status_dirut === 'pending';
+    }
+
+    /**
+     * Check if director has approved
+     */
+    public function isDirectorApproved()
+    {
+        return $this->status_dirut === 'approved';
+    }
+
+    /**
+     * Get current approval status
+     */
+    public function getCurrentStatusAttribute()
+    {
+        if ($this->isManagerPending()) {
+            return 'Menunggu Persetujuan Manager';
+        } elseif ($this->isSecretaryPending()) {
+            return 'Menunggu Persetujuan Sekretaris';
+        } elseif ($this->isDirectorPending()) {
+            return 'Menunggu Persetujuan Direktur';
+        } elseif ($this->isDirectorApproved()) {
+            return 'Disetujui';
+        } else {
+            return 'Ditolak';
+        }
     }
 }

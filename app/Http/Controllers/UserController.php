@@ -15,13 +15,15 @@ class UserController extends Controller
     public function index()
     {
         $jabatan = Jabatan::where('status', 'aktif')->get();
-        return view('pages.super_admin.manageuser', compact('jabatan'));
+        $managers = User::where('role', 4)->where('status_akun', 'aktif')->get();
+        $generalManagers = User::where('role', 6)->where('status_akun', 'aktif')->get();
+        return view('pages.super_admin.manageuser', compact('jabatan', 'managers', 'generalManagers'));
     }
 
     public function getUsers()
     {
-        $users = User::with('jabatan')
-            ->select('id', 'name', 'username', 'email', 'role', 'jabatan_id', 'status_akun', 'foto_profile', 'created_at')
+        $users = User::with(['jabatan', 'manager', 'generalManager'])
+            ->select('id', 'name', 'username', 'email', 'role', 'jabatan_id', 'manager_id', 'general_manager_id', 'status_akun', 'foto_profile', 'created_at')
             ->get()
             ->map(function ($user) {
                 $user->foto_url = $user->foto_url; // Ensure foto_url is included
@@ -38,8 +40,10 @@ class UserController extends Controller
             'username' => 'required|string|max:255|unique:users',
             'email' => 'nullable|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:3',
-            'role' => 'required|integer|in:0,1,2,3',
+            'role' => 'required|integer|in:0,1,2,3,4,5,6,7,8',
             'jabatan_id' => 'required|exists:tbl_jabatan,id',
+            'manager_id' => 'nullable|exists:users,id',
+            'general_manager_id' => 'nullable|exists:users,id',
             'status_akun' => 'required|in:aktif,nonaktif'
         ]);
 
@@ -68,8 +72,10 @@ class UserController extends Controller
             'username' => 'required|string|max:255|unique:users,username,' . $user->id,
             'email' => 'nullable|string|email|max:255|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:3',
-            'role' => 'required|integer|in:0,1,2,3',
+            'role' => 'required|integer|in:0,1,2,3,4,5,6,7,8',
             'jabatan_id' => 'required|exists:tbl_jabatan,id',
+            'manager_id' => 'nullable|exists:users,id',
+            'general_manager_id' => 'nullable|exists:users,id',
             'status_akun' => 'required|in:aktif,nonaktif'
         ]);
 
@@ -103,7 +109,8 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Status user berhasil diubah'
+                'message' => 'Status user berhasil diubah',
+                'new_status' => $user->status_akun
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -271,5 +278,59 @@ class UserController extends Controller
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Get managers for dropdown
+     */
+    public function getManagers()
+    {
+        $managers = User::where('role', 4)
+            ->where('status_akun', 'aktif')
+            ->select('id', 'name', 'username')
+            ->get();
+        
+        return response()->json($managers);
+    }
+
+    /**
+     * Get independent managers (not connected to any general manager)
+     */
+    public function getIndependentManagers()
+    {
+        $independentManagers = User::whereIn('role', [4, 7]) // Include both Manager and Manager Keuangan
+            ->whereNull('general_manager_id')
+            ->where('status_akun', 'aktif')
+            ->select('id', 'name', 'username')
+            ->get();
+        
+        return response()->json($independentManagers);
+    }
+
+    /**
+     * Get connected managers (connected to specific general manager)
+     */
+    public function getConnectedManagers($generalManagerId)
+    {
+        $connectedManagers = User::whereIn('role', [4, 7]) // Include both Manager and Manager Keuangan
+            ->where('general_manager_id', $generalManagerId)
+            ->where('status_akun', 'aktif')
+            ->select('id', 'name', 'username')
+            ->get();
+        
+        return response()->json($connectedManagers);
+    }
+
+    /**
+     * Get general managers for dropdown
+     */
+    public function getGeneralManagers()
+    {
+        $generalManagers = User::where('role', 6)
+            ->where('status_akun', 'aktif')
+            ->select('id', 'name', 'username')
+            ->get();
+        
+        return response()->json($generalManagers);
     }
 }

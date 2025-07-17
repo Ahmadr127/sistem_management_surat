@@ -164,9 +164,9 @@ class PerusahaanController extends Controller
     {
         try {
             $query = $request->get('query');
-            
-            $perusahaans = Perusahaan::where('nama_perusahaan', 'LIKE', "%{$query}%")
-                ->orWhere('kode', 'LIKE', "%{$query}%")
+            // Case-insensitive search
+            $perusahaans = Perusahaan::whereRaw('LOWER(nama_perusahaan) LIKE ?', ['%' . strtolower($query) . '%'])
+                ->orWhereRaw('LOWER(kode) LIKE ?', ['%' . strtolower($query) . '%'])
                 ->select('id', 'kode', 'nama_perusahaan')
                 ->orderBy('nama_perusahaan')
                 ->limit(10)
