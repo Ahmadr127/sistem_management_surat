@@ -20,7 +20,7 @@
                         Umum (Internal)
                     </button>
                     <button id="tab-diradm" class="tab-button border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700" data-tab="diradm">
-                        Direktur Adm & Keuangan
+                        Manajemen Adm & Keuangan
                     </button>
                     <button id="tab-dirrs" class="tab-button border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700" data-tab="dirrs">
                         Direktur RS
@@ -45,7 +45,7 @@
         <div id="tab-content-diradm" class="tab-content hidden">
             @include('pages.nomor.components.nomor-table', [
                 'jenis' => 'diradm',
-                'title' => 'Nomor Surat Direktur Adm & Keuangan',
+                'title' => 'Nomor Surat Manajemen Adm & Keuangan',
                 'format' => 'Nomor/Dir.Adm.Keu/RSAZRA/Bulan/Tahun',
                 'kode' => 'Dir.Adm.Keu'
             ])
@@ -75,7 +75,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Tab functionality
+    // T ab functionality
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabContents = document.querySelectorAll('.tab-content');
 

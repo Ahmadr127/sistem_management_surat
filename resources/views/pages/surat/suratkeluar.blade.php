@@ -368,7 +368,7 @@
                                     class="border border-gray-200 rounded-lg p-3 max-h-60 overflow-y-auto" style="display:none;">
                                     <div class="space-y-2">
                                         @php
-                                            $allowedRolesAsp = [1, 2, 6, 7]; // Sekretaris, Dirut, GM, Keuangan
+                                            $allowedRolesAsp = [1, 2, 6, 7, 8]; // Sekretaris, Dirut, GM, Keuangan
                                         @endphp
                                         @foreach ($users as $user)
                                             @if ((auth()->user()->role === 5 && in_array($user->role, $allowedRolesAsp)) || auth()->user()->role !== 5 && in_array($user->role, [1,2,4,5,7,8]))
@@ -840,7 +840,7 @@
 
             const totalSelected = document.querySelectorAll('.tujuan-checkbox:checked').length;
             const totalItems = document.querySelectorAll('.tujuan-checkbox').length;
-            selectionCounterElem.textContent = `${totalSelected} dipilih dari ${totalItems} tersedia`;
+            selectionCounterElem.textContent = `${totalSelected} dipilih`;
         }
 
         // Initialize counter
@@ -2153,7 +2153,7 @@
 
             const totalSelected = document.querySelectorAll('.tujuan-checkbox:checked').length;
             const totalItems = document.querySelectorAll('.tujuan-checkbox').length;
-            selectionCounterElem.textContent = `${totalSelected} dipilih dari ${totalItems} tersedia`;
+            selectionCounterElem.textContent = `${totalSelected} dipilih `;
         }
 
         // Initialize counter

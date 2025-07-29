@@ -276,6 +276,8 @@ class SuratUnitManagerController extends Controller
      */
     public function store(Request $request)
     {
+        // Log data request masuk
+        \Log::info('Request data untuk store SuratUnitManager:', $request->all());
         try {
             $user = auth()->user();
             
@@ -327,8 +329,12 @@ class SuratUnitManagerController extends Controller
                     'nullable',
                     'file',
                     'mimes:pdf,doc,docx,jpg,jpeg,png,xls,xlsx,ppt,pptx,zip,rar',
-                    'max:2048', // 2MB per file (sesuai upload_max_filesize PHP)
-                    function ($attribute, $value, $fail) {
+                    'max:5120', // 5MB per file (sesuaikan juga upload_max_filesize PHP)
+                    function (
+                        $attribute,
+                        $value,
+                        $fail
+                    ) {
                         if ($value && !$value->isValid()) {
                             $fail('File tidak valid atau rusak.');
                         }
@@ -338,7 +344,11 @@ class SuratUnitManagerController extends Controller
                 'keterangan_unit' => 'nullable|string'
             ]);
 
-            if ($validator->fails()) {
+            if (	$validator->fails()) {
+                \Log::warning('Validasi gagal pada store SuratUnitManager', [
+                    'input' => $request->all(),
+                    'errors' => $validator->errors()->toArray()
+                ]);
                 return response()->json([
                     'success' => false,
                     'message' => 'Validasi gagal',
@@ -419,7 +429,10 @@ class SuratUnitManagerController extends Controller
             }
 
         } catch (\Exception $e) {
-            Log::error('Error in SuratUnitManagerController@store: ' . $e->getMessage());
+            \Log::error('Error in SuratUnitManagerController@store: ' . $e->getMessage(), [
+                'input' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
             
             // Check if it's a file upload error
             if (strpos($e->getMessage(), 'SplFileInfo::getSize') !== false || 
@@ -571,7 +584,7 @@ class SuratUnitManagerController extends Controller
                     'nullable',
                     'file',
                     'mimes:pdf,doc,docx,jpg,jpeg,png,xls,xlsx,ppt,pptx,zip,rar',
-                    'max:2048', // 2MB per file (sesuai upload_max_filesize PHP)
+                    'max:5120', // 5MB per file (sesuaikan juga upload_max_filesize PHP)
                     function ($attribute, $value, $fail) {
                         if ($value && !$value->isValid()) {
                             $fail('File tidak valid atau rusak.');
