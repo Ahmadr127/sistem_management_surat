@@ -945,7 +945,7 @@
                 
                 if (isAsDirut) {
                     namaJabatan = "Direktur Utama";
-                    kodeJabatan = "DIRSS";
+                    kodeJabatan = "DIRRS";
                 } else if (isAsManagerKeuangan) {
                     namaJabatan = "Manager Keuangan";
                     kodeJabatan = "Dir.Adm.Keu";
@@ -1709,7 +1709,7 @@
 
                 // Create FormData object for request
                 const formData = new FormData();
-                formData.append('kode_jabatan', 'DIRSS');
+                formData.append('kode_jabatan', 'DIRRS');
                 formData.append('is_as_dirut', '1');
                 formData.append('tanggal_surat', tanggalSurat);
                 formData.append('_token', '{{ csrf_token() }}');
@@ -1779,7 +1779,7 @@
                     const tahun = date.getFullYear();
 
                     // Generate nomor surat dengan format Direktur
-                    const nomorSurat = `${String(nextNumber).padStart(3, '0')}/DIRSS/RSAZRA/${convertToRoman(bulan)}/${tahun}`;
+                    const nomorSurat = `${String(nextNumber).padStart(3, '0')}/DIRRS/RSAZRA/${convertToRoman(bulan)}/${tahun}`;
                     console.log("Generated nomor surat:", nomorSurat);
 
                     // Set value to nomor surat input

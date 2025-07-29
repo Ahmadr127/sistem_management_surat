@@ -193,9 +193,14 @@ class SuratKeluarController extends Controller
 
                         // Cek apakah pengirim menggunakan toggle sebagai Manager Keuangan
                         $isAsManagerKeuangan = $request->has('as_manager_keuangan') && $request->as_manager_keuangan;
+                        $isAsDirut = $request->has('as_dirut') && $request->as_dirut;
                         if ($isAsManagerKeuangan && $pengirimRole == 5) {
                             // Jika Sekretaris ASP mengirim sebagai Manager Keuangan
                             $pengirimRole = 7; // Set role sebagai Manager Keuangan
+                        }
+                        if ($isAsDirut && $pengirimRole == 5) {
+                            // Jika Sekretaris ASP mengirim sebagai Dirut
+                            $pengirimRole = 8; // Set role sebagai Dirut
                         }
 
                         // Cek logika khusus manager ke GM atau manager keuangan
@@ -218,7 +223,12 @@ class SuratKeluarController extends Controller
 
                         $isAntarManSek = in_array($pengirimRole, [1,4]) && collect($tujuanRoles)->every(fn($r) => in_array($r, [1,4]));
                         
-                        if ($pengirimRole == 5) { // Sekretaris ASP
+                        // Penentuan status disposisi
+                        if (auth()->user()->role == 5 && ($isAsManagerKeuangan || $isAsDirut)) {
+                            // Jika Sekretaris ASP mengirim sebagai Manager Keuangan atau Dirut, tetap set status sekretaris approved
+                            $disposisi->status_sekretaris = 'approved';
+                            $disposisi->status_dirut = 'pending';
+                        } elseif ($pengirimRole == 5) { // Sekretaris ASP
                             $disposisi->status_sekretaris = 'approved';
                             $disposisi->status_dirut = 'pending';
                         } elseif ($pengirimRole == 8) { // Direktur ASP
@@ -858,7 +868,7 @@ class SuratKeluarController extends Controller
             $isAsManagerKeuangan = $request->is_as_manager_keuangan;
             
             if ($isAsDirut) {
-                $kodeJabatan = 'DIRSS';
+                $kodeJabatan = 'DIRRS';
             } else if ($isAsManagerKeuangan) {
                 $kodeJabatan = 'Dir.Adm.Keu';
             }
