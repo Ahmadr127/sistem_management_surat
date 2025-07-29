@@ -48,6 +48,52 @@
                 </div>
             @endif
 
+            <!-- Toggle untuk Sekretaris ASP sebagai Direktur -->
+            @if (auth()->user()->role === 5)
+                <div class="mb-6 bg-indigo-50 p-4 rounded-lg border border-indigo-100">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="ri-user-settings-line text-indigo-600 text-lg mr-2"></i>
+                            <div>
+                                <h4 class="text-sm font-medium text-indigo-800">Opsi Pengirim</h4>
+                                <p class="text-xs text-indigo-600 mt-0.5">Anda dapat membuat surat atas nama direktur</p>
+                            </div>
+                        </div>
+                        <label class="flex items-center cursor-pointer">
+                            <div class="relative">
+                                <input type="checkbox" id="toggle-as-dirut-asp" name="as_dirut" class="sr-only">
+                                <div class="block bg-gray-200 w-10 h-5 rounded-full"></div>
+                                <div class="dot absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition"></div>
+                            </div>
+                            <span class="ml-2 text-sm font-medium text-indigo-800">Kirim sebagai Direktur</span>
+                        </label>
+                    </div>
+                </div>
+            @endif
+
+            <!-- Toggle untuk Sekretaris ASP sebagai Manager Keuangan -->
+            @if (auth()->user()->role === 5)
+                <div class="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="ri-user-settings-line text-blue-600 text-lg mr-2"></i>
+                            <div>
+                                <h4 class="text-sm font-medium text-blue-800">Opsi Pengirim</h4>
+                                <p class="text-xs text-blue-600 mt-0.5">Anda dapat membuat surat atas nama manager keuangan</p>
+                            </div>
+                        </div>
+                        <label class="flex items-center cursor-pointer">
+                            <div class="relative">
+                                <input type="checkbox" id="toggle-as-manager-keuangan" name="as_manager_keuangan" class="sr-only">
+                                <div class="block bg-gray-200 w-10 h-5 rounded-full"></div>
+                                <div class="dot absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition"></div>
+                            </div>
+                            <span class="ml-2 text-sm font-medium text-blue-800">Kirim sebagai Manager Keuangan</span>
+                        </label>
+                    </div>
+                </div>
+            @endif
+
             <!-- Card untuk Informasi Surat -->
             <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
                 <div class="p-6 border-b border-gray-200 bg-gray-50">
@@ -72,11 +118,21 @@
                                             Generate Nomor
                                         </button>
                                     @elseif (auth()->user()->role === 5)
-                                        <!-- Untuk Sekretaris ASP (role 5): hanya tampilkan Generate Nomor ASP -->
+                                        <!-- Untuk Sekretaris ASP (role 5): tampilkan Generate Nomor ASP dan Manager Keuangan -->
                                         <button type="button" id="generateNomorAspBtn"
                                             class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 group">
                                             <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
                                             Generate Nomor ASP
+                                        </button>
+                                        <button type="button" id="generateNomorManagerKeuanganBtn"
+                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-100 rounded-lg hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 group hidden">
+                                            <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                                            Generate Nomor Manager Keuangan
+                                        </button>
+                                        <button type="button" id="generateNomorDirutAspBtn"
+                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 group hidden">
+                                            <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                                            Generate Nomor Direktur
                                         </button>
                                     @elseif (auth()->user()->role === 8)
                                         <!-- Untuk Direktur ASP (role 8): hanya tampilkan Generate Nomor ASP -->
@@ -291,7 +347,9 @@
                                     <i class="ri-search-line"></i>
                                 </div>
                             </div>
-                            <!-- Selection Box -->
+                            <!-- Selected Users Badge -->
+                            <div id="selected-users-badge" class="flex flex-wrap gap-2 mb-2"></div>
+                            <!-- Selection Box (dynamic show/hide) -->
                             <div class="relative">
                                 <div class="flex justify-between mb-2 items-center">
                                     <div class="text-xs text-gray-500" id="selection-counter">0 dipilih</div>
@@ -307,7 +365,7 @@
                                     </div>
                                 </div>
                                 <div id="tujuan-selection-container"
-                                    class="border border-gray-200 rounded-lg p-3 max-h-60 overflow-y-auto">
+                                    class="border border-gray-200 rounded-lg p-3 max-h-60 overflow-y-auto" style="display:none;">
                                     <div class="space-y-2">
                                         @php
                                             $allowedRolesAsp = [1, 2, 6, 7]; // Sekretaris, Dirut, GM, Keuangan
@@ -357,6 +415,7 @@
                                                 </label>
                                             </div>
                                         @endif
+                                        <div id="no-user-found" class="text-center text-gray-400 text-xs py-2" style="display:none;">Tidak ada user ditemukan</div>
                                     </div>
                                 </div>
                             </div>
@@ -451,6 +510,10 @@
         const jenisSuratSelect = document.getElementById('jenis_surat');
         const nomorSuratInput = document.querySelector('input[name="nomor_surat"]');
         const asDirutToggle = document.getElementById('toggle-as-dirut');
+        const asDirutAspToggle = document.getElementById('toggle-as-dirut-asp');
+        const asManagerKeuanganToggle = document.getElementById('toggle-as-manager-keuangan');
+        const generateNomorManagerKeuanganBtn = document.getElementById('generateNomorManagerKeuanganBtn');
+        const generateNomorDirutAspBtn = document.getElementById('generateNomorDirutAspBtn');
         const pengirimIdInput = document.getElementById('pengirim_id');
         const tujuanDisposisiContainer = document.querySelector('#tujuan-selection-container');
         const tujuanCheckboxes = document.querySelectorAll('.tujuan-checkbox');
@@ -834,11 +897,13 @@
                 const tanggalSurat = document.querySelector('input[name="tanggal_surat"]').value;
                 const jenisSurat = jenisSuratSelect?.value || 'internal';
                 const isAsDirut = asDirutToggle?.checked || false;
+                const isAsManagerKeuangan = asManagerKeuanganToggle?.checked || false;
 
                 console.group('Generate Nomor Surat');
                 console.log('Tanggal Surat:', tanggalSurat);
                 console.log('Jenis Surat:', jenisSurat);
                 console.log('As Dirut:', isAsDirut);
+                console.log('As Manager Keuangan:', isAsManagerKeuangan);
                 console.log('User Role:', userRole);
 
                 // If external letter and role is 1, don't need to generate number
@@ -875,8 +940,16 @@
                 }
 
                 // Get current job title and code
-                let namaJabatan = isAsDirut ? "Direktur Utama" : "{{ auth()->user()->jabatan->nama_jabatan ?? 'UMUM' }}";
-                let kodeJabatan = isAsDirut ? "DIRUT" : "{{ auth()->user()->jabatan->kode_jabatan ?? 'UMUM' }}";
+                let namaJabatan = "{{ auth()->user()->jabatan->nama_jabatan ?? 'UMUM' }}";
+                let kodeJabatan = "{{ auth()->user()->jabatan->kode_jabatan ?? 'UMUM' }}";
+                
+                if (isAsDirut) {
+                    namaJabatan = "Direktur Utama";
+                    kodeJabatan = "DIRSS";
+                } else if (isAsManagerKeuangan) {
+                    namaJabatan = "Manager Keuangan";
+                    kodeJabatan = "Dir.Adm.Keu";
+                }
 
                 console.log('Generate nomor surat untuk jabatan:', namaJabatan, 'dengan kode:', kodeJabatan);
 
@@ -884,6 +957,7 @@
                 const formData = new FormData();
                 formData.append('kode_jabatan', kodeJabatan);
                 formData.append('is_as_dirut', isAsDirut ? '1' : '0');
+                formData.append('is_as_manager_keuangan', isAsManagerKeuangan ? '1' : '0');
                 formData.append('_token', '{{ csrf_token() }}');
 
                 // Send request using fetch API
@@ -1012,6 +1086,18 @@
                 //generateNomorAspBtn.onclick = generateNomorAsp;
                 console.log("Generate Nomor ASP button configured for Direktur ASP role.");
             }
+        }
+
+        // Tambahkan event listener untuk tombol Generate Nomor Manager Keuangan
+        if (generateNomorManagerKeuanganBtn) {
+            generateNomorManagerKeuanganBtn.addEventListener('click', generateNomorManagerKeuangan);
+            console.log("Event listener attached to Generate Nomor Manager Keuangan button.");
+        }
+
+        // Tambahkan event listener untuk tombol Generate Nomor Direktur
+        if (generateNomorDirutAspBtn) {
+            generateNomorDirutAspBtn.addEventListener('click', generateNomorDirutAsp);
+            console.log("Event listener attached to Generate Nomor Direktur button.");
         }
 
         // Event listener for date change
@@ -1288,6 +1374,12 @@
             console.log("generateNomorAsp function called.");
             try {
                 const tanggalSurat = document.querySelector('input[name="tanggal_surat"]').value;
+                const isAsManagerKeuangan = asManagerKeuanganToggle?.checked || false;
+                
+                console.group('Generate Nomor Surat ASP');
+                console.log('Tanggal Surat:', tanggalSurat);
+                console.log('As Manager Keuangan:', isAsManagerKeuangan);
+                console.log('User Role:', userRole);
                 
                 if (!tanggalSurat) {
                     console.log("Tanggal surat is empty.");
@@ -1319,6 +1411,7 @@
                 const formData = new FormData();
                 formData.append('is_asp', '1');
                 formData.append('tanggal_surat', tanggalSurat);
+                formData.append('is_as_manager_keuangan', isAsManagerKeuangan ? '1' : '0');
                 formData.append('_token', '{{ csrf_token() }}');
 
                 // Send request using fetch API
@@ -1424,6 +1517,306 @@
                     generateNomorAspBtn.innerHTML = `
                         <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
                         Generate Nomor ASP
+                    `;
+                }
+            }
+        }
+
+        // Function to generate nomor surat Manager Keuangan
+        async function generateNomorManagerKeuangan() {
+            console.log("generateNomorManagerKeuangan function called.");
+            try {
+                const tanggalSurat = document.querySelector('input[name="tanggal_surat"]').value;
+                
+                console.group('Generate Nomor Surat Manager Keuangan');
+                console.log('Tanggal Surat:', tanggalSurat);
+                console.log('User Role:', userRole);
+                
+                if (!tanggalSurat) {
+                    console.log("Tanggal surat is empty.");
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Perhatian',
+                        text: 'Silakan pilih tanggal surat terlebih dahulu',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#10B981'
+                    });
+                    return;
+                }
+
+                // Show loading state
+                if (generateNomorManagerKeuanganBtn) {
+                    console.log("Showing loading state for Generate Nomor Manager Keuangan button.");
+                    generateNomorManagerKeuanganBtn.disabled = true;
+                    generateNomorManagerKeuanganBtn.innerHTML = `
+                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-purple-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Generating...
+                    `;
+                }
+
+                // Create FormData object for request
+                const formData = new FormData();
+                formData.append('kode_jabatan', 'Dir.Adm.Keu');
+                formData.append('is_as_manager_keuangan', '1');
+                formData.append('tanggal_surat', tanggalSurat);
+                formData.append('_token', '{{ csrf_token() }}');
+
+                // Send request using fetch API
+                const response = await fetch("{{ route('suratkeluar.getLastNumber') }}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    console.error("Fetch failed with status:", response.status);
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log("Response data from getLastNumber:", data);
+
+                // Reset button state
+                if (generateNomorManagerKeuanganBtn) {
+                    generateNomorManagerKeuanganBtn.disabled = false;
+                    generateNomorManagerKeuanganBtn.innerHTML = `
+                        <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                        Generate Nomor Manager Keuangan
+                    `;
+                }
+
+                if (!data.success) {
+                    throw new Error(data.message || 'Gagal mendapatkan nomor surat');
+                }
+
+                // Parse last number and ensure it's a number
+                const lastNumber = parseInt(data.last_number) || 0;
+                const nextNumber = lastNumber + 1;
+                console.log("Last number:", lastNumber, "Next number:", nextNumber);
+
+                // Show Sweet Alert for confirmation
+                const result = await Swal.fire({
+                    title: 'Generate Nomor Surat Manager Keuangan',
+                    html: `
+                        <div class="text-left">
+                            <p class="mb-2">Informasi nomor surat:</p>
+                            <ul class="list-disc list-inside space-y-1">
+                                <li>Jabatan: <span class="font-semibold">Manager Keuangan</span></li>
+                                <li>Nomor urut terakhir: <span class="font-semibold">${lastNumber}</span></li>
+                                <li>Nomor urut berikutnya: <span class="font-semibold">${String(nextNumber).padStart(3, '0')}</span></li>
+                            </ul>
+                            <p class="mt-4">Apakah Anda ingin menggunakan nomor surat ini?</p>
+                        </div>
+                    `,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Gunakan',
+                    cancelButtonText: 'Tidak',
+                    confirmButtonColor: '#10B981',
+                    cancelButtonColor: '#6B7280'
+                });
+
+                if (result.isConfirmed) {
+                    // Get month and year from letter date
+                    const date = new Date(tanggalSurat);
+                    const bulan = date.getMonth() + 1;
+                    const tahun = date.getFullYear();
+
+                    // Generate nomor surat dengan format Manager Keuangan
+                    const nomorSurat = `${String(nextNumber).padStart(3, '0')}/Dir.Adm.Keu/RSAZRA/${convertToRoman(bulan)}/${tahun}`;
+                    console.log("Generated nomor surat:", nomorSurat);
+
+                    // Set value to nomor surat input
+                    if (nomorSuratInput) {
+                        nomorSuratInput.value = nomorSurat;
+                    }
+
+                    // Success notification
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: 'Nomor surat berhasil digenerate',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#10B981',
+                        timer: 2000,
+                        timerProgressBar: true,
+                        showConfirmButton: false
+                    });
+                }
+                console.groupEnd();
+            } catch (error) {
+                console.error('Error in generateNomorManagerKeuangan:', error);
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: error.message || 'Gagal menggenerate nomor surat. Silakan coba lagi.',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#10B981'
+                });
+                
+                // Reset button state in case of error
+                if (generateNomorManagerKeuanganBtn) {
+                    generateNomorManagerKeuanganBtn.disabled = false;
+                    generateNomorManagerKeuanganBtn.innerHTML = `
+                        <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                        Generate Nomor Manager Keuangan
+                    `;
+                }
+            }
+        }
+
+        // Function to generate nomor surat Direktur ASP
+        async function generateNomorDirutAsp() {
+            console.log("generateNomorDirutAsp function called.");
+            try {
+                const tanggalSurat = document.querySelector('input[name="tanggal_surat"]').value;
+                
+                console.group('Generate Nomor Surat Direktur ASP');
+                console.log('Tanggal Surat:', tanggalSurat);
+                console.log('User Role:', userRole);
+                
+                if (!tanggalSurat) {
+                    console.log("Tanggal surat is empty.");
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Perhatian',
+                        text: 'Silakan pilih tanggal surat terlebih dahulu',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#10B981'
+                    });
+                    return;
+                }
+
+                // Show loading state
+                if (generateNomorDirutAspBtn) {
+                    console.log("Showing loading state for Generate Nomor Direktur button.");
+                    generateNomorDirutAspBtn.disabled = true;
+                    generateNomorDirutAspBtn.innerHTML = `
+                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Generating...
+                    `;
+                }
+
+                // Create FormData object for request
+                const formData = new FormData();
+                formData.append('kode_jabatan', 'DIRSS');
+                formData.append('is_as_dirut', '1');
+                formData.append('tanggal_surat', tanggalSurat);
+                formData.append('_token', '{{ csrf_token() }}');
+
+                // Send request using fetch API
+                const response = await fetch("{{ route('suratkeluar.getLastNumber') }}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    console.error("Fetch failed with status:", response.status);
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log("Response data from getLastNumber:", data);
+
+                // Reset button state
+                if (generateNomorDirutAspBtn) {
+                    generateNomorDirutAspBtn.disabled = false;
+                    generateNomorDirutAspBtn.innerHTML = `
+                        <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                        Generate Nomor Direktur
+                    `;
+                }
+
+                if (!data.success) {
+                    throw new Error(data.message || 'Gagal mendapatkan nomor surat');
+                }
+
+                // Parse last number and ensure it's a number
+                const lastNumber = parseInt(data.last_number) || 0;
+                const nextNumber = lastNumber + 1;
+                console.log("Last number:", lastNumber, "Next number:", nextNumber);
+
+                // Show Sweet Alert for confirmation
+                const result = await Swal.fire({
+                    title: 'Generate Nomor Surat Direktur',
+                    html: `
+                        <div class="text-left">
+                            <p class="mb-2">Informasi nomor surat:</p>
+                            <ul class="list-disc list-inside space-y-1">
+                                <li>Jabatan: <span class="font-semibold">Direktur Utama</span></li>
+                                <li>Nomor urut terakhir: <span class="font-semibold">${lastNumber}</span></li>
+                                <li>Nomor urut berikutnya: <span class="font-semibold">${String(nextNumber).padStart(3, '0')}</span></li>
+                            </ul>
+                            <p class="mt-4">Apakah Anda ingin menggunakan nomor surat ini?</p>
+                        </div>
+                    `,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Gunakan',
+                    cancelButtonText: 'Tidak',
+                    confirmButtonColor: '#10B981',
+                    cancelButtonColor: '#6B7280'
+                });
+
+                if (result.isConfirmed) {
+                    // Get month and year from letter date
+                    const date = new Date(tanggalSurat);
+                    const bulan = date.getMonth() + 1;
+                    const tahun = date.getFullYear();
+
+                    // Generate nomor surat dengan format Direktur
+                    const nomorSurat = `${String(nextNumber).padStart(3, '0')}/DIRSS/RSAZRA/${convertToRoman(bulan)}/${tahun}`;
+                    console.log("Generated nomor surat:", nomorSurat);
+
+                    // Set value to nomor surat input
+                    if (nomorSuratInput) {
+                        nomorSuratInput.value = nomorSurat;
+                    }
+
+                    // Success notification
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: 'Nomor surat berhasil digenerate',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#10B981',
+                        timer: 2000,
+                        timerProgressBar: true,
+                        showConfirmButton: false
+                    });
+                }
+                console.groupEnd();
+            } catch (error) {
+                console.error('Error in generateNomorDirutAsp:', error);
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: error.message || 'Gagal menggenerate nomor surat. Silakan coba lagi.',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#10B981'
+                });
+                
+                // Reset button state in case of error
+                if (generateNomorDirutAspBtn) {
+                    generateNomorDirutAspBtn.disabled = false;
+                    generateNomorDirutAspBtn.innerHTML = `
+                        <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
+                        Generate Nomor Direktur
                     `;
                 }
             }
@@ -1608,6 +2001,236 @@
         if (asDirutToggle) {
             asDirutToggle.addEventListener('change', function() {
                 updateDisposisiLabels(this.checked);
+            });
+        }
+
+        // Fungsi untuk update badge user terpilih
+        function updateSelectedUsersBadge() {
+            const badgeContainer = document.getElementById('selected-users-badge');
+            badgeContainer.innerHTML = '';
+            const checked = document.querySelectorAll('.tujuan-checkbox:checked');
+            checked.forEach(cb => {
+                const label = document.querySelector('label[for="' + cb.id + '"]');
+                const badge = document.createElement('span');
+                badge.className = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mr-1 mb-1 cursor-pointer selected-user-badge';
+                badge.innerHTML = `<i class='ri-user-line mr-1'></i> ${label ? label.textContent.trim() : cb.value} <i class='ri-close-line ml-1 text-red-500'></i>`;
+                badge.dataset.userid = cb.value;
+                badge.title = 'Klik untuk hapus';
+                badgeContainer.appendChild(badge);
+            });
+        }
+        // Inisialisasi badge saat load
+        updateSelectedUsersBadge();
+        // Update badge setiap kali checkbox berubah
+        document.querySelectorAll('.tujuan-checkbox').forEach(cb => {
+            cb.addEventListener('change', updateSelectedUsersBadge);
+        });
+        // Event: klik badge untuk uncheck user
+        document.getElementById('selected-users-badge').addEventListener('click', function(e) {
+            const badge = e.target.closest('.selected-user-badge');
+            if (badge) {
+                const userId = badge.dataset.userid;
+                const cb = document.getElementById('user-' + userId);
+                if (cb) {
+                    cb.checked = false;
+                    cb.dispatchEvent(new Event('change'));
+                }
+            }
+        });
+
+        // --- Perbaikan pencarian user disposisi agar saran tetap tampil ---
+        if (tujuanSearch) {
+            tujuanSearch.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const container = document.getElementById('tujuan-selection-container');
+                const userItems = document.querySelectorAll('.user-selection-item');
+                let found = 0;
+                if (searchTerm.length > 0) {
+                    container.style.display = 'block';
+                    userItems.forEach(item => {
+                        const text = item.textContent.toLowerCase();
+                        if (text.includes(searchTerm)) {
+                            item.style.display = 'flex';
+                            found++;
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                    // Tampilkan/hide pesan tidak ada user
+                    document.getElementById('no-user-found').style.display = found === 0 ? 'block' : 'none';
+                } else {
+                    container.style.display = 'none';
+                    userItems.forEach(item => { item.style.display = 'none'; });
+                    document.getElementById('no-user-found').style.display = 'none';
+                }
+            });
+        }
+        // --- Tampilkan hasil pencarian jika sudah ada input saat load (misal dari autofill browser) ---
+        if (tujuanSearch && tujuanSearch.value.length > 0) {
+            tujuanSearch.dispatchEvent(new Event('input'));
+        }
+
+        // Toggle untuk Manager Keuangan (Sekretaris ASP)
+        if (asManagerKeuanganToggle) {
+            asManagerKeuanganToggle.addEventListener('change', function() {
+                const isChecked = this.checked;
+                const dotElement = this.parentElement.querySelector('.dot');
+
+                console.group('Toggle As Manager Keuangan State Change');
+                console.log('Toggle checked:', isChecked);
+
+                if (dotElement) {
+                    dotElement.classList.toggle('translate-x-5', isChecked);
+                }
+
+                // Visual feedback when toggled
+                const toggleContainer = this.closest('div.bg-blue-50');
+                if (toggleContainer) {
+                    if (isChecked) {
+                        console.log('Toggle activated - Setting up for Manager Keuangan mode');
+
+                        toggleContainer.classList.remove('bg-blue-50', 'border-blue-100');
+                        toggleContainer.classList.add('bg-green-50', 'border-green-100');
+
+                        // Tampilkan button Generate Nomor Manager Keuangan
+                        if (generateNomorManagerKeuanganBtn) {
+                            generateNomorManagerKeuanganBtn.classList.remove('hidden');
+                        }
+
+                        // Sembunyikan button Generate Nomor ASP
+                        const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
+                        if (generateNomorAspBtn) {
+                            generateNomorAspBtn.style.display = 'none';
+                        }
+
+                        // Tampilkan SweetAlert sukses
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Mode Surat Manager Keuangan',
+                            text: 'Surat akan dikirim atas nama manager keuangan',
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 3000,
+                            timerProgressBar: true
+                        });
+                    } else {
+                        console.log('Toggle deactivated - Reverting to normal mode');
+
+                        toggleContainer.classList.remove('bg-green-50', 'border-green-100');
+                        toggleContainer.classList.add('bg-blue-50', 'border-blue-100');
+
+                        // Sembunyikan button Generate Nomor Manager Keuangan
+                        if (generateNomorManagerKeuanganBtn) {
+                            generateNomorManagerKeuanganBtn.classList.add('hidden');
+                        }
+
+                        // Tampilkan kembali button Generate Nomor ASP
+                        const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
+                        if (generateNomorAspBtn) {
+                            generateNomorAspBtn.style.display = 'inline-flex';
+                        }
+                    }
+                }
+                console.groupEnd();
+
+                // Reset dan generate ulang nomor surat saat toggle berubah
+                if (nomorSuratInput && nomorSuratInput.value) {
+                    // Reset nomor surat
+                    nomorSuratInput.value = '';
+                }
+            });
+        }
+
+        // Function to update selection counter
+        function updateSelectionCounter() {
+            const selectionCounterElem = document.getElementById('selection-counter');
+            if (!selectionCounterElem) {
+                // If selection counter element doesn't exist, exit function
+                console.log('Selection counter element not found');
+                return;
+            }
+
+            const totalSelected = document.querySelectorAll('.tujuan-checkbox:checked').length;
+            const totalItems = document.querySelectorAll('.tujuan-checkbox').length;
+            selectionCounterElem.textContent = `${totalSelected} dipilih dari ${totalItems} tersedia`;
+        }
+
+        // Initialize counter
+        updateSelectionCounter();
+
+        // Toggle untuk Direktur ASP (Sekretaris ASP)
+        if (asDirutAspToggle) {
+            asDirutAspToggle.addEventListener('change', function() {
+                const isChecked = this.checked;
+                const dotElement = this.parentElement.querySelector('.dot');
+
+                console.group('Toggle As Dirut ASP State Change');
+                console.log('Toggle checked:', isChecked);
+
+                if (dotElement) {
+                    dotElement.classList.toggle('translate-x-5', isChecked);
+                }
+
+                // Visual feedback when toggled
+                const toggleContainer = this.closest('div.bg-indigo-50');
+                if (toggleContainer) {
+                    if (isChecked) {
+                        console.log('Toggle activated - Setting up for Direktur ASP mode');
+
+                        toggleContainer.classList.remove('bg-indigo-50', 'border-indigo-100');
+                        toggleContainer.classList.add('bg-green-50', 'border-green-100');
+
+                        // Tampilkan button Generate Nomor Direktur
+                        if (generateNomorDirutAspBtn) {
+                            generateNomorDirutAspBtn.classList.remove('hidden');
+                        }
+
+                        // Sembunyikan button Generate Nomor ASP dan Manager Keuangan
+                        const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
+                        if (generateNomorAspBtn) {
+                            generateNomorAspBtn.style.display = 'none';
+                        }
+                        if (generateNomorManagerKeuanganBtn) {
+                            generateNomorManagerKeuanganBtn.classList.add('hidden');
+                        }
+
+                        // Tampilkan SweetAlert sukses
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Mode Surat Direktur',
+                            text: 'Surat akan dikirim atas nama direktur',
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 3000,
+                            timerProgressBar: true
+                        });
+                    } else {
+                        console.log('Toggle deactivated - Reverting to normal mode');
+
+                        toggleContainer.classList.remove('bg-green-50', 'border-green-100');
+                        toggleContainer.classList.add('bg-indigo-50', 'border-indigo-100');
+
+                        // Sembunyikan button Generate Nomor Direktur
+                        if (generateNomorDirutAspBtn) {
+                            generateNomorDirutAspBtn.classList.add('hidden');
+                        }
+
+                        // Tampilkan kembali button Generate Nomor ASP
+                        const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
+                        if (generateNomorAspBtn) {
+                            generateNomorAspBtn.style.display = 'inline-flex';
+                        }
+                    }
+                }
+                console.groupEnd();
+
+                // Reset dan generate ulang nomor surat saat toggle berubah
+                if (nomorSuratInput && nomorSuratInput.value) {
+                    // Reset nomor surat
+                    nomorSuratInput.value = '';
+                }
             });
         }
     });

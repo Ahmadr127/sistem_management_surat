@@ -15,6 +15,20 @@
         <div class="flex items-center gap-2">
             <input id="search-{{ $jenis }}" type="text" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Cari nomor/perihal/pengirim...">
             <button id="search-btn-{{ $jenis }}" class="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"><i class="ri-search-line"></i></button>
+            <!-- Filter Dropdown Sort -->
+            <div class="relative ml-2">
+                <button id="filter-btn-{{ $jenis }}" type="button" class="px-2 py-2 bg-white border border-gray-200 rounded-md shadow-sm hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center" aria-haspopup="true" aria-expanded="false">
+                    <i class="ri-filter-3-line text-lg mr-1"></i>
+                    <span id="filter-label-{{ $jenis }}" class="text-xs text-gray-700">Terbaru</span>
+                    <i class="ri-arrow-down-s-line ml-1 text-gray-400"></i>
+                </button>
+                <div id="filter-dropdown-{{ $jenis }}" class="hidden absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                    <button type="button" class="filter-option block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-green-50" data-sort="asc">Nomor Terkecil</button>
+                    <button type="button" class="filter-option block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-green-50" data-sort="desc">Nomor Terbesar</button>
+                    <button type="button" class="filter-option block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-green-50" data-sort="terbaru">Terbaru</button>
+                    <button type="button" class="filter-option block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-green-50" data-sort="terlama">Terlama</button>
+                </div>
+            </div>
         </div>
         <div class="flex items-center gap-2">
             <label class="text-sm text-gray-600">Tampil</label>
@@ -121,8 +135,40 @@
     let currentPage = 1;
     let currentSearch = '';
     let currentPerPage = 10;
+    let currentSort = 'terbaru';
+    let lastData = [];
+
+    // Helper untuk ekstrak nomor urut dari string nomor surat
+    function extractNomorUrut(nomorSurat) {
+        if (!nomorSurat) return 0;
+        // Ambil bagian sebelum '/'
+        const match = nomorSurat.match(/^(\d+)/);
+        return match ? parseInt(match[1], 10) : 0;
+    }
+    // Helper untuk parse tanggal
+    function parseTanggal(tgl) {
+        if (!tgl) return 0;
+        const d = new Date(tgl);
+        return isNaN(d) ? 0 : d.getTime();
+    }
 
     function renderTable(data) {
+        lastData = data ? [...data] : [];
+        // Sorting frontend sesuai currentSort
+        if (Array.isArray(data) && data.length > 0) {
+            data.sort(function(a, b) {
+                if (currentSort === 'desc' || currentSort === 'asc') {
+                    const na = extractNomorUrut(a.nomor_surat);
+                    const nb = extractNomorUrut(b.nomor_surat);
+                    return currentSort === 'desc' ? nb - na : na - nb;
+                } else if (currentSort === 'terbaru' || currentSort === 'terlama') {
+                    const ta = parseTanggal(a.tanggal_surat);
+                    const tb = parseTanggal(b.tanggal_surat);
+                    return currentSort === 'terbaru' ? tb - ta : ta - tb;
+                }
+                return 0;
+            });
+        }
         tbody.innerHTML = '';
         if (!data || data.length === 0) {
             tbody.parentElement.parentElement.classList.add('hidden');
@@ -314,5 +360,61 @@
             year: 'numeric'
         });
     }
+
+    // --- Filter Dropdown Sort ---
+    const filterBtn = document.getElementById(`filter-btn-${jenis}`);
+    const filterDropdown = document.getElementById(`filter-dropdown-${jenis}`);
+    const filterLabel = document.getElementById(`filter-label-${jenis}`);
+    const filterOptions = filterDropdown.querySelectorAll('.filter-option');
+    const sortLabels = {
+        'asc': 'Nomor Terkecil',
+        'desc': 'Nomor Terbesar',
+        'terbaru': 'Terbaru',
+        'terlama': 'Terlama'
+    };
+    // Toggle dropdown
+    filterBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        filterDropdown.classList.toggle('hidden');
+        filterBtn.setAttribute('aria-expanded', filterDropdown.classList.contains('hidden') ? 'false' : 'true');
+    });
+    // Pilih sort
+    filterOptions.forEach(btn => {
+        btn.addEventListener('click', function() {
+            currentSort = this.dataset.sort;
+            filterLabel.textContent = sortLabels[currentSort];
+            filterDropdown.classList.add('hidden');
+            renderTable(lastData);
+        });
+    });
+    // Tutup dropdown jika klik di luar
+    document.addEventListener('click', function(e) {
+        if (!filterDropdown.classList.contains('hidden')) {
+            if (!filterDropdown.contains(e.target) && !filterBtn.contains(e.target)) {
+                filterDropdown.classList.add('hidden');
+                filterBtn.setAttribute('aria-expanded', 'false');
+            }
+        }
+    });
+    // Set label default
+    filterLabel.textContent = sortLabels[currentSort];
 })();
 </script>
+<style>
+/* Tambahan styling untuk filter dropdown agar modern */
+#filter-btn-{{ $jenis }}[aria-expanded="true"] {
+    border-color: #10B981;
+    background: #f0fdf4;
+}
+#filter-dropdown-{{ $jenis }} {
+    min-width: 160px;
+    box-shadow: 0 8px 24px 0 rgba(16,185,129,0.08);
+}
+.filter-option[data-sort="terbaru"].active,
+.filter-option[data-sort="asc"].active,
+.filter-option[data-sort="desc"].active,
+.filter-option[data-sort="terlama"].active {
+    background: #10B981 !important;
+    color: #fff !important;
+}
+</style>

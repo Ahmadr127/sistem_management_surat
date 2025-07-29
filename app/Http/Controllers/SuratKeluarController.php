@@ -191,6 +191,13 @@ class SuratKeluarController extends Controller
                         $pengirimRole = auth()->user()->role;
                         $pengirim = auth()->user();
 
+                        // Cek apakah pengirim menggunakan toggle sebagai Manager Keuangan
+                        $isAsManagerKeuangan = $request->has('as_manager_keuangan') && $request->as_manager_keuangan;
+                        if ($isAsManagerKeuangan && $pengirimRole == 5) {
+                            // Jika Sekretaris ASP mengirim sebagai Manager Keuangan
+                            $pengirimRole = 7; // Set role sebagai Manager Keuangan
+                        }
+
                         // Cek logika khusus manager ke GM atau manager keuangan
                         $isManagerToGMKeu = false;
                         if ($pengirimRole == 4 && $pengirim->general_manager_id) {
@@ -462,14 +469,23 @@ class SuratKeluarController extends Controller
                 $disposisi->surat_keluar_id = $suratKeluar->id;
                 $disposisi->keterangan_pengirim = $request->keterangan_pengirim;
                 
+                // Cek apakah pengirim menggunakan toggle sebagai Manager Keuangan
+                $isAsManagerKeuangan = $request->has('as_manager_keuangan') && $request->as_manager_keuangan;
+                $pengirimRole = auth()->user()->role;
+                
+                if ($isAsManagerKeuangan && $pengirimRole == 5) {
+                    // Jika Sekretaris ASP mengirim sebagai Manager Keuangan
+                    $pengirimRole = 7; // Set role sebagai Manager Keuangan
+                }
+                
                 // Set status based on user role
-                if (auth()->user()->role == 5) { // Sekretaris ASP
+                if ($pengirimRole == 5) { // Sekretaris ASP
                     $disposisi->status_sekretaris = 'approved';
                     $disposisi->status_dirut = 'pending';
-                } elseif (auth()->user()->role == 8) { // Direktur ASP
+                } elseif ($pengirimRole == 8) { // Direktur ASP
                     $disposisi->status_sekretaris = 'approved';
                     $disposisi->status_dirut = 'pending';
-                } elseif (auth()->user()->role == 1) { // Sekretaris
+                } elseif ($pengirimRole == 1) { // Sekretaris
                     $disposisi->status_sekretaris = 'approved';
                     $disposisi->status_dirut = 'pending';
                 } else {
@@ -839,8 +855,12 @@ class SuratKeluarController extends Controller
             // Logic untuk nomor surat internal (default)
             $kodeJabatan = $request->kode_jabatan;
             $isAsDirut = $request->is_as_dirut;
+            $isAsManagerKeuangan = $request->is_as_manager_keuangan;
+            
             if ($isAsDirut) {
-                $kodeJabatan = 'DIRUT';
+                $kodeJabatan = 'DIRSS';
+            } else if ($isAsManagerKeuangan) {
+                $kodeJabatan = 'Dir.Adm.Keu';
             }
             $nomorList = SuratKeluar::whereYear('tanggal_surat', $tahun)
                 ->where(function ($query) use ($kodeJabatan) {
