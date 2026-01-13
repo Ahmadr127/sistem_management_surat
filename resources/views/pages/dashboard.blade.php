@@ -1,6 +1,6 @@
-@extends('home')
+@extends('layouts.app')
 
-@section('title', 'Dashboard - SISM Azra')
+@section('title', 'Dashboard')
 
 @section('content')
     <div x-data="dashboardStats">

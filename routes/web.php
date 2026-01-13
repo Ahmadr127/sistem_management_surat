@@ -56,7 +56,6 @@ Route::middleware(['auth', 'checkUserStatus'])->group(function () {
 
     // Laporan
     Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan');
-    Route::get('/disposisi/create', [DisposisiController::class, 'create'])->name('disposisi.create');
     Route::get('/surat-keluar', [SuratKeluarController::class, 'index'])->name('surat-keluar.index');
     Route::get('/arsip', [SuratKeluarController::class, 'arsip'])->name('arsip');
     Route::get('/suratmasuk', [SuratMasukController::class, 'index'])->name('suratmasuk.index');
@@ -138,7 +137,7 @@ Route::middleware(['auth', 'checkRole:0,1,2,3,4,5,7,8'])->group(function () {
 });
 
 // Route khusus untuk admin dan direktur
-Route::middleware(['auth', 'checkRole:1,2,5,7,8'])->group(function () {
+Route::middleware(['auth', 'checkRole:1,2,3,5,7,8'])->group(function () {
     // App
     Route::get('/app', function () {
         return view('home');
@@ -152,6 +151,7 @@ Route::middleware(['auth', 'checkRole:1,2,5,7,8'])->group(function () {
     // Disposisi
     Route::prefix('disposisi')->name('disposisi.')->group(function () {
         Route::get('/', [DisposisiController::class, 'index'])->name('index');
+        Route::get('/create', [DisposisiController::class, 'create'])->name('create');
         Route::post('/', [DisposisiController::class, 'store'])->name('store');
         Route::get('/{disposisi}', [DisposisiController::class, 'show'])->name('show');
         Route::put('/{disposisi}/status', [DisposisiController::class, 'updateStatus'])->name('updateStatus');
@@ -194,6 +194,26 @@ Route::middleware(['auth', 'checkRole:3'])->group(function () {
     
     // Manage Jabatan
     Route::get('/managejabatan', [JabatanController::class, 'index'])->name('managejabatan.index');
+    
+    // Permission Management
+    Route::resource('permissions', App\Http\Controllers\PermissionController::class);
+    
+    // Role Management
+    Route::resource('roles', App\Http\Controllers\RoleController::class);
+    
+    // Organization Type Management
+    Route::resource('organization-types', App\Http\Controllers\OrganizationTypeController::class);
+    
+    // Organization Unit Management
+    Route::resource('organization-units', App\Http\Controllers\OrganizationUnitController::class);
+    
+    // Organization Unit - Additional Routes
+    Route::patch('organization-units/{organizationUnit}/update-head', [App\Http\Controllers\OrganizationUnitController::class, 'updateHead'])
+        ->name('organization-units.update-head');
+    Route::post('organization-units/{organizationUnit}/add-member', [App\Http\Controllers\OrganizationUnitController::class, 'addMember'])
+        ->name('organization-units.add-member');
+    Route::delete('organization-units/{organizationUnit}/remove-member/{user}', [App\Http\Controllers\OrganizationUnitController::class, 'removeMember'])
+        ->name('organization-units.remove-member');
 });
 
 // Route untuk admin, sekretaris, dan super admin

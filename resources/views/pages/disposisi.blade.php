@@ -1,4 +1,4 @@
-{{-- @extends('home')
+@extends('home')
 
 @section('title', 'Disposisi - SISM Azra')
 
@@ -667,4 +667,4 @@
             }));
         });
     </script>
-@endpush --}}
+@endpush
