@@ -1,15 +1,31 @@
+@props([
+    'name',
+    'label' => '',
+    'options' => [],
+    'selected' => null,
+    'valueField' => 'id',
+    'labelField' => 'name',
+    'groupField' => null,
+    'placeholder' => 'Pilih...',
+    'emptyOption' => null,
+    'required' => false,
+    'multiple' => false,
+])
+
 <div x-data="{
     open: false,
     search: '',
-    selected: {{ $selected ? "'" . $selected . "'" : 'null' }},
+    selected: {{ $multiple ? json_encode($selected ? (array)$selected : []) : ($selected ? "'" . $selected . "'" : 'null') }},
     selectedLabel: '',
     options: {{ json_encode($options) }},
     valueField: '{{ $valueField }}',
     labelField: '{{ $labelField }}',
     groupField: {{ $groupField ? "'" . $groupField . "'" : 'null' }},
+    multiple: {{ $multiple ? 'true' : 'false' }},
     
     get filteredOptions() {
         if (!this.search) return this.options;
+        
         return this.options.filter(option => {
             const label = option[this.labelField].toLowerCase();
             return label.includes(this.search.toLowerCase());
@@ -28,14 +44,45 @@
     },
     
     selectOption(option) {
-        this.selected = option ? option[this.valueField] : null;
-        this.selectedLabel = option ? option[this.labelField] : '';
-        this.open = false;
-        this.search = '';
+        if (this.multiple) {
+            const value = option[this.valueField];
+            const index = this.selected.indexOf(value);
+            if (index > -1) {
+                this.selected.splice(index, 1);
+            } else {
+                this.selected.push(value);
+            }
+        } else {
+            this.selected = option ? option[this.valueField] : null;
+            this.selectedLabel = option ? option[this.labelField] : '';
+            this.open = false;
+            this.search = '';
+        }
+    },
+    
+    isSelected(option) {
+        if (this.multiple) {
+            return this.selected.includes(option[this.valueField]);
+        }
+        return this.selected == option[this.valueField];
+    },
+    
+    getSelectedLabels() {
+        if (!this.multiple) return '';
+        return this.options
+            .filter(opt => this.selected.includes(opt[this.valueField]))
+            .map(opt => opt[this.labelField]);
+    },
+    
+    removeSelected(value) {
+        const index = this.selected.indexOf(value);
+        if (index > -1) {
+            this.selected.splice(index, 1);
+        }
     },
     
     init() {
-        if (this.selected) {
+        if (!this.multiple && this.selected) {
             const option = this.options.find(opt => opt[this.valueField] == this.selected);
             if (option) {
                 this.selectedLabel = option[this.labelField];
@@ -53,8 +100,28 @@
         </label>
     @endif
     
-    <!-- Hidden Input -->
-    <input type="hidden" name="{{ $name }}" :value="selected" {{ $required ? 'required' : '' }}>
+    <!-- Hidden Input(s) -->
+    @if($multiple)
+        <template x-for="(value, index) in selected" :key="index">
+            <input type="hidden" :name="'{{ $name }}[]'" :value="value">
+        </template>
+    @else
+        <input type="hidden" name="{{ $name }}" :value="selected" {{ $required ? 'required' : '' }}>
+    @endif
+    
+    <!-- Selected Badges (for multiple) -->
+    <template x-if="multiple && selected.length > 0">
+        <div class="flex flex-wrap gap-2 mb-2">
+            <template x-for="value in selected" :key="value">
+                <div class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
+                    <span x-text="options.find(opt => opt[valueField] == value)?.[labelField]" class="mr-2"></span>
+                    <button type="button" @click="removeSelected(value)" class="hover:text-green-900 focus:outline-none">
+                        <i class="ri-close-line"></i>
+                    </button>
+                </div>
+            </template>
+        </div>
+    </template>
     
     <!-- Dropdown Button -->
     <button 
@@ -62,7 +129,8 @@
         @click="open = !open"
         class="w-full px-3 py-2 text-left border border-gray-300 rounded-md shadow-sm bg-white focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm flex items-center justify-between"
         :class="{ 'ring-2 ring-green-500': open }">
-        <span x-text="selectedLabel || '{{ $placeholder }}'" class="block truncate" :class="{ 'text-gray-400': !selectedLabel }"></span>
+        <span x-show="!multiple" x-text="selectedLabel || '{{ $placeholder }}'" class="block truncate" :class="{ 'text-gray-400': !selectedLabel }"></span>
+        <span x-show="multiple" class="block truncate" x-text="(!selected || selected.length === 0) ? '{{ $placeholder }}' : selected.length + ' dipilih'" :class="{ 'text-gray-400': !selected || selected.length === 0 }"></span>
         <i class="fas fa-chevron-down text-gray-400 transition-transform" :class="{ 'rotate-180': open }"></i>
     </button>
     
@@ -91,7 +159,7 @@
         <!-- Options List -->
         <div class="overflow-y-auto max-h-48">
             <!-- Empty Option -->
-            @if($emptyOption)
+            @if($emptyOption && !$multiple)
                 <div 
                     @click="selectOption(null)"
                     class="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm"
@@ -105,9 +173,12 @@
                 <template x-for="option in filteredOptions" :key="option[valueField]">
                     <div 
                         @click="selectOption(option)"
-                        class="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm"
-                        :class="{ 'bg-green-50 text-green-700': selected == option[valueField] }"
-                        x-text="option[labelField]">
+                        class="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm flex items-center"
+                        :class="{ 'bg-green-50 text-green-700': isSelected(option) }">
+                        <template x-if="multiple">
+                            <input type="checkbox" :checked="isSelected(option)" class="mr-2" @click.stop>
+                        </template>
+                        <span x-text="option[labelField]"></span>
                     </div>
                 </template>
             </template>
@@ -119,9 +190,12 @@
                         <template x-for="option in groupOptions" :key="option[valueField]">
                             <div 
                                 @click="selectOption(option)"
-                                class="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm pl-6"
-                                :class="{ 'bg-green-50 text-green-700': selected == option[valueField] }"
-                                x-text="option[labelField]">
+                                class="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm pl-6 flex items-center"
+                                :class="{ 'bg-green-50 text-green-700': isSelected(option) }">
+                                <template x-if="multiple">
+                                    <input type="checkbox" :checked="isSelected(option)" class="mr-2" @click.stop>
+                                </template>
+                                <span x-text="option[labelField]"></span>
                             </div>
                         </template>
                     </div>

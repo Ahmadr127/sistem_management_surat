@@ -30,28 +30,42 @@ class SuratKeluarController extends Controller
             ]);
 
             // Search filter
-        if ($request->has('search')) {
+        if ($request->has('search') && $request->search) {
             $query->search($request->search);
         }
 
         // Filter berdasarkan perusahaan
-        if ($request->has('perusahaan')) {
+        if ($request->has('perusahaan') && $request->perusahaan) {
             $query->byPerusahaan($request->perusahaan);
         }
 
         // Filter berdasarkan tanggal
-        if ($request->has(['start_date', 'end_date'])) {
+        if ($request->has('start_date') && $request->has('end_date') && $request->start_date && $request->end_date) {
             $query->byDateRange($request->start_date, $request->end_date);
         }
 
             // Filter berdasarkan jenis surat
-            if ($request->has('jenis_surat')) {
+            if ($request->has('jenis_surat') && $request->jenis_surat) {
                 $query->byJenisSurat($request->jenis_surat);
             }
 
             // Filter berdasarkan sifat surat
-            if ($request->has('sifat_surat')) {
+            if ($request->has('sifat_surat') && $request->sifat_surat) {
                 $query->bySifatSurat($request->sifat_surat);
+            }
+
+            // Filter berdasarkan status sekretaris
+            if ($request->has('status_sekretaris') && $request->status_sekretaris) {
+                $query->whereHas('disposisi', function($q) use ($request) {
+                    $q->where('status_sekretaris', $request->status_sekretaris);
+                });
+            }
+
+            // Filter berdasarkan status direktur
+            if ($request->has('status_dirut') && $request->status_dirut) {
+                $query->whereHas('disposisi', function($q) use ($request) {
+                    $q->where('status_dirut', $request->status_dirut);
+                });
             }
 
             // Order by newest records first - tanggal_surat desc, then created_at desc
@@ -69,7 +83,22 @@ class SuratKeluarController extends Controller
                                      ->orderBy('nama_perusahaan')
                                      ->get();
 
-            return view('pages.surat.index', compact('suratKeluar', 'users', 'perusahaans'));
+            // Prepare surat options for searchable dropdown
+            $suratOptions = SuratKeluar::with(['perusahaanData'])
+                                       ->orderBy('tanggal_surat', 'desc')
+                                       ->get()
+                                       ->map(function($surat) {
+                                           return [
+                                               'id' => $surat->id,
+                                               'label' => $surat->nomor_surat . ' - ' . $surat->perihal,
+                                               'nomor_surat' => $surat->nomor_surat,
+                                               'perihal' => $surat->perihal,
+                                               'tanggal_surat' => $surat->tanggal_surat,
+                                               'jenis_surat' => $surat->jenis_surat,
+                                           ];
+                                       });
+
+            return view('pages.surat.surat_keluar.index', compact('suratKeluar', 'users', 'perusahaans', 'suratOptions'));
         } catch (\Exception $e) {
             \Log::error('Error in SuratKeluarController@index: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat data');
@@ -326,7 +355,7 @@ class SuratKeluarController extends Controller
      */
     public function show(SuratKeluar $suratKeluar)
     {
-        return view('pages.surat.suratkeluar.show', compact('suratKeluar'));
+        return view('pages.surat.surat_keluar.show', compact('suratKeluar'));
     }
 
     /**
@@ -361,7 +390,7 @@ class SuratKeluarController extends Controller
                           ->orderBy('nama_perusahaan')
                           ->get();
         
-        return view('pages.surat.editsuratkeluar', [
+        return view('pages.surat.surat_keluar.editsuratkeluar', [
             'surat' => $suratKeluar,
             'users' => $users,
                 'selectedUsers' => $selectedUsers,
@@ -957,7 +986,7 @@ class SuratKeluarController extends Controller
                                   ->first();
             }
 
-            return view('pages.surat.suratkeluar', compact('users', 'perusahaans', 'userPerusahaan'));
+            return view('pages.surat.surat_keluar.suratkeluar', compact('users', 'perusahaans', 'userPerusahaan'));
         } catch (\Exception $e) {
             \Log::error('Error in SuratKeluarController@create: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat halaman');
@@ -971,7 +1000,7 @@ class SuratKeluarController extends Controller
     {
         try {
             // Surat yang sudah dihapus hanya bisa dilihat oleh pembuat surat, kecuali untuk admin (role 3)
-            return view('pages.surat.trashed');
+            return view('pages.surat.surat_keluar.trashed');
         } catch (\Exception $e) {
             \Log::error('Error saat menampilkan surat yang sudah dihapus: ' . $e->getMessage());
             return redirect()->route('suratkeluar.index')
@@ -1150,6 +1179,66 @@ class SuratKeluarController extends Controller
     }
 
     /**
+     * View file surat keluar (inline)
+     */
+    public function viewFile($suratId, $fileId)
+    {
+        try {
+            $suratKeluar = SuratKeluar::withTrashed()->findOrFail($suratId);
+            $file = $suratKeluar->files()->findOrFail($fileId);
+            
+            $filePath = $file->file_path;
+            \Log::info('DEBUG: Viewing file ID ' . $fileId . ', DB Path: ' . $filePath);
+
+            // Daftar kemungkinan path
+            $possiblePaths = [];
+
+            // 1. Standard Storage Path (storage/app/public/...)
+            if (strpos($filePath, 'public/') === 0) {
+                $possiblePaths[] = storage_path('app/' . $filePath);
+            } else {
+                $possiblePaths[] = storage_path('app/public/' . $filePath);
+            }
+
+            // 2. Direct Storage Path (storage/app/...)
+            $possiblePaths[] = storage_path('app/' . $filePath);
+
+            // 3. Public Path (public/...)
+            $possiblePaths[] = public_path($filePath);
+
+            // 4. Public Storage Path (public/storage/...)
+            $possiblePaths[] = public_path('storage/' . $filePath);
+            
+            // 5. Absolute path check (if stored as absolute path)
+            $possiblePaths[] = $filePath;
+
+            $foundPath = null;
+            foreach ($possiblePaths as $path) {
+                \Log::info('DEBUG: Checking path: ' . $path);
+                if (file_exists($path) && is_file($path)) {
+                    $foundPath = $path;
+                    break;
+                }
+            }
+            
+            if (!$foundPath) {
+                \Log::error('DEBUG: File not found in any checked paths.');
+                return response()->json([
+                    'message' => 'File tidak ditemukan di server',
+                    'checked_paths' => $possiblePaths // Hapus ini di production
+                ], 404);
+            }
+            
+            \Log::info('DEBUG: File found at: ' . $foundPath);
+            return response()->file($foundPath);
+
+        } catch (\Exception $e) {
+            \Log::error('Error viewing file: ' . $e->getMessage());
+            return response()->json(['message' => 'File tidak ditemukan'], 404);
+        }
+    }
+
+    /**
      * Hapus file surat keluar
      */
     public function deleteFile($suratId, $fileId)
@@ -1270,6 +1359,56 @@ class SuratKeluarController extends Controller
                 'success' => false,
                 'message' => 'Terjadi kesalahan pada server: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Get detail surat keluar (API)
+     */
+    public function getDetail($id)
+    {
+        try {
+            \Log::info('API getDetail called for ID: ' . $id);
+            
+            // Debugging: Check if record exists manually
+            $exists = SuratKeluar::withTrashed()->where('id', $id)->exists();
+            \Log::info('DEBUG: Record with ID ' . $id . ' exists? ' . ($exists ? 'YES' : 'NO'));
+            
+            if (!$exists) {
+                $ids = SuratKeluar::withTrashed()->limit(10)->pluck('id')->toArray();
+                \Log::info('DEBUG: First 10 Available IDs: ' . implode(',', $ids));
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Surat tidak ditemukan di database (ID: ' . $id . ')'
+                ], 404);
+            }
+
+            $surat = SuratKeluar::withTrashed()->with([
+                'disposisi.tujuan',
+                'disposisi.creator', // Ganti user dengan creator
+                'creator.jabatan',
+                'perusahaanData',
+                'files'
+            ])->findOrFail($id);
+
+            // Transform data if needed
+            $data = $surat->toArray();
+            
+            // Add custom fields
+            $data['perusahaan_nama'] = $surat->perusahaanData ? $surat->perusahaanData->nama_perusahaan : $surat->perusahaan;
+            $data['creator_nama'] = $surat->creator ? $surat->creator->name : '-';
+            $data['creator_jabatan'] = $surat->creator && $surat->creator->jabatan ? $surat->creator->jabatan->nama_jabatan : '-';
+
+            return response()->json([
+                'success' => true,
+                'data' => $data
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching detail surat: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500); // Ubah ke 500 untuk membedakan dengan 404 not found
         }
     }
 }

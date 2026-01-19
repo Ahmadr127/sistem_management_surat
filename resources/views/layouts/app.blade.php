@@ -9,6 +9,7 @@
     <!-- @vite(['resources/css/app.css', 'resources/js/app.js']) -->
     <link rel="icon" type="image/x-icon" href="{{ asset('images/logo.png') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     
     {{-- Sidebar CSS --}}
     <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">

@@ -77,6 +77,8 @@ Route::middleware(['auth', 'checkRole:0,1,2,3,4,5,7,8'])->group(function () {
         Route::get('/create', [SuratKeluarController::class, 'create'])->name('create');
         Route::post('/', [SuratKeluarController::class, 'store'])->name('store');
         Route::get('/get-last-number', [SuratKeluarController::class, 'getLastNumber'])->name('getLastNumber');
+        Route::get('/{suratKeluar}/file/{fileId}/view', [SuratKeluarController::class, 'viewFile'])->name('file.view');
+        Route::get('/{suratKeluar}/file/{fileId}/download', [SuratKeluarController::class, 'downloadFile'])->name('file.download');
         Route::get('/{suratKeluar}', [SuratKeluarController::class, 'show'])->name('show');
         Route::delete('/{suratKeluar}', [SuratKeluarController::class, 'destroy'])->name('destroy');
         Route::get('/{suratKeluar}/edit', [SuratKeluarController::class, 'edit'])->name('edit');
@@ -247,6 +249,8 @@ Route::middleware('auth')->prefix('api')->name('api.')->group(function () {
     // Surat Keluar routes
     Route::get('/surat-keluar', [SuratKeluarController::class, 'getSuratKeluar'])->name('surat-keluar');
     Route::get('/surat-keluar/trashed', [SuratKeluarController::class, 'getTrashedSurat'])->name('surat-keluar.trashed');
+    Route::get('/surat-keluar/by-format', [SuratKeluarController::class, 'getByFormat'])->name('suratkeluar.byformat');
+    Route::get('/surat-keluar/{id}', [SuratKeluarController::class, 'getDetail'])->name('surat-keluar.detail');
     
     // Disposisi routes - order matters for route resolution!
     Route::get('/disposisi/surat/{suratId}', [DisposisiController::class, 'getDisposisiBySurat'])->name('disposisi.by-surat');
@@ -382,9 +386,5 @@ Route::middleware(['auth', 'checkRole:7'])->group(function () {
 
 Route::post('/api/disposisi/{id}/keterangan-penerima', [App\Http\Controllers\DisposisiController::class, 'updateKeteranganPenerima'])->name('api.disposisi.keterangan-penerima');
 Route::post('/api/disposisi/{id}/keterangan-pengirim', [App\Http\Controllers\DisposisiController::class, 'updateKeteranganPengirim'])->name('api.disposisi.keterangan-pengirim');
-
-Route::middleware(['auth'])->group(function () {
-    Route::get('/api/surat-keluar/by-format', [App\Http\Controllers\SuratKeluarController::class, 'getByFormat'])->name('api.suratkeluar.byformat');
-});
 
 

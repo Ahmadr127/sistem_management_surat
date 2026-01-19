@@ -263,24 +263,23 @@
                 </div>
 
                 <div class="p-6 space-y-6">
-                    <!-- Tujuan Disposisi (Multiple Select) -->
-                    <div class="space-y-2" id="tujuan-disposisi-section">
-                        <label class="text-sm font-semibold text-gray-800">Tujuan Disposisi</label>
-                        <input type="text" id="search-tujuan" class="w-full px-3 py-2 rounded-lg border border-gray-200 mb-2" placeholder="Cari nama atau jabatan...">
-                        <div id="tujuan-disposisi-list" class="space-y-2 max-h-60 overflow-y-auto border border-gray-100 rounded p-2 bg-gray-50">
-                            @foreach ($users as $user)
-                                <div class="flex items-center tujuan-item">
-                                    <input type="checkbox" name="tujuan_disposisi[]" value="{{ $user->id }}" id="user-{{ $user->id }}"
-                                        {{ in_array($user->id, old('tujuan_disposisi', $selectedUsers ?? [])) ? 'checked' : '' }}
-                                        class="mr-2 tujuan-checkbox">
-                                    <label for="user-{{ $user->id }}" class="flex-1 cursor-pointer">
-                                        <span class="font-medium">{{ $user->name }}</span>
-                                        <span class="text-xs text-gray-500 ml-1">({{ $user->jabatan->nama_jabatan ?? 'Tidak ada jabatan' }})</span>
-                                    </label>
-                                </div>
-                            @endforeach
-                        </div>
-                        <div class="text-xs text-gray-500 mt-1" id="selected-tujuan-count"></div>
+                    <!-- Tujuan Disposisi (Using Searchable Dropdown Component) -->
+                    <div class="space-y-2">
+                        <x-searchable-dropdown
+                            name="tujuan_disposisi"
+                            label="Tujuan Disposisi"
+                            :options="$users->map(fn($user) => [
+                                'id' => $user->id,
+                                'name' => $user->name . ' (' . ($user->jabatan->nama_jabatan ?? 'Tidak ada jabatan') . ')',
+                                'jabatan' => $user->jabatan->nama_jabatan ?? 'Tidak ada jabatan'
+                            ])->toArray()"
+                            value-field="id"
+                            label-field="name"
+                            :selected="old('tujuan_disposisi', $selectedUsers ?? [])"
+                            placeholder="Pilih tujuan disposisi"
+                            :multiple="true"
+                            :required="false"
+                        />
                     </div>
 
                     <!-- Keterangan Pengirim -->
