@@ -36,7 +36,7 @@
                         <img src="{{ asset('images/logo.png') }}" alt="Logo" class="h-8 w-auto object-contain">
                     </div>
                     {{-- Use CSS-driven visibility instead of x-show --}}
-                    <h1 class="sidebar-text text-xl font-bold text-white tracking-wide truncate">PUM System</h1>
+                    <h1 class="sidebar-text text-xl font-bold text-white tracking-wide truncate">SIMS</h1>
                 </div>
             </div>
 
@@ -167,8 +167,8 @@
                 @endif
 
                 {{-- Surat Menyurat (Mail Management) Submenu --}}
-                @if(auth()->user()->hasPermission('manage_surat_masuk') || auth()->user()->hasPermission('manage_surat_keluar') || auth()->user()->hasPermission('manage_disposisi') || auth()->user()->hasPermission('generate_nomor_surat') || auth()->user()->hasPermission('create_surat_unit') || auth()->user()->hasPermission('approve_surat_unit'))
-                <div class="mb-4" x-data="{ open: {{ request()->is('suratmasuk*') || request()->is('suratkeluar*') || request()->is('disposisi*') || request()->is('nomor*') || request()->is('surat-unit-manager*') ? 'true' : 'false' }} }">
+                @if(auth()->user()->hasPermission('manage_surat_masuk') || auth()->user()->hasPermission('manage_surat_keluar') || auth()->user()->hasPermission('generate_nomor_surat') || auth()->user()->hasPermission('create_surat_unit') || auth()->user()->hasPermission('approve_surat_unit'))
+                <div class="mb-4" x-data="{ open: {{ request()->is('suratmasuk*') || request()->is('suratkeluar*') || request()->is('nomor*') || request()->is('surat-unit-manager*') ? 'true' : 'false' }} }">
                     <button @click="open = !open" 
                             class="w-full flex items-center justify-between px-4 py-3 text-white rounded-lg hover:bg-green-800 transition-colors">
                         <div class="flex items-center">
@@ -205,14 +205,7 @@
                         </a>
                         @endif
                         
-                        @if(auth()->user()->hasPermission('manage_disposisi'))
-                        <a href="{{ route('disposisi.create') }}" 
-                           class="flex items-center px-3 py-2 text-green-100 rounded-lg hover:bg-green-800 hover:text-white transition-colors text-sm {{ request()->is('disposisi*') ? 'bg-green-800 text-white' : '' }}"
-                           title="Disposisi">
-                            <i class="fas fa-share-nodes w-4 mr-2"></i>
-                            <span class="sidebar-text">Disposisi</span>
-                        </a>
-                        @endif
+
                         
                         @if(auth()->user()->hasPermission('generate_nomor_surat'))
                         <a href="{{ route('nomor.generate') }}" 
@@ -359,7 +352,7 @@
                                 <div class="text-left hidden sm:block">
                                     <div class="text-sm font-medium text-gray-700">{{ auth()->user()->name }}</div>
                                     <div class="text-xs text-gray-500">
-                                        {{ auth()->user()->role->display_name ?? auth()->user()->role->name ?? '-' }}
+                                        {{ auth()->user()->roleModel->display_name ?? auth()->user()->roleModel->name ?? auth()->user()->role_name ?? '-' }}
                                         @if(auth()->user()->organizationUnit)
                                             <span class="text-gray-400">•</span>
                                             {{ auth()->user()->organizationUnit->name }}

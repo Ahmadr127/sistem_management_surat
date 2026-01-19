@@ -69,30 +69,6 @@
                     </select>
                 </div>
 
-                <div class="flex-1 min-w-[150px]">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Status Sekretaris</label>
-                    <select name="status_sekretaris"
-                        class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 text-sm">
-                        <option value="">Semua Status</option>
-                        <option value="pending" {{ request('status_sekretaris') == 'pending' ? 'selected' : '' }}>Menunggu</option>
-                        <option value="review" {{ request('status_sekretaris') == 'review' ? 'selected' : '' }}>Sedang Ditinjau</option>
-                        <option value="approved" {{ request('status_sekretaris') == 'approved' ? 'selected' : '' }}>Disetujui</option>
-                        <option value="rejected" {{ request('status_sekretaris') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
-                    </select>
-                </div>
-
-                <div class="flex-1 min-w-[150px]">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Status Direktur</label>
-                    <select name="status_dirut"
-                        class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 text-sm">
-                        <option value="">Semua Status</option>
-                        <option value="pending" {{ request('status_dirut') == 'pending' ? 'selected' : '' }}>Menunggu</option>
-                        <option value="review" {{ request('status_dirut') == 'review' ? 'selected' : '' }}>Sedang Ditinjau</option>
-                        <option value="approved" {{ request('status_dirut') == 'approved' ? 'selected' : '' }}>Disetujui</option>
-                        <option value="rejected" {{ request('status_dirut') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
-                    </select>
-                </div>
-
                 {{-- Action Buttons --}}
                 <div class="flex items-center gap-2">
                     <button 
@@ -121,22 +97,18 @@
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-green-600">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-white uppercase">No Disposisi</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-white uppercase">Tanggal</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-white uppercase">Nomor Surat</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-white uppercase">Perusahaan</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-white uppercase">Perihal</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-white uppercase">Jenis</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-white uppercase">Status Sekretaris</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-white uppercase">Status Direktur</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-white uppercase">Tujuan</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-white uppercase">Sifat</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-white uppercase">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         @foreach($suratKeluar as $surat)
                             <tr class="hover:bg-gray-50 transition-colors duration-150">
-                                <td class="px-4 py-3 text-sm text-gray-900">{{ $surat->disposisi->id ?? '-' }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-900">
                                     {{ $surat->tanggal_surat ? \Carbon\Carbon::parse($surat->tanggal_surat)->format('d M Y') : '-' }}
                                 </td>
@@ -151,63 +123,25 @@
                                     @endif
                                 </td>
                                 <td class="px-4 py-3 text-sm">
-                                    @php
-                                        $statusSekretaris = $surat->disposisi->status_sekretaris ?? 'pending';
-                                        $badgeClass = match($statusSekretaris) {
-                                            'approved' => 'bg-green-100 text-green-800',
-                                            'rejected' => 'bg-red-100 text-red-800',
-                                            'review' => 'bg-blue-100 text-blue-800',
-                                            default => 'bg-yellow-100 text-yellow-800'
-                                        };
-                                        $badgeLabel = match($statusSekretaris) {
-                                            'approved' => 'Disetujui',
-                                            'rejected' => 'Ditolak',
-                                            'review' => 'Ditinjau',
-                                            default => 'Menunggu'
-                                        };
-                                    @endphp
-                                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $badgeClass }}">
-                                        {{ $badgeLabel }}
-                                    </span>
+                                    @if($surat->sifat_surat == 'urgent')
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Urgent</span>
+                                    @else
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">Normal</span>
+                                    @endif
                                 </td>
                                 <td class="px-4 py-3 text-sm">
-                                    @php
-                                        $statusDirut = $surat->disposisi->status_dirut ?? 'pending';
-                                        $badgeClass = match($statusDirut) {
-                                            'approved' => 'bg-green-100 text-green-800',
-                                            'rejected' => 'bg-red-100 text-red-800',
-                                            'review' => 'bg-blue-100 text-blue-800',
-                                            default => 'bg-yellow-100 text-yellow-800'
-                                        };
-                                        $badgeLabel = match($statusDirut) {
-                                            'approved' => 'Disetujui',
-                                            'rejected' => 'Ditolak',
-                                            'review' => 'Ditinjau',
-                                            default => 'Menunggu'
-                                        };
-                                    @endphp
-                                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $badgeClass }}">
-                                        {{ $badgeLabel }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3 text-sm text-gray-900">
-                                    {{ $surat->disposisi?->tujuan?->pluck('name')->join(', ') ?? '-' }}
-                                </td>
-                                <td class="px-4 py-3 text-sm">
-                                    <div class="flex items-center space-x-2">
+                                    <div class="flex flex-wrap gap-2">
                                         {{-- View Detail --}}
                                         <button onclick="showDetailSurat({{ $surat->id }})" 
-                                                class="text-blue-600 hover:text-blue-800 transition-colors"
-                                                title="Lihat Detail">
-                                            <i class="ri-eye-line text-lg"></i>
+                                                class="inline-flex items-center px-2.5 py-1.5 bg-white border border-blue-300 hover:bg-blue-50 text-blue-700 rounded-md shadow-sm transition-colors duration-200">
+                                            <i class="ri-eye-line mr-1"></i> Detail
                                         </button>
 
                                         {{-- Edit (only for creator or admin) --}}
                                         @if($surat->created_by == auth()->id() || auth()->user()->role == 3)
                                             <a href="{{ route('suratkeluar.edit', $surat->id) }}" 
-                                               class="text-green-600 hover:text-green-800 transition-colors"
-                                               title="Edit">
-                                                <i class="ri-edit-line text-lg"></i>
+                                               class="inline-flex items-center px-2.5 py-1.5 bg-white border border-green-300 hover:bg-green-50 text-green-700 rounded-md shadow-sm transition-colors duration-200">
+                                                <i class="ri-edit-line mr-1"></i> Edit
                                             </a>
                                             
                                             <form action="{{ route('suratkeluar.destroy', $surat->id) }}" 
@@ -217,20 +151,10 @@
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" 
-                                                        class="text-red-600 hover:text-red-800 transition-colors"
-                                                        title="Hapus">
-                                                    <i class="ri-delete-bin-line text-lg"></i>
+                                                        class="inline-flex items-center px-2.5 py-1.5 bg-white border border-red-300 hover:bg-red-50 text-red-700 rounded-md shadow-sm transition-colors duration-200">
+                                                    <i class="ri-delete-bin-line mr-1"></i> Hapus
                                                 </button>
                                             </form>
-                                        @endif
-
-                                        {{-- Edit Disposisi (for sekretaris, direktur, or admin) --}}
-                                        @if(in_array(auth()->user()->role, [1, 2, 3]))
-                                            <button onclick="openEditDisposisiModal({{ $surat->id }})" 
-                                                    class="text-purple-600 hover:text-purple-800 transition-colors"
-                                                    title="Edit Disposisi">
-                                                <i class="ri-file-edit-line text-lg"></i>
-                                            </button>
                                         @endif
                                     </div>
                                 </td>
@@ -258,7 +182,6 @@
 
 {{-- Include Modals --}}
 @include('pages.surat.surat_keluar.modal.detail_surat')
-@include('pages.surat.surat_keluar.modal.edit_disposisi')
 
 @endsection
 
@@ -271,7 +194,7 @@
     window.userId = {{ auth()->id() }};
 
     // Auto-submit form on filter change
-    document.querySelectorAll('select[name="jenis_surat"], select[name="sifat_surat"], select[name="status_sekretaris"], select[name="status_dirut"]').forEach(select => {
+    document.querySelectorAll('select[name="jenis_surat"], select[name="sifat_surat"]').forEach(select => {
         select.addEventListener('change', function() {
             document.getElementById('filterForm').submit();
         });

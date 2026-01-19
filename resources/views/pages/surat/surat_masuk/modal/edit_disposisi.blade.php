@@ -322,7 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (window.userRole === 2) { // Direktur
                 formData.append('status_dirut', document.querySelector('[name="status_dirut"]').value);
                 formData.append('keterangan_dirut', document.querySelector('[name="keterangan_dirut"]').value);
-                const waktuDirut = document.querySelector('[name="waktu_review_dirut"]').value);
+                const waktuDirut = document.querySelector('[name="waktu_review_dirut"]').value;
                 if (waktuDirut) formData.append('waktu_review_dirut', waktuDirut);
                 
                 // Tujuan disposisi

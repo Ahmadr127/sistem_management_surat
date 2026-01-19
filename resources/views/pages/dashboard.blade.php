@@ -108,13 +108,7 @@
                         </a>
                     @endif
 
-                    @if (Auth::user()->role === 'admin' || Auth::user()->role === 'staff')
-                        <a href="{{ url('/disposisi/create') }}"
-                            class="flex items-center justify-center p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
-                            <i class="ri-send-plane-line mr-2 text-blue-600"></i>
-                            <span class="text-sm font-medium text-blue-600">Buat Disposisi</span>
-                        </a>
-                    @endif
+
 
                     <a href="{{ url('/arsip') }}"
                         class="flex items-center justify-center p-4 rounded-xl bg-purple-50 hover:bg-purple-100 transition-colors">

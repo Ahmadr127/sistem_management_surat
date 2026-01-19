@@ -34,7 +34,7 @@ class RolePermissionSeeder extends Seeder
             $staff->permissions()->sync(Permission::whereIn('name', [
                 'view_dashboard',
                 'manage_surat_masuk',      // Can view surat masuk
-                'manage_disposisi',         // Can manage disposisi
+
                 'create_surat_unit',        // Can create surat unit
                 'view_own_surat',
                 'view_arsip',               // Can view arsip
@@ -48,7 +48,7 @@ class RolePermissionSeeder extends Seeder
                 'view_dashboard',
                 'manage_surat_masuk',       // Full access to surat masuk
                 'manage_surat_keluar',      // Full access to surat keluar
-                'manage_disposisi',         // Full access to disposisi
+
                 'generate_nomor_surat',     // Can generate nomor surat
                 'view_laporan',
                 'view_arsip',
@@ -61,7 +61,7 @@ class RolePermissionSeeder extends Seeder
                 'view_dashboard',
                 'manage_surat_masuk',       // Can view surat masuk
                 'view_surat',
-                'manage_disposisi',         // Can manage disposisi
+
                 'approve_disposisi',
                 'view_laporan',
                 'view_arsip',
@@ -74,7 +74,7 @@ class RolePermissionSeeder extends Seeder
                 'view_dashboard',
                 'manage_surat_masuk',       // Can view surat masuk
                 'manage_surat_keluar',      // Can manage surat keluar
-                'manage_disposisi',         // Can manage disposisi
+
                 'approve_surat_unit',       // Can approve surat unit
                 'view_surat',
                 'view_laporan',
@@ -87,7 +87,7 @@ class RolePermissionSeeder extends Seeder
             $sekretarisAsp->permissions()->sync(Permission::whereIn('name', [
                 'manage_surat_masuk',       // Can manage surat masuk
                 'manage_surat_keluar',      // Can manage surat keluar
-                'manage_disposisi',         // Can manage disposisi
+
                 'view_surat',
                 'view_arsip',
                 'view_laporan',
@@ -100,7 +100,7 @@ class RolePermissionSeeder extends Seeder
                 'view_dashboard',
                 'manage_surat_masuk',       // Can view surat masuk
                 'manage_surat_keluar',      // Can manage surat keluar
-                'manage_disposisi',         // Can manage disposisi
+
                 'approve_surat_unit',
                 'manage_team',
                 'view_surat',
@@ -115,7 +115,7 @@ class RolePermissionSeeder extends Seeder
                 'view_dashboard',
                 'manage_surat_masuk',       // Can view surat masuk
                 'manage_surat_keluar',      // Can manage surat keluar
-                'manage_disposisi',         // Can manage disposisi
+
                 'approve_surat_unit',       // Can approve surat unit
                 'view_surat',
                 'view_laporan',
@@ -129,7 +129,7 @@ class RolePermissionSeeder extends Seeder
                 'view_dashboard',
                 'manage_surat_masuk',       // Can view surat masuk
                 'manage_surat_keluar',      // Can manage surat keluar
-                'manage_disposisi',         // Can manage disposisi
+
                 'approve_surat_unit',
                 'view_surat',
                 'view_laporan',
