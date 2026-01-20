@@ -12,18 +12,23 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            // Organization structure seeders (MUST RUN FIRST)
+            OrganizationTypeSeeder::class,
+            OrganizationUnitSeeder::class,
+
             // Existing seeders
-            JabatanSeeder::class,
+            // JabatanSeeder::class, // DEPRECATED: Replaced by Role + Organization Logic
             UserSeeder::class,
+            GeneralManagerSeeder::class,
+            ManagerKeuanganSeeder::class,
+            IndependentManagerSeeder::class,
+            ManagerKeuanganIndependenSeeder::class,
+            ManagerITSeeder::class,
             
             // New permission system seeders
             PermissionSeeder::class,
             RoleSeeder::class,
             RolePermissionSeeder::class,
-            
-            // Organization structure seeders
-            OrganizationTypeSeeder::class,
-            OrganizationUnitSeeder::class,
             
             // Update existing users with new role system
             UserRoleUpdateSeeder::class,

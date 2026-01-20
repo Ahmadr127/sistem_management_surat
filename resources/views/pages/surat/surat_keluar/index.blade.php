@@ -114,7 +114,9 @@
                                 </td>
                                 <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $surat->nomor_surat ?? '-' }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-900">{{ $surat->perusahaanData->nama_perusahaan ?? $surat->perusahaan ?? '-' }}</td>
-                                <td class="px-4 py-3 text-sm text-gray-900">{{ $surat->perihal ?? '-' }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-900 max-w-[200px] truncate" title="{{ $surat->perihal ?? '-' }}">
+                                    {{ $surat->perihal ?? '-' }}
+                                </td>
                                 <td class="px-4 py-3 text-sm">
                                     @if($surat->jenis_surat == 'internal')
                                         <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">Internal</span>

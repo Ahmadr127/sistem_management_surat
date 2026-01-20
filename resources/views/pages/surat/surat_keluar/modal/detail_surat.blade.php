@@ -35,16 +35,16 @@
                     </h4>
                     <div class="bg-gray-50 p-4 rounded-lg border border-gray-100 space-y-3">
                         <div>
-                            <dt class="text-sm font-medium text-gray-500">Nomor Surat</dt>
+                            <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Nomor Surat</dt>
                             <dd class="mt-1 text-sm font-semibold text-gray-900" id="detail-nomor">-</dd>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <dt class="text-sm font-medium text-gray-500">Tanggal Surat</dt>
-                                <dd class="mt-1 text-sm text-gray-900" id="detail-tanggal">-</dd>
+                                <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Surat</dt>
+                                <dd class="mt-1 text-sm font-semibold text-gray-900" id="detail-tanggal">-</dd>
                             </div>
                             <div>
-                                <dt class="text-sm font-medium text-gray-500">Jenis Surat</dt>
+                                <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis Surat</dt>
                                 <dd class="mt-1">
                                     <span id="detail-jenis-badge" class="px-2 py-1 text-xs font-medium rounded-full">
                                         <span id="detail-jenis">-</span>
@@ -53,7 +53,7 @@
                             </div>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-gray-500">Sifat Surat</dt>
+                            <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Sifat Surat</dt>
                             <dd class="mt-1">
                                 <span id="detail-sifat-badge" class="px-2 py-1 text-xs font-medium rounded-full">
                                     <span id="detail-sifat">-</span>
@@ -61,12 +61,12 @@
                             </dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-gray-500">Perihal</dt>
-                            <dd class="mt-1 text-sm text-gray-900" id="detail-perihal">-</dd>
+                            <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Perihal</dt>
+                            <dd class="mt-1 text-sm font-semibold text-gray-900 break-words" id="detail-perihal">-</dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-gray-500">Perusahaan</dt>
-                            <dd class="mt-1 text-sm text-gray-900" id="detail-perusahaan">-</dd>
+                            <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Perusahaan</dt>
+                            <dd class="mt-1 text-sm font-semibold text-gray-900 break-words" id="detail-perusahaan">-</dd>
                         </div>
                     </div>
                 </div>
@@ -79,12 +79,12 @@
                     </h4>
                     <div class="bg-gray-50 p-4 rounded-lg border border-gray-100 space-y-3">
                         <div class="flex justify-between items-center">
-                            <dt class="text-sm font-medium text-gray-500">Status Sekretaris</dt>
-                            <dd class="text-sm" id="detail-status-sekretaris">-</dd>
+                            <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Status Sekretaris</dt>
+                            <dd class="text-sm font-semibold" id="detail-status-sekretaris">-</dd>
                         </div>
                         <div class="flex justify-between items-center">
-                            <dt class="text-sm font-medium text-gray-500">Status Direktur</dt>
-                            <dd class="text-sm" id="detail-status-dirut">-</dd>
+                            <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Status Direktur</dt>
+                            <dd class="text-sm font-semibold" id="detail-status-dirut">-</dd>
                         </div>
                     </div>
                 </div>
@@ -98,16 +98,16 @@
                 </h4>
                 <div class="bg-gray-50 p-4 rounded-lg border border-gray-100 space-y-4">
                     <div>
-                        <dt class="text-sm font-medium text-gray-500 mb-1">Keterangan Pengirim</dt>
-                        <dd class="text-sm text-gray-700 bg-white p-3 rounded border border-gray-200" id="detail-keterangan-pengirim">-</dd>
+                        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Keterangan Pengirim</dt>
+                        <dd class="text-sm text-gray-700 bg-white p-3 rounded border border-gray-200 break-words" id="detail-keterangan-pengirim">-</dd>
                     </div>
                     <div>
-                        <dt class="text-sm font-medium text-gray-500 mb-1">Keterangan Sekretaris</dt>
-                        <dd class="text-sm text-gray-700 bg-white p-3 rounded border border-gray-200" id="detail-keterangan-sekretaris">-</dd>
+                        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Keterangan Sekretaris</dt>
+                        <dd class="text-sm text-gray-700 bg-white p-3 rounded border border-gray-200 break-words" id="detail-keterangan-sekretaris">-</dd>
                     </div>
                     <div>
-                        <dt class="text-sm font-medium text-gray-500 mb-1">Keterangan Direktur</dt>
-                        <dd class="text-sm text-gray-700 bg-white p-3 rounded border border-gray-200" id="detail-keterangan-dirut">-</dd>
+                        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Keterangan Direktur</dt>
+                        <dd class="text-sm text-gray-700 bg-white p-3 rounded border border-gray-200 break-words" id="detail-keterangan-dirut">-</dd>
                     </div>
                 </div>
             </div>

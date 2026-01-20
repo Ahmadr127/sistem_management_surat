@@ -25,7 +25,7 @@ class SuratKeluarController extends Controller
             // Ambil data surat keluar dengan eager loading disposisi dan tujuan disposisi
             $query = SuratKeluar::with([
                 'disposisi.tujuan',
-                'creator.jabatan',
+                'creator.organizationUnit',
                 'perusahaanData'
             ]);
 
@@ -364,8 +364,8 @@ class SuratKeluarController extends Controller
     public function edit(SuratKeluar $suratKeluar)
     {
         try {
-            // Get users for disposisi with their jabatan
-            $users = User::with('jabatan')
+            // Get users for disposisi with their organization unit
+            $users = User::with('organizationUnit')
                 ->where('id', '!=', auth()->id())
                 ->where('status_akun', 'aktif')
                 ->get();
@@ -767,7 +767,7 @@ class SuratKeluarController extends Controller
     public function getSuratKeluar(Request $request)
     {
         try {
-            $query = SuratKeluar::with(['disposisi.tujuan', 'creator.jabatan', 'perusahaanData', 'files']);
+            $query = SuratKeluar::with(['disposisi.tujuan', 'creator.organizationUnit', 'perusahaanData', 'files']);
 
             $user = auth()->user();
             
@@ -892,26 +892,46 @@ class SuratKeluarController extends Controller
             }
 
             // Logic untuk nomor surat internal (default)
-            $kodeJabatan = $request->kode_jabatan;
+            // Prioritas: Toggle -> Organization Unit -> Request Param (Legacy)
+            $kodeUnit = null;
             $isAsDirut = $request->is_as_dirut;
             $isAsManagerKeuangan = $request->is_as_manager_keuangan;
             
             if ($isAsDirut) {
-                $kodeJabatan = 'DIRRS';
+                $kodeUnit = 'DIRRS';
             } else if ($isAsManagerKeuangan) {
-                $kodeJabatan = 'Dir.Adm.Keu';
+                $kodeUnit = 'Dir.Adm.Keu';
+            } else {
+                // Ambil kode dari Organization Unit user
+                $user = auth()->user();
+                if ($user && $user->organization_unit_id) {
+                    $orgUnit = \App\Models\OrganizationUnit::find($user->organization_unit_id);
+                    if ($orgUnit) {
+                        $kodeUnit = $orgUnit->code;
+                    }
+                }
+                
+                // Fallback jika tidak ada unit, gunakan input manual atau default
+                if (!$kodeUnit) {
+                    $kodeUnit = $request->kode_jabatan ?? 'UMUM'; 
+                }
             }
+
             $nomorList = SuratKeluar::whereYear('tanggal_surat', $tahun)
-                ->where(function ($query) use ($kodeJabatan) {
-                    $query->where('nomor_surat', 'like', "%/{$kodeJabatan}/%")
-                        ->orWhere('nomor_surat', 'like', "%/{$kodeJabatan}/%\-");
+                ->where(function ($query) use ($kodeUnit) {
+                    $query->where('nomor_surat', 'like', "%/{$kodeUnit}/%")
+                        ->orWhere('nomor_surat', 'like', "%/{$kodeUnit}/%\-");
                 })
                 ->pluck('nomor_surat')
                 ->toArray();
-            \Log::info('Nomor surat internal ditemukan:', $nomorList);
+            
+            \Log::info('Nomor surat internal ditemukan:', ['kode' => $kodeUnit, 'list' => $nomorList]);
+            
             $maxNumber = 0;
             foreach ($nomorList as $nomor) {
-                if (preg_match('/^(\\d{3})\/' . preg_quote($kodeJabatan, '/') . '\//', $nomor, $matches)) {
+                // Regex fleksibel untuk menangkap nomor urut di awal string
+                // Format: 001/KODE/RSAZRA/ROMAWI/TAHUN
+                if (preg_match('/^(\\d{3})\/' . preg_quote($kodeUnit, '/') . '\//', $nomor, $matches)) {
                     $num = intval($matches[1]);
                     if ($num > $maxNumber) {
                         $maxNumber = $num;
@@ -919,9 +939,11 @@ class SuratKeluarController extends Controller
                 }
             }
             $lastNumber = $maxNumber; // hanya angka terakhir
+            
             return response()->json([
                 'success' => true,
-                'last_number' => $lastNumber
+                'last_number' => $lastNumber,
+                'kode_unit' => $kodeUnit // Kembalikan kode unit agar frontend bisa pakai
             ]);
         } catch (\Exception $e) {
             \Log::error('Error in getLastNumber: ' . $e->getMessage());
@@ -937,7 +959,7 @@ class SuratKeluarController extends Controller
         try {
             $suratKeluar = SuratKeluar::with([
                 'disposisi.tujuan',
-                'creator.jabatan',
+                'creator.organizationUnit',
                 'perusahaanData',
                 'files'
             ])
@@ -949,15 +971,13 @@ class SuratKeluarController extends Controller
                           ->orderBy('nama_perusahaan')
                           ->get();
             
-            // Get all jabatan for filter dropdown
-            $jabatanList = \App\Models\Jabatan::where('status', 'aktif')
-                          ->orderBy('nama_jabatan')
-                          ->get();
+            // Jabatan table has been dropped, use empty collection
+            $jabatanList = collect([]);
             
             return view('pages.arsip', compact('suratKeluar', 'jabatanList', 'perusahaans'));
         } catch (\Exception $e) {
             \Log::error('Error in SuratKeluarController@arsip: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat data arsip');
+            return redirect()->route('dashboard')->with('error', 'Terjadi kesalahan saat memuat data arsip');
         }
     }
 
@@ -967,7 +987,7 @@ class SuratKeluarController extends Controller
     public function create()
     {
         try {
-            $users = User::with('jabatan')
+            $users = User::with('organizationUnit')
                 ->where('status_akun', 'aktif')
                 ->where('id', '!=', auth()->id())
                 ->get();
@@ -979,13 +999,8 @@ class SuratKeluarController extends Controller
                           
             // Get authenticated user's perusahaan preference
             $userPerusahaan = null;
-            $user = auth()->user();
-            if ($user && $user->jabatan && $user->jabatan->perusahaan_default) {
-                $userPerusahaan = Perusahaan::where('kode', $user->jabatan->perusahaan_default)
-                                  ->where('status', 'aktif')
-                                  ->first();
-            }
-
+            // Logic perusahaan default dihapus karena kolom jabatan dihapus
+            
             return view('pages.surat.surat_keluar.suratkeluar', compact('users', 'perusahaans', 'userPerusahaan'));
         } catch (\Exception $e) {
             \Log::error('Error in SuratKeluarController@create: ' . $e->getMessage());
@@ -1386,7 +1401,7 @@ class SuratKeluarController extends Controller
             $surat = SuratKeluar::withTrashed()->with([
                 'disposisi.tujuan',
                 'disposisi.creator', // Ganti user dengan creator
-                'creator.jabatan',
+                'creator.organizationUnit',
                 'perusahaanData',
                 'files'
             ])->findOrFail($id);
@@ -1397,7 +1412,7 @@ class SuratKeluarController extends Controller
             // Add custom fields
             $data['perusahaan_nama'] = $surat->perusahaanData ? $surat->perusahaanData->nama_perusahaan : $surat->perusahaan;
             $data['creator_nama'] = $surat->creator ? $surat->creator->name : '-';
-            $data['creator_jabatan'] = $surat->creator && $surat->creator->jabatan ? $surat->creator->jabatan->nama_jabatan : '-';
+            $data['creator_jabatan'] = $surat->creator ? $surat->creator->jabatanName : '-';
 
             return response()->json([
                 'success' => true,

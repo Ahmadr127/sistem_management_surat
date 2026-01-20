@@ -22,8 +22,8 @@
             @csrf
             @method('PUT')
             <!-- Card untuk Informasi Surat -->
-            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                <div class="p-6 border-b border-gray-200 bg-gray-50">
+            <div class="bg-white rounded-xl border border-gray-200">
+                <div class="p-6 border-b border-gray-200 bg-gray-50 rounded-t-xl">
                     <h3 class="text-sm font-semibold text-gray-800">
                         <i class="ri-mail-line mr-2 text-gray-600"></i>
                         Informasi Surat
@@ -254,8 +254,8 @@
             </div>
 
             <!-- Card untuk Disposisi -->
-            <div class="mt-6 bg-white rounded-xl border border-gray-200 overflow-hidden">
-                <div class="p-6 border-b border-gray-200 bg-gray-50">
+            <div class="mt-6 bg-white rounded-xl border border-gray-200">
+                <div class="p-6 border-b border-gray-200 bg-gray-50 rounded-t-xl">
                     <h3 class="text-sm font-semibold text-gray-800">
                         <i class="ri-share-forward-line mr-2 text-gray-600"></i>
                         Disposisi Surat
@@ -264,23 +264,8 @@
 
                 <div class="p-6 space-y-6">
                     <!-- Tujuan Disposisi (Using Searchable Dropdown Component) -->
-                    <div class="space-y-2">
-                        <x-searchable-dropdown
-                            name="tujuan_disposisi"
-                            label="Tujuan Disposisi"
-                            :options="$users->map(fn($user) => [
-                                'id' => $user->id,
-                                'name' => $user->name . ' (' . ($user->jabatan->nama_jabatan ?? 'Tidak ada jabatan') . ')',
-                                'jabatan' => $user->jabatan->nama_jabatan ?? 'Tidak ada jabatan'
-                            ])->toArray()"
-                            value-field="id"
-                            label-field="name"
-                            :selected="old('tujuan_disposisi', $selectedUsers ?? [])"
-                            placeholder="Pilih tujuan disposisi"
-                            :multiple="true"
-                            :required="false"
-                        />
-                    </div>
+                    <!-- Tujuan Disposisi Component -->
+                    <x-tujuan-disposisi :users="$users" :selectedUsers="$selectedUsers" />
 
                     <!-- Keterangan Pengirim -->
                     <div class="space-y-2">
@@ -339,25 +324,24 @@
             }
 
             // Sembunyikan input tujuan disposisi
-            const tujuanDisposisiContainer = document.querySelector('select[name="tujuan_disposisi[]"]')
-                .closest('.space-y-2');
-            if (tujuanDisposisiContainer) {
-                tujuanDisposisiContainer.style.display = 'none';
+            const tujuanDisposisiLabel = document.querySelector('.label-tujuan-disposisi');
+            if (tujuanDisposisiLabel) {
+                const container = tujuanDisposisiLabel.closest('.space-y-2');
+                if (container) container.style.display = 'none';
             }
 
             // Set default tujuan disposisi ke direktur utama (role 2)
-            const tujuanDisposisiSelect = document.querySelector('select[name="tujuan_disposisi[]"]');
-            if (tujuanDisposisiSelect) {
-                // Cari option dengan jabatan direktur
-                let dirOption = Array.from(tujuanDisposisiSelect.options).find(option => {
-                    return option.textContent.toLowerCase().includes('direktur');
-                });
-
-                if (dirOption) {
-                    // Pilih direktur
-                    dirOption.selected = true;
+            // Kita tunggu sebentar agar Alpine selesai init (meskipun DOMContentLoaded harusnya cukup)
+            setTimeout(() => {
+                const dirutItem = document.querySelector('.user-item[data-role="2"]');
+                if (dirutItem) {
+                    const checkbox = dirutItem.querySelector('input[type="checkbox"]');
+                    if (checkbox && !checkbox.checked) {
+                        checkbox.checked = true;
+                        checkbox.dispatchEvent(new Event('change'));
+                    }
                 }
-            }
+            }, 500);
 
             // Tambahkan informasi
             const disposisiSection = document.querySelector('div.p-6.space-y-6');
@@ -664,33 +648,6 @@
             });
         }
 
-        // Fitur pencarian dan counter tujuan disposisi
-        const searchTujuan = document.getElementById('search-tujuan');
-        const tujuanList = document.getElementById('tujuan-disposisi-list');
-        const tujuanItems = tujuanList ? tujuanList.querySelectorAll('.tujuan-item') : [];
-        const tujuanCheckboxes = () => tujuanList ? tujuanList.querySelectorAll('.tujuan-checkbox') : [];
-        const tujuanCount = document.getElementById('selected-tujuan-count');
-
-        function updateSelectedCount() {
-            if (!tujuanCount) return;
-            const checked = tujuanCheckboxes();
-            const total = Array.from(checked).filter(cb => cb.checked).length;
-            tujuanCount.textContent = `${total} tujuan dipilih`;
-        }
-        if (tujuanCheckboxes()) {
-            tujuanCheckboxes().forEach(cb => cb.addEventListener('change', updateSelectedCount));
-            updateSelectedCount();
-        }
-
-        if (searchTujuan) {
-            searchTujuan.addEventListener('input', function() {
-                const val = this.value.toLowerCase();
-                tujuanItems.forEach(item => {
-                    const text = item.textContent.toLowerCase();
-                    item.style.display = text.includes(val) ? '' : 'none';
-                });
-            });
-        }
     });
 </script>
 
@@ -769,16 +726,6 @@
     .suggestions-wrapper {
         position: relative !important;
         z-index: 50 !important;
-    }
-
-    /* Override untuk container form */
-    form .p-6.space-y-6 {
-        overflow: visible !important;
-    }
-
-    /* Override untuk card container */
-    .bg-white.rounded-xl.border.border-gray-200.overflow-hidden {
-        overflow: visible !important;
     }
 
     #perusahaan-container { display: block; }

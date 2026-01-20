@@ -140,7 +140,7 @@
                                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
                                     {{ $surat->perusahaanData->nama_perusahaan ?? $surat->perusahaan ?? '-' }}
                                 </td>
-                                <td class="px-3 py-3 text-sm text-gray-500 max-w-xs truncate">
+                                <td class="px-3 py-3 text-sm text-gray-500 max-w-[200px] truncate" title="{{ $surat->perihal }}">
                                     {{ $surat->perihal }}
                                 </td>
                                 <td class="px-3 py-3 whitespace-nowrap text-sm">
@@ -199,7 +199,7 @@
                                     </span>
                                 </td>
                                 <td class="px-3 py-3 whitespace-nowrap text-sm font-medium">
-                                    <div class="flex flex-wrap gap-2">
+                                    <div class="flex flex-nowrap gap-2">
                                         <button onclick="window.showDetailSuratMasuk({{ $surat->id }})"
                                             class="inline-flex items-center px-2.5 py-1.5 bg-white border border-green-300 hover:bg-green-50 text-green-700 rounded-md shadow-sm transition-colors duration-200">
                                             <i class="ri-eye-line mr-1"></i> Detail

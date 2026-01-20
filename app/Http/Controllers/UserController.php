@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\Jabatan;
+use App\Models\OrganizationUnit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -14,19 +14,19 @@ class UserController extends Controller
 {
     public function index()
     {
-        $jabatan = Jabatan::where('status', 'aktif')->get();
         $managers = User::where('role', 4)->where('status_akun', 'aktif')->get();
         $generalManagers = User::where('role', 6)->where('status_akun', 'aktif')->get();
-        return view('pages.super_admin.manageuser', compact('jabatan', 'managers', 'generalManagers'));
+        return view('pages.super_admin.manageuser', compact('managers', 'generalManagers'));
     }
 
     public function getUsers()
     {
-        $users = User::with(['jabatan', 'manager', 'generalManager'])
-            ->select('id', 'name', 'username', 'email', 'role', 'jabatan_id', 'manager_id', 'general_manager_id', 'status_akun', 'foto_profile', 'created_at')
+        $users = User::with(['organizationUnit', 'manager', 'generalManager'])
+            ->select('id', 'name', 'username', 'email', 'role', 'organization_unit_id', 'manager_id', 'general_manager_id', 'status_akun', 'foto_profile', 'created_at')
             ->get()
             ->map(function ($user) {
                 $user->foto_url = $user->foto_url; // Ensure foto_url is included
+                $user->jabatan_name = $user->jabatanName; // Include dynamic jabatan name
                 return $user;
             });
         
@@ -41,7 +41,7 @@ class UserController extends Controller
             'email' => 'nullable|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:3',
             'role' => 'required|integer|in:0,1,2,3,4,5,6,7,8',
-            'jabatan_id' => 'required|exists:tbl_jabatan,id',
+            'organization_unit_id' => 'nullable|exists:organization_units,id',
             'manager_id' => 'nullable|exists:users,id',
             'general_manager_id' => 'nullable|exists:users,id',
             'status_akun' => 'required|in:aktif,nonaktif'
@@ -73,7 +73,7 @@ class UserController extends Controller
             'email' => 'nullable|string|email|max:255|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:3',
             'role' => 'required|integer|in:0,1,2,3,4,5,6,7,8',
-            'jabatan_id' => 'required|exists:tbl_jabatan,id',
+            'organization_unit_id' => 'nullable|exists:organization_units,id',
             'manager_id' => 'nullable|exists:users,id',
             'general_manager_id' => 'nullable|exists:users,id',
             'status_akun' => 'required|in:aktif,nonaktif'
@@ -143,7 +143,7 @@ class UserController extends Controller
 
     public function profile()
     {
-        $user = Auth::user()->load('jabatan');
+        $user = Auth::user()->load('organizationUnit');
         return view('pages.profile', compact('user'));
     }
 

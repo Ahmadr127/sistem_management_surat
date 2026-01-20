@@ -23,7 +23,7 @@ class SuratMasukController extends Controller
     // Start query with eager loading
     $query = SuratKeluar::with([
         'disposisi.tujuan',
-        'creator.jabatan',
+        'creator.organizationUnit',
         'perusahaanData',
         'files'
     ]);
@@ -245,8 +245,8 @@ class SuratMasukController extends Controller
                       })
                       ->orWhereHas('creator', function($subquery) use ($searchTerm) {
                           $subquery->where('name', 'like', "%{$searchTerm}%")
-                                   ->orWhereHas('jabatan', function($q2) use ($searchTerm) {
-                                       $q2->where('nama_jabatan', 'like', "%{$searchTerm}%");
+                                   ->orWhereHas('organizationUnit', function($q2) use ($searchTerm) {
+                                       $q2->where('name', 'like', "%{$searchTerm}%");
                                    });
                       })
                       ->orWhereHas('disposisi', function($subquery) use ($searchTerm) {

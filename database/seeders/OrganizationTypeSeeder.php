@@ -20,12 +20,6 @@ class OrganizationTypeSeeder extends Seeder
                 'description' => 'Perusahaan induk atau holding'
             ],
             [
-                'name' => 'company',
-                'display_name' => 'Perusahaan',
-                'level' => 2,
-                'description' => 'Perusahaan atau anak perusahaan'
-            ],
-            [
                 'name' => 'directorate',
                 'display_name' => 'Direktorat',
                 'level' => 3,
@@ -36,12 +30,6 @@ class OrganizationTypeSeeder extends Seeder
                 'display_name' => 'Departemen',
                 'level' => 4,
                 'description' => 'Departemen atau divisi'
-            ],
-            [
-                'name' => 'unit',
-                'display_name' => 'Unit',
-                'level' => 5,
-                'description' => 'Unit kerja terkecil'
             ],
         ];
 

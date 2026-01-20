@@ -18,18 +18,16 @@ class LaporanController extends Controller
 {
     public function index()
     {
-        // Get all active jabatan for the dropdown filter
-        $jabatanList = \App\Models\Jabatan::where('status', 'aktif')
-            ->orderBy('nama_jabatan')
-            ->get();
+        // Jabatan table has been dropped, so we'll use an empty list or fetch distinct roles/units if needed
+        $jabatanList = collect([]); 
             
         // Get all active perusahaan for the dropdown filter
         $perusahaans = \App\Models\Perusahaan::where('status', 'aktif')
             ->orderBy('nama_perusahaan')
             ->get();
             
-        \Log::info('Loaded active jabatan for laporan filter dropdown:', [
-            'count' => $jabatanList->count()
+        \Log::info('Loaded active perusahaan for laporan filter dropdown:', [
+            'count' => $perusahaans->count()
         ]);
             
         return view('pages.laporan', compact('jabatanList', 'perusahaans'));
@@ -107,9 +105,8 @@ class LaporanController extends Controller
                     $q->select('id', 'surat_keluar_id', 'status_sekretaris', 'status_dirut', 'waktu_review_dirut', 'waktu_review_sekretaris', 'created_at', 'updated_at');
                 },
                 'disposisi.tujuan' => function($q) {
-                    $q->select('users.id', 'users.name', 'jabatan_id');
-                },
-                'creator.jabatan'
+                    $q->select('users.id', 'users.name', 'organization_unit_id');
+                }
             ])
             ->orderBy('tanggal_surat', 'desc');
         
@@ -125,12 +122,10 @@ class LaporanController extends Controller
             \Log::info("Applied perusahaan filter: {$perusahaan}");
         }
         
-        // Apply jabatan filter
+        // Apply jabatan filter - REMOVED as table is dropped
         if ($jabatan) {
-            $query->whereHas('creator.jabatan', function($q) use ($jabatan) {
-                $q->where('nama_jabatan', $jabatan);
-            });
-            \Log::info("Applied jabatan filter: {$jabatan}");
+            // Logic removed
+            \Log::info("Jabatan filter ignored as table is dropped: {$jabatan}");
         }
         
         // Apply status filter
@@ -168,7 +163,7 @@ class LaporanController extends Controller
         $totalDisposisi = Disposisi::count();
         \Log::info("Total Disposisi records in database: {$totalDisposisi}");
         
-        $query = Disposisi::with(['suratKeluar', 'tujuan', 'creator.jabatan'])
+        $query = Disposisi::with(['suratKeluar', 'tujuan'])
             ->orderBy('created_at', 'desc');
         
         // Apply date filters
@@ -202,14 +197,6 @@ class LaporanController extends Controller
             \Log::info("Applied perusahaan filter: {$perusahaan}");
         }
         
-        // Apply jabatan filter
-        if ($jabatan) {
-            $query->whereHas('creator.jabatan', function($q) use ($jabatan) {
-                $q->where('nama_jabatan', $jabatan);
-            });
-            \Log::info("Applied jabatan filter: {$jabatan}");
-        }
-        
         // Apply role-based access
         if ($user->role == 0) { // Staff
             $query->where(function($q) use ($user) {
@@ -238,12 +225,11 @@ class LaporanController extends Controller
         \Log::info('Running getSuratMasukReport');
         
         $query = SuratKeluar::with([
-                'creator.jabatan',
                 'disposisi' => function($q) {
                     $q->select('id', 'surat_keluar_id', 'status_sekretaris', 'status_dirut');
                 },
                 'disposisi.tujuan' => function($q) {
-                    $q->select('users.id', 'users.name', 'jabatan_id');
+                    $q->select('users.id', 'users.name', 'organization_unit_id');
                 }
             ])
             ->whereHas('disposisi', function($q) use ($user) {
@@ -265,12 +251,10 @@ class LaporanController extends Controller
             \Log::info("Applied perusahaan filter: {$perusahaan}");
         }
         
-        // Apply jabatan filter - filter by the creator's jabatan
+        // Apply jabatan filter - REMOVED
         if ($jabatan) {
-            $query->whereHas('creator.jabatan', function($q) use ($jabatan) {
-                $q->where('nama_jabatan', $jabatan);
-            });
-            \Log::info("Applied jabatan filter: {$jabatan}");
+            // Logic removed
+            \Log::info("Jabatan filter ignored: {$jabatan}");
         }
         
         $result = $query->get();
@@ -331,9 +315,8 @@ class LaporanController extends Controller
                     $q->select('id', 'surat_keluar_id', 'status_sekretaris', 'status_dirut', 'waktu_review_dirut', 'waktu_review_sekretaris', 'created_at', 'updated_at');
                 },
                 'disposisi.tujuan' => function($q) {
-                    $q->select('users.id', 'users.name', 'jabatan_id');
-                },
-                'creator.jabatan'
+                    $q->select('users.id', 'users.name', 'organization_unit_id');
+                }
             ])
             ->orderBy('tanggal_surat', 'desc');
             
@@ -347,9 +330,7 @@ class LaporanController extends Controller
             }
             
             if ($jabatan) {
-                $query->whereHas('creator.jabatan', function($q) use ($jabatan) {
-                    $q->where('nama_jabatan', $jabatan);
-                });
+                // Logic removed
             }
             
             if ($status) {
@@ -489,9 +470,8 @@ class LaporanController extends Controller
                     $q->select('id', 'surat_keluar_id', 'status_sekretaris', 'status_dirut', 'waktu_review_dirut', 'waktu_review_sekretaris', 'created_at', 'updated_at');
                 },
                 'disposisi.tujuan' => function($q) {
-                    $q->select('users.id', 'users.name', 'jabatan_id');
-                },
-                'creator.jabatan'
+                    $q->select('users.id', 'users.name', 'organization_unit_id');
+                }
             ])
             ->orderBy('tanggal_surat', 'desc');
             
@@ -505,9 +485,7 @@ class LaporanController extends Controller
             }
             
             if ($jabatan) {
-                $query->whereHas('creator.jabatan', function($q) use ($jabatan) {
-                    $q->where('nama_jabatan', $jabatan);
-                });
+                // Logic removed
             }
             
             if ($status) {

@@ -12,6 +12,45 @@ use Illuminate\Support\Facades\Validator;
 class SuratUnitManagerApprovalController extends Controller
 {
     /**
+     * Public method untuk redirect user ke halaman approval yang sesuai dengan role
+     * Ini adalah entry point universal dari sidebar
+     */
+    public function redirectToApproval()
+    {
+        $user = auth()->user();
+        
+        Log::info('RedirectToApproval called for user: ' . $user->id . ' Role: ' . $user->role);
+        Log::info('Has permission approve_surat_unit: ' . ($user->hasPermission('approve_surat_unit') ? 'Yes' : 'No'));
+
+        // Cek permission dulu
+        if (!$user->hasPermission('approve_surat_unit')) {
+            Log::warning('User does not have permission to approve surat unit');
+            return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses ke halaman persetujuan surat');
+        }
+        
+        // Redirect berdasarkan role
+        $role = $user->role;
+        
+        if ($role == 4) { // Manager
+            Log::info('Redirecting to manager index');
+            return redirect()->route('surat-unit-manager.manager.index');
+        } elseif ($role == 7) { // Manager Keuangan
+            Log::info('Redirecting to manager keuangan index');
+            return redirect()->route('surat-unit-manager.manager-keuangan.index');
+        } elseif (in_array($role, [1, 5])) { // Sekretaris atau Sekretaris ASP
+            Log::info('Redirecting to sekretaris index');
+            return redirect()->route('surat-unit-manager.sekretaris.index');
+        } elseif (in_array($role, [2, 8])) { // Direktur atau Direktur ASP
+            Log::info('Redirecting to dirut index');
+            return redirect()->route('surat-unit-manager.dirut.index');
+        }
+        
+        // Default untuk Super Admin atau role lainnya: redirect ke manager page (view all)
+        Log::info('Redirecting to default (manager index)');
+        return redirect()->route('surat-unit-manager.manager.index');
+    }
+
+    /**
      * Menampilkan daftar surat yang perlu disetujui manager
      */
     public function managerIndex(Request $request)
@@ -19,19 +58,24 @@ class SuratUnitManagerApprovalController extends Controller
         try {
             $user = auth()->user();
             
-            // Hanya manager yang bisa akses
-            if ($user->role !== 4) {
-                return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini');
+            // Cek permission saja, tidak perlu cek role
+            if (!$user->hasPermission('approve_surat_unit')) {
+                return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses ke halaman ini');
             }
 
             $query = SuratUnitManager::with([
-                'unit.jabatan',
-                'manager.jabatan',
-                'sekretaris.jabatan',
-                'dirut.jabatan',
+                'unit',
+                'manager',
+                'sekretaris',
+                'dirut',
                 'perusahaanData',
                 'files'
-            ])->byManager($user->id);
+            ]);
+            
+            // Jika bukan Super Admin (role 3), filter hanya surat yang ditujukan ke user ini
+            if ($user->role != 3) {
+                $query->byManager($user->id);
+            }
 
             // Filter berdasarkan status
             if ($request->has('status') && $request->status !== '') {
@@ -43,7 +87,7 @@ class SuratUnitManagerApprovalController extends Controller
                 $query->search($request->search);
             }
 
-            $suratUnitManager = $query->orderBy('created_at', 'desc')->get();
+            $suratUnitManager = $query->orderBy('created_at', 'desc')->paginate(10);
 
             return view('pages.surat_unit_manager.manager.index', compact('suratUnitManager'));
         } catch (\Exception $e) {
@@ -60,8 +104,13 @@ class SuratUnitManagerApprovalController extends Controller
         try {
             $user = auth()->user();
             
-            // Check access permission
-            if ($user->role !== 4 || $suratUnitManager->manager_id !== $user->id) {
+            // Cek permission
+            if (!$user->hasPermission('approve_surat_unit')) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki akses ke surat ini');
+            }
+            
+            // Super Admin bisa lihat semua, selain itu harus manager yang dituju
+            if ($user->role != 3 && $suratUnitManager->manager_id !== $user->id) {
                 return redirect()->back()->with('error', 'Anda tidak memiliki akses ke surat ini');
             }
 
@@ -83,8 +132,16 @@ class SuratUnitManagerApprovalController extends Controller
         try {
             $user = auth()->user();
             
-            // Check access permission
-            if ($user->role !== 4 || $suratUnitManager->manager_id !== $user->id) {
+            // Cek permission
+            if (!$user->hasPermission('approve_surat_unit')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses untuk menyetujui surat ini'
+                ], 403);
+            }
+            
+            // Super Admin bisa approve semua, selain itu harus manager yang dituju
+            if ($user->role != 3 && $suratUnitManager->manager_id !== $user->id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Anda tidak memiliki akses untuk menyetujui surat ini'
@@ -156,19 +213,24 @@ class SuratUnitManagerApprovalController extends Controller
         try {
             $user = auth()->user();
             
-            // Hanya manager keuangan yang bisa akses
-            if ($user->role !== 7) {
-                return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini');
+            // Cek permission
+            if (!$user->hasPermission('approve_surat_unit')) {
+                return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses ke halaman ini');
             }
 
             $query = SuratUnitManager::with([
-                'unit.jabatan',
-                'manager.jabatan',
-                'sekretaris.jabatan',
-                'dirut.jabatan',
+                'unit',
+                'manager',
+                'sekretaris',
+                'dirut',
                 'perusahaanData',
                 'files'
-            ])->byManager($user->id);
+            ]);
+            
+            // Jika bukan Super Admin (role 3), filter hanya surat yang ditujukan ke user ini
+            if ($user->role != 3) {
+                $query->byManager($user->id);
+            }
 
             // Filter berdasarkan status
             if ($request->has('status') && $request->status !== '') {
@@ -198,8 +260,13 @@ class SuratUnitManagerApprovalController extends Controller
         try {
             $user = auth()->user();
             
-            // Check access permission
-            if ($user->role !== 7 || $suratUnitManager->manager_id !== $user->id) {
+            // Cek permission
+            if (!$user->hasPermission('approve_surat_unit')) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki akses ke surat ini');
+            }
+            
+            // Super Admin bisa lihat semua, selain itu harus manager yang dituju
+            if ($user->role != 3 && $suratUnitManager->manager_id !== $user->id) {
                 return redirect()->back()->with('error', 'Anda tidak memiliki akses ke surat ini');
             }
 
@@ -222,8 +289,16 @@ class SuratUnitManagerApprovalController extends Controller
         try {
             $user = auth()->user();
             
-            // Check access permission
-            if ($user->role !== 7 || $suratUnitManager->manager_id !== $user->id) {
+            // Cek permission
+            if (!$user->hasPermission('approve_surat_unit')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses untuk menyetujui surat ini'
+                ], 403);
+            }
+            
+            // Super Admin bisa approve semua, selain itu harus manager yang dituju
+            if ($user->role != 3 && $suratUnitManager->manager_id !== $user->id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Anda tidak memiliki akses untuk menyetujui surat ini'
@@ -295,16 +370,16 @@ class SuratUnitManagerApprovalController extends Controller
         try {
             $user = auth()->user();
             
-            // Hanya sekretaris yang bisa akses
-            if ($user->role !== 1) {
-                return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini');
+            // Cek permission
+            if (!$user->hasPermission('approve_surat_unit')) {
+                return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses ke halaman ini');
             }
 
             $query = SuratUnitManager::with([
-                'unit.jabatan',
-                'manager.jabatan',
-                'sekretaris.jabatan',
-                'dirut.jabatan',
+                'unit',
+                'manager',
+                'sekretaris',
+                'dirut',
                 'perusahaanData',
                 'files'
             ])->where('status_manager', 'approved');
@@ -339,8 +414,8 @@ class SuratUnitManagerApprovalController extends Controller
         try {
             $user = auth()->user();
             
-            // Check access permission
-            if ($user->role !== 1) {
+            // Cek permission
+            if (!$user->hasPermission('approve_surat_unit')) {
                 return redirect()->back()->with('error', 'Anda tidak memiliki akses ke surat ini');
             }
 
@@ -367,8 +442,8 @@ class SuratUnitManagerApprovalController extends Controller
         try {
             $user = auth()->user();
             
-            // Check access permission
-            if ($user->role !== 1) {
+            // Cek permission
+            if (!$user->hasPermission('approve_surat_unit')) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Anda tidak memiliki akses untuk menyetujui surat ini'
@@ -446,9 +521,9 @@ class SuratUnitManagerApprovalController extends Controller
         try {
             $user = auth()->user();
             
-            // Hanya direktur yang bisa akses
-            if ($user->role !== 2) {
-                return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini');
+            // Cek permission
+            if (!$user->hasPermission('approve_surat_unit')) {
+                return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses ke halaman ini');
             }
 
             $query = SuratUnitManager::with([
@@ -490,8 +565,8 @@ class SuratUnitManagerApprovalController extends Controller
         try {
             $user = auth()->user();
             
-            // Check access permission
-            if ($user->role !== 2) {
+            // Cek permission
+            if (!$user->hasPermission('approve_surat_unit')) {
                 return redirect()->back()->with('error', 'Anda tidak memiliki akses ke surat ini');
             }
 
@@ -518,8 +593,8 @@ class SuratUnitManagerApprovalController extends Controller
         try {
             $user = auth()->user();
             
-            // Check access permission
-            if ($user->role !== 2) {
+            // Cek permission
+            if (!$user->hasPermission('approve_surat_unit')) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Anda tidak memiliki akses untuk menyetujui surat ini'
@@ -588,4 +663,4 @@ class SuratUnitManagerApprovalController extends Controller
             ], 500);
         }
     }
-} 
+}

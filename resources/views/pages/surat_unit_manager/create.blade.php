@@ -178,6 +178,7 @@
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.getElementById('suratForm').addEventListener('submit', function(e) {
     e.preventDefault();
@@ -260,6 +261,7 @@ document.getElementById('suratForm').addEventListener('submit', function(e) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            console.log('Success response received:', data);
             Swal.fire({
                 icon: 'success',
                 title: 'Berhasil!',
@@ -267,7 +269,14 @@ document.getElementById('suratForm').addEventListener('submit', function(e) {
                 timer: 2000,
                 showConfirmButton: false
             }).then(() => {
-                window.location.href = data.redirect_url;
+                if (data.redirect_url) {
+                    console.log('Redirecting to:', data.redirect_url);
+                    window.location.href = data.redirect_url;
+                } else {
+                    console.error('Redirect URL missing in response');
+                    // Fallback redirect
+                    window.location.href = '/surat-unit-manager';
+                }
             });
         } else {
             // Show validation errors

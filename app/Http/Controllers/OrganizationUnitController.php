@@ -176,4 +176,21 @@ class OrganizationUnitController extends Controller
         return redirect()->route('organization-units.show', $organizationUnit)
             ->with('success', 'Anggota berhasil dihapus!');
     }
+
+    /**
+     * API: Get active units for dropdowns
+     */
+    public function getUnits(Request $request)
+    {
+        $units = OrganizationUnit::active()
+            ->orderBy('name')
+            ->select('id', 'name', 'code', 'type_id')
+            ->with('type:id,name')
+            ->get();
+            
+        return response()->json([
+            'status' => 'success',
+            'data' => $units
+        ]);
+    }
 }

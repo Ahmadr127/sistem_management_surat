@@ -18,7 +18,7 @@ return new class extends Migration
             }
             
             // Tambahkan kolom jabatan_id dengan foreign key
-            $table->unsignedBigInteger('jabatan_id')->after('role');
+            $table->unsignedBigInteger('jabatan_id')->nullable()->after('role');
             $table->enum('status_akun', ['aktif', 'nonaktif'])->default('aktif')->after('jabatan_id');
             
             // Tambahkan foreign key constraint

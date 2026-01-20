@@ -30,7 +30,6 @@ class User extends Authenticatable
         'role',
         'role_id',
         'organization_unit_id',
-        'jabatan_id',
         'manager_id',
         'general_manager_id',
         'status_akun',
@@ -70,10 +69,6 @@ class User extends Authenticatable
         return 'username';
     }
 
-    public function jabatan()
-    {
-        return $this->belongsTo(Jabatan::class, 'jabatan_id', 'id');
-    }
 
     /**
      * Relasi ke manager (self-referencing)
@@ -190,144 +185,21 @@ class User extends Authenticatable
         return collect();
     }
 
-    // Tambahkan accessor untuk memudahkan pengambilan nama jabatan
-    public function getJabatanNameAttribute()
+    /**
+     * Get role display name (Helper)
+     */
+    public function getRoleDisplayNameAttribute()
     {
-        return $this->jabatan ? $this->jabatan->nama_jabatan : 'Tidak ada jabatan';
-    }
-
-    public function getFotoUrlAttribute()
-    {
-        if ($this->foto_profile) {
-            return Storage::url($this->foto_profile);
+        // If using new permission system
+        if ($this->roleModel) {
+            return $this->roleModel->display_name;
         }
-        return asset('images/default-avatar.png');
-    }
-
-    /**
-     * Check if user is manager
-     */
-    public function isManager()
-    {
-        return $this->role === 4;
-    }
-
-    /**
-     * Check if user is staff
-     */
-    public function isStaff()
-    {
-        return $this->role === 0;
-    }
-
-    /**
-     * Check if user is secretary
-     */
-    public function isSecretary()
-    {
-        return $this->role === 1;
-    }
-
-    /**
-     * Check if user is director
-     */
-    public function isDirector()
-    {
-        return $this->role === 2;
-    }
-
-    /**
-     * Check if user is admin
-     */
-    public function isAdmin()
-    {
-        return $this->role === 3;
-    }
-
-    /**
-     * Check if user is sekretaris ASP
-     */
-    public function isSekretarisAsp()
-    {
-        return $this->role === 5;
-    }
-
-    /**
-     * Check if user is general manager
-     */
-    public function isGeneralManager()
-    {
-        return $this->role === 6;
-    }
-
-    // /**
-    //  * Check if user is direktur administrasi keuangan
-    //  */
-    // public function isDirekturAdmKeuangan()
-    // {
-    //     return $this->role === 7;
-    // }
-
-    /**
-     * Check if user is manager keuangan
-     */
-    public function isManagerKeuangan()
-    {
-        return $this->role === 7;
-    }
-
-    /**
-     * Check if user is direktur ASP
-     */
-    public function isDirekturAsp()
-    {
-        return $this->role === 8;
-    }
-
-    /**
-     * Check if manager is connected to general manager
-     */
-    public function isConnectedToGeneralManager()
-    {
-        return ($this->role === 4 || $this->role === 7) && $this->general_manager_id !== null;
-    }
-
-    /**
-     * Check if manager is independent (not connected to general manager)
-     */
-    public function isIndependentManager()
-    {
-        return ($this->role === 4 || $this->role === 7) && $this->general_manager_id === null;
-    }
-
-    /**
-     * Get all managers under this general manager
-     */
-    public function getConnectedManagers()
-    {
-        return $this->hasMany(User::class, 'general_manager_id')
-                    ->whereIn('role', [4, 7]); // Include both Manager and Manager Keuangan
-    }
-
-    /**
-     * Get all independent managers (not connected to any general manager)
-     */
-    public static function getIndependentManagers()
-    {
-        return self::whereIn('role', [4, 7]) // Include both Manager and Manager Keuangan
-                   ->whereNull('general_manager_id')
-                   ->where('status_akun', 'aktif');
-    }
-
-    /**
-     * Get role name
-     */
-    public function getRoleNameAttribute()
-    {
+        
+        // Fallback for legacy roles
         $roles = [
             0 => 'Staff',
             1 => 'Sekretaris',
-            2 => 'Direktur',
+            2 => 'Direktur Utama',
             3 => 'Admin',
             4 => 'Manager',
             5 => 'Sekretaris ASP',
@@ -335,7 +207,52 @@ class User extends Authenticatable
             7 => 'Manager Keuangan',
             8 => 'Direktur ASP'
         ];
-        return $roles[$this->role] ?? 'Unknown';
+        return $roles[$this->role] ?? 'User';
+    }
+
+    /**
+     * Generate Jabatan Name dynamically from Role + Organization
+     * Replaces the need for tbl_jabatan
+     */
+    public function getJabatanNameAttribute()
+    {
+        // 1. Get Base Role Name
+        $roleName = $this->role_display_name;
+        
+        // 2. Get Organization Name
+        $orgName = '';
+        if ($this->organizationUnit) {
+            $orgName = $this->organizationUnit->name;
+            
+            // Cleanup common prefixes to make it sound natural
+            // "Departemen IT" -> "IT"
+            // "Unit Support" -> "Support"
+            $prefixes = ['Departemen ', 'Unit ', 'Direktorat ', 'PT '];
+            $orgName = str_replace($prefixes, '', $orgName);
+        }
+
+        // 3. Combine Logic
+        
+        // Special Cases
+        if ($this->role === 2) return 'Direktur Utama'; // Always Dirut
+        if ($this->role === 1) return 'Sekretaris Perusahaan';
+        if ($this->role === 6) return 'General Manager';
+        if ($this->role === 8) return 'Direktur ASP';
+        
+        // General Cases: "Manager IT", "Staff HR", "Admin IT"
+        if ($orgName) {
+            return "$roleName $orgName";
+        }
+        
+        return $roleName;
+    }
+
+    /**
+     * Get role name (Legacy accessor, kept for compatibility)
+     */
+    public function getRoleNameAttribute()
+    {
+        return $this->role_display_name;
     }
 
     // Tambahkan relasi untuk surat keluar yang ditujukan ke user ini

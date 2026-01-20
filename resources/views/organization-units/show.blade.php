@@ -67,7 +67,7 @@
             @endif
 
             <!-- Kepala Unit -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="bg-white overflow-visible shadow-sm sm:rounded-lg">
                 <div class="p-4 bg-white border-b border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-900 mb-3">
                         <i class="fas fa-user-tie text-green-600 mr-2"></i>Kepala Unit
@@ -136,7 +136,7 @@
 
         <!-- Right Column: Members -->
         <div class="lg:col-span-2">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="bg-white overflow-visible shadow-sm sm:rounded-lg">
                 <div class="p-4 bg-white border-b border-gray-200">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold text-gray-900">

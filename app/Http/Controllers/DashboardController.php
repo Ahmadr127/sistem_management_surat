@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\SuratKeluar;
+use App\Models\SuratUnitManager;
+use App\Models\User;
 use App\Models\Disposisi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -10,267 +12,289 @@ use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
-    public function __construct()
-    {
-        // Hapus middleware di constructor karena sudah diterapkan di routes
-    }
-
+    /**
+     * Display the dashboard with stats based on user permissions
+     */
     public function index()
     {
-        return view('pages.dashboard');
+        $user = Auth::user();
+        $stats = $this->getStats($user);
+        $recentActivities = $this->getRecentActivities($user);
+        $quickActions = $this->getQuickActions($user);
+
+        return view('pages.dashboard', compact('stats', 'recentActivities', 'quickActions'));
     }
 
-    public function getStats()
+    /**
+     * Get stats based on user permissions
+     */
+    private function getStats($user)
     {
-        try {
-            $user = Auth::user();
-            
-            // Debug info
-            Log::info('Getting stats for user:', [
-                'id' => $user->id,
-                'name' => $user->name,
-                'role' => $user->role
-            ]);
-            
-            // Hitung total surat masuk sesuai logic di SuratMasukController
-            $query = SuratKeluar::with(['disposisi', 'disposisi.tujuan', 'creator', 'files', 'perusahaanData']);
-            
-            if ($user->role == 0 || $user->role == 3) { // Staff atau Admin
-                // Surat yang ditujukan kepada user dan surat yang dibuat oleh user (jika disetujui direktur)
-                $query->where(function($q) use ($user) {
-                    // Surat yang ditujukan kepada user
-                    $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
-                        $subq->where('users.id', $user->id);
-                    });
-                    // Atau surat yang dibuat oleh user dan disetujui direktur
-                    $q->orWhere(function($subq) use ($user) {
-                        $subq->where('created_by', $user->id)
-                             ->whereHas('disposisi', function($subsubq) {
-                                 $subsubq->where('status_dirut', 'approved');
-                             });
-                    });
-                });
-            } else if ($user->role == 1) { // Sekretaris
-                // Semua data surat
-                Log::info('Showing all surat for Sekretaris');
-            } else if ($user->role == 2) { // Direktur
-                // Surat dengan status sekretaris approved
-                $query->whereHas('disposisi', function($q) {
-                    $q->where('status_sekretaris', 'approved');
-                });
-            } else if ($user->role == 4) { // Manager
-                // Surat yang ditujukan kepada user dan surat yang dibuat oleh user
-                $query->where(function($q) use ($user) {
-                    $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
-                        $subq->where('users.id', $user->id);
-                    });
-                    $q->orWhere('created_by', $user->id);
-                });
-            } else if ($user->role == 5) { // Sekretaris ASP
-                // Surat yang ditujukan kepada user dan surat yang dibuat oleh user
-                $query->where(function($q) use ($user) {
-                    $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
-                        $subq->where('users.id', $user->id);
-                    });
-                    $q->orWhere('created_by', $user->id);
-                });
-            } else if ($user->role == 6) { // General Manager
-                // Surat yang ditujukan kepada user dan surat yang dibuat oleh user
-                $query->where(function($q) use ($user) {
-                    $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
-                        $subq->where('users.id', $user->id);
-                    });
-                    $q->orWhere('created_by', $user->id);
-                });
-            } else if ($user->role == 7) { // Manager Keuangan
-                // Surat yang ditujukan kepada user dan surat yang dibuat oleh user
-                $query->where(function($q) use ($user) {
-                    $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
-                        $subq->where('users.id', $user->id);
-                    });
-                    $q->orWhere('created_by', $user->id);
-                });
-            } else if ($user->role == 8) { // Direktur ASP
-                // Surat dengan status sekretaris approved
-                $query->whereHas('disposisi', function($q) {
-                    $q->where('status_sekretaris_asp', 'approved');
-                });
-            }
-            
-            $totalSurat = $query->count();
-            Log::info('Total Surat calculated:', ['count' => $totalSurat, 'role' => $user->role]);
+        $stats = [];
 
-            // Hitung total disposisi - sama untuk semua role
-            $totalDisposisi = Disposisi::whereHas('tujuan', function($q) use ($user) {
-                $q->where('users.id', $user->id);
-            })
-            ->orWhere('created_by', $user->id)
-            ->count();
-            
-            Log::info('Total Disposisi calculated:', ['count' => $totalDisposisi]);
-
-            // Hitung disposisi belum selesai - sama untuk semua role
-            $disposisiBelumSelesai = Disposisi::where(function($q) use ($user) {
-                $q->whereHas('tujuan', function($q2) use ($user) {
-                    $q2->where('users.id', $user->id);
-                })
-                ->orWhere('created_by', $user->id);
-            })
-            ->where(function($q) {
-                $q->where('status_sekretaris', '!=', 'approved')
-                  ->orWhere('status_dirut', '!=', 'approved');
-            })
-            ->count();
-            
-            Log::info('Disposisi Belum Selesai calculated:', ['count' => $disposisiBelumSelesai]);
-
-            // Hitung disposisi selesai
-            $disposisiSelesai = Disposisi::where(function($q) use ($user) {
-                $q->whereHas('tujuan', function($q2) use ($user) {
-                    $q2->where('users.id', $user->id);
-                })
-                ->orWhere('created_by', $user->id);
-            })
-            ->where(function($q) {
-                $q->where('status_sekretaris', 'approved')
-                  ->where('status_dirut', 'approved');
-            })
-            ->count();
-            
-            Log::info('Disposisi Selesai calculated:', ['count' => $disposisiSelesai]);
-
-            $response = [
-                'totalSurat' => $totalSurat,
-                'totalDisposisi' => $totalDisposisi,
-                'disposisiBelumSelesai' => $disposisiBelumSelesai,
-                'disposisiSelesai' => $disposisiSelesai
+        // Stats untuk Surat Masuk (manage_surat_masuk permission)
+        if ($user->hasPermission('manage_surat_masuk')) {
+            $suratMasukQuery = $this->getSuratMasukQuery($user);
+            $stats['surat_masuk'] = [
+                'total' => (clone $suratMasukQuery)->count(),
+                'belum_dibaca' => (clone $suratMasukQuery)->whereDoesntHave('disposisi')->count(),
+                'bulan_ini' => (clone $suratMasukQuery)->whereMonth('tanggal_surat', now()->month)->whereYear('tanggal_surat', now()->year)->count(),
             ];
-
-            Log::info('Final response:', $response);
-            return response()->json($response);
-
-        } catch (\Exception $e) {
-            Log::error('Error in getStats:', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return response()->json([
-                'error' => true,
-                'message' => 'Terjadi kesalahan saat mengambil data statistik',
-                'totalSurat' => 0,
-                'totalDisposisi' => 0,
-                'disposisiBelumSelesai' => 0,
-                'disposisiSelesai' => 0
-            ], 500);
         }
+
+        // Stats untuk Surat Keluar (manage_surat_keluar permission)
+        if ($user->hasPermission('manage_surat_keluar')) {
+            $suratKeluarQuery = $this->getSuratKeluarQuery($user);
+            $stats['surat_keluar'] = [
+                'total' => (clone $suratKeluarQuery)->count(),
+                'menunggu_persetujuan' => (clone $suratKeluarQuery)->whereHas('disposisi', function($q) {
+                    $q->where('status_sekretaris', 'pending')
+                      ->orWhere('status_dirut', 'pending');
+                })->count(),
+                'bulan_ini' => (clone $suratKeluarQuery)->whereMonth('tanggal_surat', now()->month)->whereYear('tanggal_surat', now()->year)->count(),
+            ];
+        }
+
+        // Stats untuk Generate Nomor (generate_nomor_surat permission) 
+        if ($user->hasPermission('generate_nomor_surat')) {
+            $stats['generate_nomor'] = [
+                'total_hari_ini' => SuratKeluar::whereDate('created_at', now()->toDateString())->count(),
+                'total_bulan_ini' => SuratKeluar::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count(),
+            ];
+        }
+
+        // Stats untuk Surat Unit Manager (create_surat_unit permission)
+        if ($user->hasPermission('create_surat_unit')) {
+            $suratUnitQuery = $this->getSuratUnitQuery($user);
+            $stats['surat_unit'] = [
+                'total' => (clone $suratUnitQuery)->count(),
+                'menunggu_manager' => (clone $suratUnitQuery)->where('status_manager', 'pending')->count(),
+                'disetujui' => (clone $suratUnitQuery)->where('status_dirut', 'approved')->count(),
+                'bulan_ini' => (clone $suratUnitQuery)->whereMonth('tanggal_surat', now()->month)->whereYear('tanggal_surat', now()->year)->count(),
+            ];
+        }
+
+        // Stats untuk Persetujuan Surat (approve_surat_unit permission)
+        if ($user->hasPermission('approve_surat_unit')) {
+            $persetujuanQuery = $this->getPersetujuanQuery($user);
+            $stats['persetujuan'] = [
+                'menunggu_approval' => (clone $persetujuanQuery)->count(),
+                'total_disetujui' => $this->getTotalApproved($user),
+                'total_ditolak' => $this->getTotalRejected($user),
+            ];
+        }
+
+        return $stats;
     }
 
-    public function getRecentActivities()
+    /**
+     * Get surat masuk query based on user permission
+     */
+    private function getSuratMasukQuery($user)
     {
-        try {
-            $user = Auth::user();
-            Log::info('Getting recent activities for user:', [
-                'id' => $user->id,
-                'name' => $user->name,
-                'role' => $user->role
-            ]);
-            
-            $query = SuratKeluar::with([
-                'disposisi', 
-                'disposisi.tujuan',
-                'creator',
-                'files',
-                'perusahaanData'
-            ]);
-            
-            // Filter berdasarkan role sesuai logic di SuratMasukController
-            if ($user->role == 0 || $user->role == 3) { // Staff atau Admin
-                // Surat yang ditujukan kepada user dan surat yang dibuat oleh user (jika disetujui direktur)
-                $query->where(function($q) use ($user) {
-                    // Surat yang ditujukan kepada user
-                    $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
-                        $subq->where('users.id', $user->id);
-                    });
-                    // Atau surat yang dibuat oleh user dan disetujui direktur
-                    $q->orWhere(function($subq) use ($user) {
-                        $subq->where('created_by', $user->id)
-                             ->whereHas('disposisi', function($subsubq) {
-                                 $subsubq->where('status_dirut', 'approved');
-                             });
-                    });
-                });
-            } else if ($user->role == 1) { // Sekretaris
-                // Semua data surat
-                Log::info('Showing all surat for Sekretaris');
-            } else if ($user->role == 2) { // Direktur
-                // Surat dengan status sekretaris approved
-                $query->whereHas('disposisi', function($q) {
-                    $q->where('status_sekretaris', 'approved');
-                });
-            } else if ($user->role == 4) { // Manager
-                // Surat yang ditujukan kepada user dan surat yang dibuat oleh user
-                $query->where(function($q) use ($user) {
-                    $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
-                        $subq->where('users.id', $user->id);
-                    });
-                    $q->orWhere('created_by', $user->id);
-                });
-            } else if ($user->role == 5) { // Sekretaris ASP
-                // Surat yang ditujukan kepada user dan surat yang dibuat oleh user
-                $query->where(function($q) use ($user) {
-                    $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
-                        $subq->where('users.id', $user->id);
-                    });
-                    $q->orWhere('created_by', $user->id);
-                });
-            } else if ($user->role == 6) { // General Manager
-                // Surat yang ditujukan kepada user dan surat yang dibuat oleh user
-                $query->where(function($q) use ($user) {
-                    $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
-                        $subq->where('users.id', $user->id);
-                    });
-                    $q->orWhere('created_by', $user->id);
-                });
-            } else if ($user->role == 7) { // Manager Keuangan
-                // Surat yang ditujukan kepada user dan surat yang dibuat oleh user
-                $query->where(function($q) use ($user) {
-                    $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
-                        $subq->where('users.id', $user->id);
-                    });
-                    $q->orWhere('created_by', $user->id);
-                });
-            } else if ($user->role == 8) { // Direktur ASP
-                // Surat dengan status sekretaris approved
-                $query->whereHas('disposisi', function($q) {
-                    $q->where('status_sekretaris_asp', 'approved');
-                });
-            }
-            
-            $activities = $query->latest('tanggal_surat')
-                ->take(5)
+        return SuratKeluar::suratMasukForUser($user);
+    }
+
+    /**
+     * Get surat keluar query based on user permission
+     */
+    private function getSuratKeluarQuery($user)
+    {
+        return SuratKeluar::suratKeluarForUser($user);
+    }
+
+    /**
+     * Get surat unit query based on user permission
+     */
+    private function getSuratUnitQuery($user)
+    {
+        return SuratUnitManager::suratUnitForUser($user);
+    }
+
+    /**
+     * Get persetujuan query based on user permission
+     */
+    private function getPersetujuanQuery($user)
+    {
+        return SuratUnitManager::forUserApproval($user);
+    }
+
+    /**
+     * Get total approved by user
+     */
+    private function getTotalApproved($user)
+    {
+        return SuratUnitManager::forUserApproved($user)->count();
+    }
+
+    /**
+     * Get total rejected by user
+     */
+    /**
+     * Get total rejected by user
+     */
+    private function getTotalRejected($user)
+    {
+        return SuratUnitManager::forUserRejected($user)->count();
+    }
+
+    /**
+     * Get recent activities based on user permissions
+     */
+    private function getRecentActivities($user)
+    {
+        $activities = collect();
+
+        if ($user->hasPermission('manage_surat_masuk')) {
+            $suratMasuk = $this->getSuratMasukQuery($user)
+                ->orderBy('created_at', 'desc')
+                ->take(3)
                 ->get()
-                ->map(function ($surat) {
+                ->map(function($surat) {
                     return [
-                        'id' => $surat->id,
-                        'nomor_surat' => $surat->nomor_surat ?? 'N/A',
-                        'perihal' => $surat->perihal ?? 'N/A',
-                        'created_at' => $surat->created_at,
-                        'tanggal_surat' => $surat->tanggal_surat,
-                        'status' => $surat->disposisi && 
-                                  $surat->disposisi->status_sekretaris === 'approved' && 
-                                  $surat->disposisi->status_dirut === 'approved' 
-                            ? 'selesai' 
-                            : 'belum selesai'
+                        'type' => 'surat_masuk',
+                        'icon' => 'fa-inbox',
+                        'color' => 'blue',
+                        'title' => 'Surat Masuk Baru',
+                        'description' => $surat->perihal ?? $surat->nomor_surat,
+                        'time' => $surat->created_at,
+                        'url' => url('/suratmasuk'),
                     ];
                 });
-
-            Log::info('Recent Activities Count: ' . $activities->count());
-            return response()->json($activities);
-
-        } catch (\Exception $e) {
-            Log::error('Error in getRecentActivities: ' . $e->getMessage());
-            return response()->json([]);
+            $activities = $activities->merge($suratMasuk);
         }
+
+        if ($user->hasPermission('manage_surat_keluar')) {
+            $suratKeluar = $this->getSuratKeluarQuery($user)
+                ->orderBy('created_at', 'desc')
+                ->take(3)
+                ->get()
+                ->map(function($surat) {
+                    return [
+                        'type' => 'surat_keluar',
+                        'icon' => 'fa-paper-plane',
+                        'color' => 'green',
+                        'title' => 'Surat Keluar',
+                        'description' => $surat->perihal ?? $surat->nomor_surat,
+                        'time' => $surat->created_at,
+                        'url' => route('suratkeluar.index'),
+                    ];
+                });
+            $activities = $activities->merge($suratKeluar);
+        }
+
+        if ($user->hasPermission('approve_surat_unit')) {
+            $persetujuan = $this->getPersetujuanQuery($user)
+                ->orderBy('created_at', 'desc')
+                ->take(3)
+                ->get()
+                ->map(function($surat) {
+                    return [
+                        'type' => 'persetujuan',
+                        'icon' => 'fa-check-circle',
+                        'color' => 'yellow',
+                        'title' => 'Menunggu Persetujuan',
+                        'description' => $surat->perihal ?? $surat->nomor_surat,
+                        'time' => $surat->created_at,
+                        'url' => route('surat-unit-manager.manager.index'),
+                    ];
+                });
+            $activities = $activities->merge($persetujuan);
+        }
+
+        if ($user->hasPermission('create_surat_unit')) {
+            $suratUnit = $this->getSuratUnitQuery($user)
+                ->orderBy('created_at', 'desc')
+                ->take(3)
+                ->get()
+                ->map(function($surat) {
+                    return [
+                        'type' => 'surat_unit',
+                        'icon' => 'fa-file-alt',
+                        'color' => 'purple',
+                        'title' => 'Surat Unit Manager',
+                        'description' => $surat->perihal ?? $surat->nomor_surat,
+                        'time' => $surat->created_at,
+                        'url' => route('surat-unit-manager.index'),
+                    ];
+                });
+            $activities = $activities->merge($suratUnit);
+        }
+
+        return $activities->sortByDesc('time')->take(5);
+    }
+
+    /**
+     * Get quick actions based on user permissions
+     */
+    private function getQuickActions($user)
+    {
+        $actions = [];
+
+        if ($user->hasPermission('manage_surat_masuk')) {
+            $actions[] = [
+                'title' => 'Lihat Surat Masuk',
+                'description' => 'Kelola surat masuk',
+                'icon' => 'fa-inbox',
+                'color' => 'blue',
+                'url' => url('/suratmasuk'),
+            ];
+        }
+
+        if ($user->hasPermission('manage_surat_keluar')) {
+            $actions[] = [
+                'title' => 'Buat Surat Keluar',
+                'description' => 'Buat surat keluar baru',
+                'icon' => 'fa-paper-plane',
+                'color' => 'green',
+                'url' => route('suratkeluar.create'),
+            ];
+        }
+
+        if ($user->hasPermission('generate_nomor_surat')) {
+            $actions[] = [
+                'title' => 'Generate Nomor',
+                'description' => 'Generate nomor surat',
+                'icon' => 'fa-hashtag',
+                'color' => 'purple',
+                'url' => route('nomor.generate'),
+            ];
+        }
+
+        if ($user->hasPermission('create_surat_unit')) {
+            $actions[] = [
+                'title' => 'Buat Surat Unit',
+                'description' => 'Ajukan surat unit manager',
+                'icon' => 'fa-file-alt',
+                'color' => 'yellow',
+                'url' => route('surat-unit-manager.create'),
+            ];
+        }
+
+        if ($user->hasPermission('approve_surat_unit')) {
+            // Determine approval URL based on user permission
+            $approvalUrl = route('surat-unit-manager.manager.index'); // default
+
+            if ($user->hasPermission('manage_pum')) { 
+                // Manager Keuangan
+                $approvalUrl = route('surat-unit-manager.manager-keuangan.index');
+            } elseif ($user->hasPermission('manage_surat_keluar')) { 
+                // Sekretaris
+                $approvalUrl = route('surat-unit-manager.sekretaris.index');
+            } elseif ($user->hasPermission('approve_disposisi')) { 
+                // Direktur
+                $approvalUrl = route('surat-unit-manager.dirut.index');
+            }
+            
+            $actions[] = [
+                'title' => 'Persetujuan Surat',
+                'description' => 'Setujui surat yang pending',
+                'icon' => 'fa-check-circle',
+                'color' => 'red',
+                'url' => $approvalUrl,
+            ];
+        }
+
+        return $actions;
     }
 }

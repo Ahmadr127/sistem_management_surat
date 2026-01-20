@@ -109,7 +109,7 @@
                                 <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role
                                 </th>
                                 <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Jabatan</th>
+                                    Posisi</th>
                                 <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Manager</th>
                                 <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -157,7 +157,7 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                        x-text="user.jabatan?.nama_jabatan || 'Tidak ada jabatan'"></td>
+                                        x-text="user.jabatan_name || '-'"></td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         <span x-text="user.manager ? user.manager.name : '-'"></span>
                                     </td>
@@ -323,13 +323,13 @@
                                             </select>
                                         </div>
 
-                                        <!-- Jabatan -->
+                                        <!-- Organization Unit -->
                                         <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">Jabatan</label>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Unit Organisasi</label>
                                             <div class="relative" x-data="{ open: false, search: '' }">
                                                 <button type="button" @click="open = !open"
                                                     class="w-full px-4 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent flex justify-between items-center">
-                                                    <span x-text="getSelectedJabatanName() || 'Pilih Jabatan'"></span>
+                                                    <span x-text="getSelectedUnitName() || 'Pilih Unit Organisasi'"></span>
                                                     <i class="ri-arrow-down-s-line" :class="{ 'rotate-180': open }"></i>
                                                 </button>
                                                 
@@ -337,24 +337,25 @@
                                                     class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
                                                     <!-- Search Input -->
                                                     <div class="p-2 border-b border-gray-200">
-                                                        <input type="text" x-model="search" placeholder="Cari jabatan..."
+                                                        <input type="text" x-model="search" placeholder="Cari unit..."
                                                             class="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
                                                     </div>
                                                     
-                                                    <!-- Jabatan List -->
+                                                    <!-- Unit List -->
                                                     <div class="max-h-48 overflow-y-auto">
-                                                        <template x-for="jabatan in jabatanList.filter(j => j.nama_jabatan.toLowerCase().includes(search.toLowerCase()))" :key="jabatan.id">
-                                                            <button type="button" @click="selectJabatan(jabatan); open = false"
+                                                        <template x-for="unit in unitList.filter(u => u.name.toLowerCase().includes(search.toLowerCase()))" :key="unit.id">
+                                                            <button type="button" @click="selectUnit(unit); open = false"
                                                                 class="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-                                                                :class="{ 'bg-green-50 text-green-700': formData.jabatan_id == jabatan.id }">
-                                                                <span x-text="jabatan.nama_jabatan"></span>
+                                                                :class="{ 'bg-green-50 text-green-700': formData.organization_unit_id == unit.id }">
+                                                                <span x-text="unit.name"></span>
+                                                                <span class="text-xs text-gray-500 ml-2" x-text="'(' + unit.type.name + ')'"></span>
                                                             </button>
                                                         </template>
                                                         
                                                         <!-- No results message -->
-                                                        <div x-show="jabatanList.filter(j => j.nama_jabatan.toLowerCase().includes(search.toLowerCase())).length === 0" 
+                                                        <div x-show="unitList.filter(u => u.name.toLowerCase().includes(search.toLowerCase())).length === 0" 
                                                             class="px-4 py-2 text-sm text-gray-500 text-center">
-                                                            Tidak ada jabatan yang ditemukan
+                                                            Tidak ada unit yang ditemukan
                                                         </div>
                                                     </div>
                                                 </div>
@@ -446,7 +447,7 @@
         document.addEventListener('alpine:init', () => {
             Alpine.data('userManagement', () => ({
                 users: [],
-                jabatanList: [],
+                unitList: [],
                 managers: @json($managers),
                 generalManagers: @json($generalManagers),
                 searchQuery: '',
@@ -461,7 +462,7 @@
                     email: '',
                     password: '',
                     role: 0, // Default to Staff
-                    jabatan_id: '',
+                    organization_unit_id: '',
                     manager_id: '',
                     general_manager_id: '',
                     status_akun: 'aktif'
@@ -473,7 +474,7 @@
                     console.log('Initializing userManagement...');
                     await Promise.all([
                         this.fetchUsers(),
-                        this.fetchJabatan()
+                        this.fetchUnits()
                     ]);
                     this.$watch('searchQuery', () => { this.currentPage = 1; });
                     this.$watch('roleFilter', () => { this.currentPage = 1; });
@@ -496,9 +497,9 @@
                     }
                 },
 
-                async fetchJabatan() {
+                async fetchUnits() {
                     try {
-                        const response = await fetch('/jabatan/data', {
+                        const response = await fetch('/api/organization-units/list', {
                             method: 'GET',
                             headers: { 'X-Requested-With': 'XMLHttpRequest' },
                             credentials: 'same-origin'
@@ -506,14 +507,11 @@
                         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                         const result = await response.json();
                         if (result.status === 'success') {
-                            this.jabatanList = result.data.filter(j => j.status === 'aktif');
-                            if (this.jabatanList.length > 0 && !this.formData.jabatan_id) {
-                                this.formData.jabatan_id = this.jabatanList[0].id;
-                            }
+                            this.unitList = result.data;
                         }
                     } catch (error) {
-                        console.error('Error fetching jabatan:', error);
-                        this.showError('Gagal memuat data jabatan.');
+                        console.error('Error fetching units:', error);
+                        this.showError('Gagal memuat data unit organisasi.');
                     }
                 },
 
@@ -556,7 +554,7 @@
                         email: user.email,
                         password: '',
                         role: user.role,
-                        jabatan_id: user.jabatan_id,
+                        organization_unit_id: user.organization_unit_id,
                         manager_id: user.manager_id || '',
                         general_manager_id: user.general_manager_id || '',
                         status_akun: user.status_akun
@@ -573,7 +571,7 @@
                         email: '',
                         password: '',
                         role: 0,
-                        jabatan_id: this.jabatanList.length > 0 ? this.jabatanList[0].id : '',
+                        organization_unit_id: '',
                         manager_id: '',
                         general_manager_id: '',
                         status_akun: 'aktif'
@@ -734,12 +732,12 @@
                     this.showModal = false;
                     this.resetForm();
                 },
-                getSelectedJabatanName() {
-                    const selectedJabatan = this.jabatanList.find(j => j.id === this.formData.jabatan_id);
-                    return selectedJabatan ? selectedJabatan.nama_jabatan : null;
+                getSelectedUnitName() {
+                    const selectedUnit = this.unitList.find(u => u.id === this.formData.organization_unit_id);
+                    return selectedUnit ? selectedUnit.name : null;
                 },
-                selectJabatan(jabatan) {
-                    this.formData.jabatan_id = jabatan.id;
+                selectUnit(unit) {
+                    this.formData.organization_unit_id = unit.id;
                 }
             }));
         });

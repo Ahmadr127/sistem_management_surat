@@ -48,7 +48,7 @@ class RolePermissionSeeder extends Seeder
                 'view_dashboard',
                 'manage_surat_masuk',       // Full access to surat masuk
                 'manage_surat_keluar',      // Full access to surat keluar
-
+                'approve_surat_unit',       // Can approve surat unit (sekretaris level)
                 'generate_nomor_surat',     // Can generate nomor surat
                 'view_laporan',
                 'view_arsip',
@@ -61,7 +61,6 @@ class RolePermissionSeeder extends Seeder
                 'view_dashboard',
                 'manage_surat_masuk',       // Can view surat masuk
                 'view_surat',
-
                 'approve_disposisi',
                 'view_laporan',
                 'view_arsip',
@@ -85,9 +84,10 @@ class RolePermissionSeeder extends Seeder
         // Sekretaris ASP (role 5)
         if ($sekretarisAsp) {
             $sekretarisAsp->permissions()->sync(Permission::whereIn('name', [
+                'view_dashboard',
                 'manage_surat_masuk',       // Can manage surat masuk
                 'manage_surat_keluar',      // Can manage surat keluar
-
+                'approve_surat_unit',       // Can approve surat unit (sekretaris level)
                 'view_surat',
                 'view_arsip',
                 'view_laporan',

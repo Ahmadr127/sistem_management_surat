@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\User;
-use App\Models\Jabatan;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
@@ -17,15 +16,6 @@ class GeneralManagerSeeder extends Seeder
     public function run(): void
     {
         try {
-            // Ambil jabatan yang sudah ada atau buat baru
-            $jabatanGeneralManager = Jabatan::firstOrCreate(
-                ['nama_jabatan' => 'General Manager'],
-                [
-                    'kode_jabatan' => 'GM',
-                    'status' => 'aktif'
-                ]
-            );
-
             // Buat user General Manager
             $generalManager = User::firstOrCreate(
                 ['username' => 'general_manager'],
@@ -34,7 +24,6 @@ class GeneralManagerSeeder extends Seeder
                     'email' => 'general_manager@gmail.com',
                     'password' => Hash::make('123'),
                     'role' => 6, // Role General Manager
-                    'jabatan_id' => $jabatanGeneralManager->id,
                     'status_akun' => 'aktif',
                 ]
             );

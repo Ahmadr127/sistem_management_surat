@@ -136,7 +136,7 @@
                         </div>
                         <div>
                             <p class="text-lg font-semibold text-blue-900">{{ $suratUnitManager->unit->name }}</p>
-                            <p class="text-sm text-blue-700">{{ optional($suratUnitManager->unit->jabatan)->nama_jabatan }}</p>
+                            <p class="text-sm text-blue-700">{{ $suratUnitManager->unit->jabatan_name }}</p>
                             <p class="text-xs text-blue-600">{{ $suratUnitManager->unit->email }}</p>
                         </div>
                     </div>
@@ -274,6 +274,7 @@
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const approvalForm = document.getElementById('approvalForm');
@@ -315,7 +316,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const formData = new FormData(this);
                     
                     // Submit form
-                    fetch(this.action, {
+                    fetch(this.getAttribute('action'), {
                         method: 'POST',
                         body: formData,
                         headers: {

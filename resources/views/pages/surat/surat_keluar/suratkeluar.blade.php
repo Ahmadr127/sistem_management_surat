@@ -95,8 +95,8 @@
             @endif
 
             <!-- Card untuk Informasi Surat -->
-            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                <div class="p-6 border-b border-gray-200 bg-gray-50">
+            <div class="bg-white rounded-xl border border-gray-200">
+                <div class="p-6 border-b border-gray-200 bg-gray-50 rounded-t-xl">
                     <h3 class="text-sm font-semibold text-gray-800">
                         <i class="ri-mail-line mr-2 text-gray-600"></i>
                         Informasi Surat
@@ -311,8 +311,8 @@
             </div>
 
             <!-- Card untuk Disposisi -->
-            <div class="mt-6 bg-white rounded-xl border border-gray-200 overflow-hidden">
-                <div class="p-6 border-b border-gray-200 bg-gray-50">
+            <div class="mt-6 bg-white rounded-xl border border-gray-200">
+                <div class="p-6 border-b border-gray-200 bg-gray-50 rounded-t-xl">
                     <h3 class="text-sm font-semibold text-gray-800 card-disposisi-title">
                         <i class="ri-share-forward-line mr-2 text-gray-600"></i>
                         Disposisi Surat
@@ -333,94 +333,8 @@
                         <input type="hidden" name="status_sekretaris_default" value="approved">
                     @endif
                     
-                    <!-- Tujuan Disposisi (Multiple Select dengan Search) -->
-                    <div class="space-y-2 mt-4">
-                        <label class="text-sm font-semibold text-gray-800 label-tujuan-disposisi">Tujuan Disposisi</label>
-                        <div class="relative">
-                            <!-- Search Input -->
-                            <div class="mb-2 relative">
-                                <input type="text" id="tujuan-search"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200 input-tujuan-disposisi"
-                                    placeholder="Cari nama atau jabatan..."
-                                    autocomplete="off">
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
-                                    <i class="ri-search-line"></i>
-                                </div>
-                            </div>
-                            <!-- Selected Users Badge -->
-                            <div id="selected-users-badge" class="flex flex-wrap gap-2 mb-2"></div>
-                            <!-- Selection Box (dynamic show/hide) -->
-                            <div class="relative">
-                                <div class="flex justify-between mb-2 items-center">
-                                    <div class="text-xs text-gray-500" id="selection-counter">0 dipilih</div>
-                                    <div class="space-x-2">
-                                        <button type="button" id="select-all-btn"
-                                            class="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors duration-200">
-                                            Pilih Semua
-                                        </button>
-                                        <button type="button" id="clear-all-btn"
-                                            class="px-2 py-1 text-xs bg-gray-50 text-gray-600 rounded hover:bg-gray-100 transition-colors duration-200">
-                                            Hapus Semua
-                                        </button>
-                                    </div>
-                                </div>
-                                <div id="tujuan-selection-container"
-                                    class="border border-gray-200 rounded-lg p-3 max-h-60 overflow-y-auto" style="display:none;">
-                                    <div class="space-y-2">
-                                        @php
-                                            $allowedRolesAsp = [1, 2, 6, 7, 8]; // Sekretaris, Dirut, GM, Keuangan
-                                        @endphp
-                                        @foreach ($users as $user)
-                                            @if ((auth()->user()->role === 5 && in_array($user->role, $allowedRolesAsp)) || auth()->user()->role !== 5 && in_array($user->role, [1,2,4,5,7,8]))
-                                                <div class="flex items-center py-1.5 px-2 hover:bg-gray-50 rounded-md user-selection-item">
-                                                    <input type="checkbox" id="user-{{ $user->id }}"
-                                                        name="tujuan_disposisi[]" value="{{ $user->id }}"
-                                                        class="tujuan-checkbox h-4 w-4 border-gray-300 rounded"
-                                                        @if ($user->role == 2) checked @endif>
-                                                    <label for="user-{{ $user->id }}"
-                                                        class="ml-3 block text-sm text-gray-700 cursor-pointer truncate">
-                                                        {{ $user->name }}
-                                                        @if ($user->jabatan)
-                                                            <span class="text-gray-500">({{ $user->jabatan->nama_jabatan }})</span>
-                                                        @else
-                                                            <span class="text-gray-500">(Tidak ada jabatan)</span>
-                                                        @endif
-                                                    </label>
-                                                </div>
-                                            @endif
-                                        @endforeach
-                                        {{-- Tambahkan GM ke list jika user login adalah manager dan punya general_manager_id --}}
-                                        @php
-                                            $authUser = auth()->user();
-                                            $gmUser = null;
-                                            if ($authUser->role === 4 && $authUser->general_manager_id) {
-                                                $gmUser = $users->first(function($u) use ($authUser) {
-                                                    return $u->role === 6 && $u->id == $authUser->general_manager_id;
-                                                });
-                                            }
-                                        @endphp
-                                        @if ($gmUser)
-                                            <div class="flex items-center py-1.5 px-2 hover:bg-gray-50 rounded-md user-selection-item">
-                                                <input type="checkbox" id="user-{{ $gmUser->id }}"
-                                                    name="tujuan_disposisi[]" value="{{ $gmUser->id }}"
-                                                    class="tujuan-checkbox h-4 w-4 border-gray-300 rounded">
-                                                <label for="user-{{ $gmUser->id }}"
-                                                    class="ml-3 block text-sm text-gray-700 cursor-pointer truncate">
-                                                    {{ $gmUser->name }}
-                                                    @if ($gmUser->jabatan)
-                                                        <span class="text-gray-500">({{ $gmUser->jabatan->nama_jabatan }})</span>
-                                                    @else
-                                                        <span class="text-gray-500">(General Manager)</span>
-                                                    @endif
-                                                </label>
-                                            </div>
-                                        @endif
-                                        <div id="no-user-found" class="text-center text-gray-400 text-xs py-2" style="display:none;">Tidak ada user ditemukan</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Tujuan Disposisi Component -->
+                    <x-tujuan-disposisi :users="$users" />
                     
                     <!-- Keterangan Pengirim -->
                     <div class="space-y-2">
@@ -515,16 +429,9 @@
         const generateNomorManagerKeuanganBtn = document.getElementById('generateNomorManagerKeuanganBtn');
         const generateNomorDirutAspBtn = document.getElementById('generateNomorDirutAspBtn');
         const pengirimIdInput = document.getElementById('pengirim_id');
-        const tujuanDisposisiContainer = document.querySelector('#tujuan-selection-container');
-        const tujuanCheckboxes = document.querySelectorAll('.tujuan-checkbox');
         const perusahaanContainer = document.getElementById('perusahaan-container');
         const perusahaanHidden = document.getElementById('perusahaan_hidden');
         const perusahaanSearch = document.getElementById('perusahaan_search');
-        const tujuanSearch = document.getElementById('tujuan-search');
-        const selectAllBtn = document.getElementById('select-all-btn');
-        const clearAllBtn = document.getElementById('clear-all-btn');
-        const selectionCounter = document.getElementById('selection-counter');
-        const userItems = document.querySelectorAll('.user-selection-item');
         const form = document.querySelector('form');
         
         // Cek role pengguna
@@ -829,67 +736,7 @@
             });
         }
 
-        // Function to update selection counter
-        function updateSelectionCounter() {
-            const selectionCounterElem = document.getElementById('selection-counter');
-            if (!selectionCounterElem) {
-                // If selection counter element doesn't exist, exit function
-                console.log('Selection counter element not found');
-                return;
-            }
 
-            const totalSelected = document.querySelectorAll('.tujuan-checkbox:checked').length;
-            const totalItems = document.querySelectorAll('.tujuan-checkbox').length;
-            selectionCounterElem.textContent = `${totalSelected} dipilih`;
-        }
-
-        // Initialize counter
-        updateSelectionCounter();
-
-        // Search functionality
-        if (tujuanSearch) {
-            tujuanSearch.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-
-                userItems.forEach(item => {
-                    const text = item.textContent.toLowerCase();
-                    if (text.includes(searchTerm)) {
-                        item.style.display = 'flex';
-                    } else {
-                        item.style.display = 'none';
-                    }
-                });
-            });
-        }
-
-        // Select all button
-        if (selectAllBtn) {
-            selectAllBtn.addEventListener('click', function() {
-                const visibleCheckboxes = document.querySelectorAll(
-                    '.user-selection-item:not([style*="display: none"]) .tujuan-checkbox');
-                visibleCheckboxes.forEach(checkbox => {
-                    checkbox.checked = true;
-                });
-                updateSelectionCounter();
-            });
-        }
-
-        // Clear all button
-        if (clearAllBtn) {
-            clearAllBtn.addEventListener('click', function() {
-                const visibleCheckboxes = document.querySelectorAll(
-                    '.user-selection-item:not([style*="display: none"]) .tujuan-checkbox');
-                visibleCheckboxes.forEach(checkbox => {
-                    checkbox.checked = false;
-                });
-                updateSelectionCounter();
-            });
-        }
-
-        // Add event listeners to checkboxes
-        document.querySelectorAll('.tujuan-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', updateSelectionCounter);
-        });
 
         // Function to generate nomor surat
         async function generateNomorSurat() {
@@ -940,8 +787,9 @@
                 }
 
                 // Get current job title and code
-                let namaJabatan = "{{ auth()->user()->jabatan->nama_jabatan ?? 'UMUM' }}";
-                let kodeJabatan = "{{ auth()->user()->jabatan->kode_jabatan ?? 'UMUM' }}";
+                let namaJabatan = "{{ auth()->user()->jabatan_name ?? 'UMUM' }}";
+                // Kode jabatan/unit akan didapat dari response API
+                let kodeJabatan = "UMUM"; 
                 
                 if (isAsDirut) {
                     namaJabatan = "Direktur Utama";
@@ -951,11 +799,14 @@
                     kodeJabatan = "Dir.Adm.Keu";
                 }
 
-                console.log('Generate nomor surat untuk jabatan:', namaJabatan, 'dengan kode:', kodeJabatan);
+                console.log('Generate nomor surat untuk jabatan:', namaJabatan);
 
                 // Create FormData object for request
                 const formData = new FormData();
-                formData.append('kode_jabatan', kodeJabatan);
+                // Kita kirim kode_jabatan jika override (dirut/keuangan), jika tidak biarkan null/default
+                if (isAsDirut || isAsManagerKeuangan) {
+                    formData.append('kode_jabatan', kodeJabatan);
+                }
                 formData.append('is_as_dirut', isAsDirut ? '1' : '0');
                 formData.append('is_as_manager_keuangan', isAsManagerKeuangan ? '1' : '0');
                 formData.append('_token', '{{ csrf_token() }}');
@@ -976,6 +827,11 @@
 
                 const data = await response.json();
                 console.log("Response data:", data);
+                
+                // Update kodeJabatan dari response API jika ada
+                if (data.kode_unit) {
+                    kodeJabatan = data.kode_unit;
+                }
 
                 // Reset button state
                 if (generateNomorBtn) {
@@ -993,7 +849,7 @@
                         <div class="text-left">
                             <p class="mb-2">Informasi nomor surat:</p>
                             <ul class="list-disc list-inside space-y-1">
-                                <li>Jabatan: <span class="font-semibold">${namaJabatan}</span></li>
+                                <li>Unit/Jabatan: <span class="font-semibold">${namaJabatan} (${kodeJabatan})</span></li>
                                 <li>Nomor urut terakhir: <span class="font-semibold">${data.last_number}</span></li>
                                 <li>Nomor urut berikutnya: <span class="font-semibold">${String(parseInt(data.last_number) + 1).padStart(3, '0')}</span></li>
                             </ul>
@@ -2004,71 +1860,9 @@
             });
         }
 
-        // Fungsi untuk update badge user terpilih
-        function updateSelectedUsersBadge() {
-            const badgeContainer = document.getElementById('selected-users-badge');
-            badgeContainer.innerHTML = '';
-            const checked = document.querySelectorAll('.tujuan-checkbox:checked');
-            checked.forEach(cb => {
-                const label = document.querySelector('label[for="' + cb.id + '"]');
-                const badge = document.createElement('span');
-                badge.className = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mr-1 mb-1 cursor-pointer selected-user-badge';
-                badge.innerHTML = `<i class='ri-user-line mr-1'></i> ${label ? label.textContent.trim() : cb.value} <i class='ri-close-line ml-1 text-red-500'></i>`;
-                badge.dataset.userid = cb.value;
-                badge.title = 'Klik untuk hapus';
-                badgeContainer.appendChild(badge);
-            });
-        }
-        // Inisialisasi badge saat load
-        updateSelectedUsersBadge();
-        // Update badge setiap kali checkbox berubah
-        document.querySelectorAll('.tujuan-checkbox').forEach(cb => {
-            cb.addEventListener('change', updateSelectedUsersBadge);
-        });
-        // Event: klik badge untuk uncheck user
-        document.getElementById('selected-users-badge').addEventListener('click', function(e) {
-            const badge = e.target.closest('.selected-user-badge');
-            if (badge) {
-                const userId = badge.dataset.userid;
-                const cb = document.getElementById('user-' + userId);
-                if (cb) {
-                    cb.checked = false;
-                    cb.dispatchEvent(new Event('change'));
-                }
-            }
-        });
 
-        // --- Perbaikan pencarian user disposisi agar saran tetap tampil ---
-        if (tujuanSearch) {
-            tujuanSearch.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                const container = document.getElementById('tujuan-selection-container');
-                const userItems = document.querySelectorAll('.user-selection-item');
-                let found = 0;
-                if (searchTerm.length > 0) {
-                    container.style.display = 'block';
-                    userItems.forEach(item => {
-                        const text = item.textContent.toLowerCase();
-                        if (text.includes(searchTerm)) {
-                            item.style.display = 'flex';
-                            found++;
-                        } else {
-                            item.style.display = 'none';
-                        }
-                    });
-                    // Tampilkan/hide pesan tidak ada user
-                    document.getElementById('no-user-found').style.display = found === 0 ? 'block' : 'none';
-                } else {
-                    container.style.display = 'none';
-                    userItems.forEach(item => { item.style.display = 'none'; });
-                    document.getElementById('no-user-found').style.display = 'none';
-                }
-            });
-        }
-        // --- Tampilkan hasil pencarian jika sudah ada input saat load (misal dari autofill browser) ---
-        if (tujuanSearch && tujuanSearch.value.length > 0) {
-            tujuanSearch.dispatchEvent(new Event('input'));
-        }
+
+
 
         // Toggle untuk Manager Keuangan (Sekretaris ASP)
         if (asManagerKeuanganToggle) {
@@ -2143,21 +1937,6 @@
         }
 
         // Function to update selection counter
-        function updateSelectionCounter() {
-            const selectionCounterElem = document.getElementById('selection-counter');
-            if (!selectionCounterElem) {
-                // If selection counter element doesn't exist, exit function
-                console.log('Selection counter element not found');
-                return;
-            }
-
-            const totalSelected = document.querySelectorAll('.tujuan-checkbox:checked').length;
-            const totalItems = document.querySelectorAll('.tujuan-checkbox').length;
-            selectionCounterElem.textContent = `${totalSelected} dipilih `;
-        }
-
-        // Initialize counter
-        updateSelectionCounter();
 
         // Toggle untuk Direktur ASP (Sekretaris ASP)
         if (asDirutAspToggle) {
@@ -2405,16 +2184,6 @@
     .space-y-6 > div {
         min-height: 100px; /* Tambahkan minimum height */
         position: relative;
-    }
-
-    /* Override untuk container form */
-    form .p-6.space-y-6 {
-        overflow: visible !important;
-    }
-
-    /* Override untuk card container */
-    .bg-white.rounded-xl.border.border-gray.200.overflow-hidden {
-        overflow: visible !important;
     }
 
     #perusahaan-container { display: none; }

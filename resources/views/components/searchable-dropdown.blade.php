@@ -178,7 +178,7 @@
                         <template x-if="multiple">
                             <input type="checkbox" :checked="isSelected(option)" class="mr-2" @click.stop>
                         </template>
-                        <span x-text="option[labelField]"></span>
+                        <span x-text="option[labelField]" class="truncate block" :title="option[labelField]"></span>
                     </div>
                 </template>
             </template>
@@ -195,7 +195,7 @@
                                 <template x-if="multiple">
                                     <input type="checkbox" :checked="isSelected(option)" class="mr-2" @click.stop>
                                 </template>
-                                <span x-text="option[labelField]"></span>
+                                <span x-text="option[labelField]" class="truncate block" :title="option[labelField]"></span>
                             </div>
                         </template>
                     </div>

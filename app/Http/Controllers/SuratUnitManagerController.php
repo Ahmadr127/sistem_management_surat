@@ -164,10 +164,10 @@ class SuratUnitManagerController extends Controller
     {
         try {
             $query = SuratUnitManager::with([
-                'unit.jabatan',
-                'manager.jabatan',
-                'sekretaris.jabatan',
-                'dirut.jabatan',
+                'unit',
+                'manager',
+                'sekretaris',
+                'dirut',
                 'perusahaanData',
                 'files'
             ]);
@@ -221,7 +221,7 @@ class SuratUnitManagerController extends Controller
             // Order by newest records first
             $suratUnitManager = $query->orderBy('tanggal_surat', 'desc')
                                      ->orderBy('created_at', 'desc')
-                                     ->get();
+                                     ->paginate(10);
 
             \Log::info('SuratUnitManager status_manager:', $suratUnitManager->pluck('status_manager')->toArray());
 
@@ -369,12 +369,36 @@ class SuratUnitManagerController extends Controller
                 $suratUnitManager->sifat_surat = $request->sifat_surat;
                 $suratUnitManager->keterangan_unit = $request->keterangan_unit;
                 $suratUnitManager->unit_id = $user->id;
-                $suratUnitManager->manager_id = $user->manager_id;
+            
+            // Logika penentuan Manager ID yang lebih robust
+            $managerId = $user->manager_id;
+            
+            // Jika manager_id null, coba cari dari Organization Unit Head
+            if (!$managerId && $user->organizationUnit) {
+                // Jika user BUKAN head unit, maka head unit adalah managernya
+                if ($user->organizationUnit->head_id && $user->organizationUnit->head_id != $user->id) {
+                    $managerId = $user->organizationUnit->head_id;
+                }
+                // Jika user ADALAH head unit, atau head null, coba cari dari parent unit head
+                elseif ($user->organizationUnit->parent && $user->organizationUnit->parent->head_id) {
+                    $managerId = $user->organizationUnit->parent->head_id;
+                }
+            }
+
+            // Validasi: Manager ID harus ditemukan
+            if (!$managerId) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak dapat menentukan Manager untuk persetujuan. Pastikan Anda terhubung dengan Unit Organisasi yang memiliki Kepala Unit (Manager).'
+                ], 422);
+            }
+
+            $suratUnitManager->manager_id = $managerId;
                 
                 // Set status awal
                 $suratUnitManager->status_manager = 'pending';
                 $suratUnitManager->status_sekretaris = 'pending';
-                $suratUnitManager->status_dirut = 'pending';
 
                 $suratUnitManager->save();
 
