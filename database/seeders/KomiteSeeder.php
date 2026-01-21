@@ -39,7 +39,7 @@ class KomiteSeeder extends Seeder
             [
                 'name' => 'Dr. Kepala Komite',
                 'username' => 'kepala.komite', // Added username
-                'password' => Hash::make('password'),
+                'password' => Hash::make('123'),
                 'role' => 4, // Manager
                 'organization_unit_id' => $unit->id,
                 'status_akun' => 'aktif'
@@ -55,7 +55,7 @@ class KomiteSeeder extends Seeder
             [
                 'name' => 'Anggota Komite 1',
                 'username' => 'anggota.komite', // Added username
-                'password' => Hash::make('password'),
+                'password' => Hash::make('123'),
                 'role' => 0, // Staff
                 'organization_unit_id' => $unit->id,
                 'status_akun' => 'aktif',

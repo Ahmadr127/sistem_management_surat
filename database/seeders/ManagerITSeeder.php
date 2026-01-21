@@ -39,7 +39,7 @@ class ManagerITSeeder extends Seeder
             [
                 'name' => 'Budi Manager IT',
                 'username' => 'manager_it',
-                'password' => Hash::make('password'),
+                'password' => Hash::make('123'),
                 'role' => 4, // Legacy role ID for Manager
                 'role_id' => $roleManagerId,
                 'organization_unit_id' => $deptIT->id,
