@@ -16,6 +16,11 @@ class DatabaseSeeder extends Seeder
             OrganizationTypeSeeder::class,
             OrganizationUnitSeeder::class,
 
+            // New permission system seeders (MUST RUN BEFORE USERS)
+            PermissionSeeder::class,
+            RoleSeeder::class,
+            RolePermissionSeeder::class,
+
             // Existing seeders
             // JabatanSeeder::class, // DEPRECATED: Replaced by Role + Organization Logic
             UserSeeder::class,
@@ -26,11 +31,6 @@ class DatabaseSeeder extends Seeder
             KomiteSeeder::class,
             SekretarisAspSeeder::class,
             ManagerKeuanganIndependenSeeder::class,
-            
-            // New permission system seeders
-            PermissionSeeder::class,
-            RoleSeeder::class,
-            RolePermissionSeeder::class,
             
             // Update existing users with new role system
             UserRoleUpdateSeeder::class,
