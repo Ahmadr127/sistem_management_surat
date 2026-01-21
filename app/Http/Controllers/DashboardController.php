@@ -92,7 +92,7 @@ class DashboardController extends Controller
      */
     private function getSuratMasukQuery($user)
     {
-        return SuratKeluar::suratMasukForUser($user);
+        return SuratKeluar::forSuratMasuk($user);
     }
 
     /**

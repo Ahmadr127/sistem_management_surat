@@ -1,11 +1,9 @@
 import "./bootstrap";
-import { Livewire } from "../../vendor/livewire/livewire/dist/livewire.esm";
 import Alpine from "alpinejs";
 
 // Inisialisasi Alpine.js
 window.Alpine = Alpine;
 Alpine.start();
-Livewire.start();
 
 // Dark mode handler
 document.addEventListener("DOMContentLoaded", () => {

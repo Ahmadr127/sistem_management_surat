@@ -28,48 +28,8 @@ class SuratMasukController extends Controller
         'files'
     ]);
     
-    // Role-based filtering
-    if ($userRole == 0 || $userRole == 3) { // Staff or Admin
-        // Surat yang ditujukan ke mereka ATAU surat yang mereka buat dan sudah disetujui direktur
-        $query->where(function($q) use ($user) {
-            $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
-                $subq->where('users.id', $user->id);
-            })
-            ->orWhere(function($subq) use ($user) {
-                $subq->where('created_by', $user->id)
-                    ->whereHas('disposisi', function($dispq) {
-                        $dispq->where('status_dirut', 'approved');
-                    });
-            });
-        });
-    } elseif ($userRole == 1) { // Sekretaris
-        // Semua surat
-        // No additional filter
-    } elseif ($userRole == 2) { // Direktur
-        // Surat dengan status sekretaris approved ATAU surat yang ditujukan ke dia ATAU yang dia buat
-        $query->where(function($q) use ($user) {
-            $q->whereHas('disposisi', function($subq) {
-                $subq->where('status_sekretaris', 'approved');
-            })
-            ->orWhereHas('disposisi.tujuan', function($subq) use ($user) {
-                $subq->where('users.id', $user->id);
-            })
-            ->orWhere('created_by', $user->id);
-        });
-    } elseif (in_array($userRole, [4, 5, 6, 7])) { // Manager, Sekretaris ASP, General Manager, Manager Keuangan
-        // Surat yang ditujukan ke mereka ATAU yang mereka buat
-        $query->where(function($q) use ($user) {
-            $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
-                $subq->where('users.id', $user->id);
-            })
-            ->orWhere('created_by', $user->id);
-        });
-    } elseif ($userRole == 8) { // Direktur ASP
-        // Surat dengan status sekretaris ASP approved
-        $query->whereHas('disposisi', function($q) {
-            $q->where('status_sekretaris_asp', 'approved');
-        });
-    }
+    // Role-based filtering using clean scope
+    $query->forSuratMasuk($user);
     
     // Search filter
     if ($request->filled('search')) {
@@ -129,41 +89,8 @@ class SuratMasukController extends Controller
     // Prepare surat options for searchable dropdown
     $suratOptionsQuery = SuratKeluar::with(['perusahaanData']);
     
-    // Apply same role-based filter for options
-    if ($userRole == 0 || $userRole == 3) {
-        $suratOptionsQuery->where(function($q) use ($user) {
-            $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
-                $subq->where('users.id', $user->id);
-            })
-            ->orWhere(function($subq) use ($user) {
-                $subq->where('created_by', $user->id)
-                    ->whereHas('disposisi', function($dispq) {
-                        $dispq->where('status_dirut', 'approved');
-                    });
-            });
-        });
-    } elseif ($userRole == 2) {
-        $suratOptionsQuery->where(function($q) use ($user) {
-            $q->whereHas('disposisi', function($subq) {
-                $subq->where('status_sekretaris', 'approved');
-            })
-            ->orWhereHas('disposisi.tujuan', function($subq) use ($user) {
-                $subq->where('users.id', $user->id);
-            })
-            ->orWhere('created_by', $user->id);
-        });
-    } elseif (in_array($userRole, [4, 5, 6, 7])) {
-        $suratOptionsQuery->where(function($q) use ($user) {
-            $q->whereHas('disposisi.tujuan', function($subq) use ($user) {
-                $subq->where('users.id', $user->id);
-            })
-            ->orWhere('created_by', $user->id);
-        });
-    } elseif ($userRole == 8) {
-        $suratOptionsQuery->whereHas('disposisi', function($q) {
-            $q->where('status_sekretaris_asp', 'approved');
-        });
-    }
+    // Apply same role-based filter for options using clean scope
+    $suratOptionsQuery->forSuratMasuk($user);
     
     $suratOptions = $suratOptionsQuery->orderBy('tanggal_surat', 'desc')
                                       ->get()

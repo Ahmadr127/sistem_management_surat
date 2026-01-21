@@ -164,11 +164,11 @@
                                 <label class="block text-sm font-medium text-yellow-700 mb-2">Keputusan</label>
                                 <div class="flex space-x-4">
                                     <label class="flex items-center">
-                                        <input type="radio" name="action" value="approve" class="mr-2 text-green-600" required>
+                                        <input type="radio" name="approval_action" value="approve" class="mr-2 text-green-600" required>
                                         <span class="text-sm text-green-700">Setujui</span>
                                     </label>
                                     <label class="flex items-center">
-                                        <input type="radio" name="action" value="reject" class="mr-2 text-red-600" required>
+                                        <input type="radio" name="approval_action" value="reject" class="mr-2 text-red-600" required>
                                         <span class="text-sm text-red-700">Tolak</span>
                                     </label>
                                 </div>
@@ -284,7 +284,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             
             // Get selected action
-            const selectedAction = document.querySelector('input[name="action"]:checked');
+            const selectedAction = document.querySelector('input[name="approval_action"]:checked');
             if (!selectedAction) {
                 Swal.fire({
                     icon: 'warning',

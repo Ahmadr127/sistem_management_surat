@@ -140,7 +140,7 @@
                                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
                                     {{ $surat->perusahaanData->nama_perusahaan ?? $surat->perusahaan ?? '-' }}
                                 </td>
-                                <td class="px-3 py-3 text-sm text-gray-500 max-w-[200px] truncate" title="{{ $surat->perihal }}">
+                                <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500 max-w-[200px] truncate" title="{{ $surat->perihal }}">
                                     {{ $surat->perihal }}
                                 </td>
                                 <td class="px-3 py-3 whitespace-nowrap text-sm">
@@ -148,7 +148,7 @@
                                         {{ $surat->jenis_surat === 'internal' ? 'Internal' : 'Eksternal' }}
                                     </span>
                                 </td>
-                                <td class="px-3 py-3 text-sm text-gray-500">
+                                <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
                                     {{ $surat->creator->name ?? '-' }}
                                     @if($surat->creator && $surat->creator->jabatan)
                                         <span class="text-gray-400">({{ $surat->creator->jabatan->nama_jabatan }})</span>

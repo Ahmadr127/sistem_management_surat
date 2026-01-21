@@ -157,7 +157,7 @@ class SuratUnitManagerApprovalController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'action' => 'required|in:approve,reject',
+                'approval_action' => 'required|in:approve,reject',
                 'keterangan_manager' => 'nullable|string'
             ]);
 
@@ -172,14 +172,14 @@ class SuratUnitManagerApprovalController extends Controller
             DB::beginTransaction();
 
             try {
-                $suratUnitManager->status_manager = $request->action === 'approve' ? 'approved' : 'rejected';
+                $suratUnitManager->status_manager = $request->approval_action === 'approve' ? 'approved' : 'rejected';
                 $suratUnitManager->keterangan_manager = $request->keterangan_manager;
                 $suratUnitManager->waktu_review_manager = now();
                 $suratUnitManager->save();
 
                 DB::commit();
 
-                $actionText = $request->action === 'approve' ? 'disetujui' : 'ditolak';
+                $actionText = $request->approval_action === 'approve' ? 'disetujui' : 'ditolak';
                 
                 return response()->json([
                     'success' => true,
@@ -314,7 +314,7 @@ class SuratUnitManagerApprovalController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'action' => 'required|in:approve,reject',
+                'approval_action' => 'required|in:approve,reject',
                 'keterangan_manager' => 'nullable|string'
             ]);
 
@@ -329,14 +329,14 @@ class SuratUnitManagerApprovalController extends Controller
             DB::beginTransaction();
 
             try {
-                $suratUnitManager->status_manager = $request->action === 'approve' ? 'approved' : 'rejected';
+                $suratUnitManager->status_manager = $request->approval_action === 'approve' ? 'approved' : 'rejected';
                 $suratUnitManager->keterangan_manager = $request->keterangan_manager;
                 $suratUnitManager->waktu_review_manager = now();
                 $suratUnitManager->save();
 
                 DB::commit();
 
-                $actionText = $request->action === 'approve' ? 'disetujui' : 'ditolak';
+                $actionText = $request->approval_action === 'approve' ? 'disetujui' : 'ditolak';
                 
                 return response()->json([
                     'success' => true,
@@ -467,7 +467,7 @@ class SuratUnitManagerApprovalController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'action' => 'required|in:approve,reject',
+                'approval_action' => 'required|in:approve,reject',
                 'keterangan_sekretaris' => 'nullable|string'
             ]);
 
@@ -482,7 +482,7 @@ class SuratUnitManagerApprovalController extends Controller
             DB::beginTransaction();
 
             try {
-                $suratUnitManager->status_sekretaris = $request->action === 'approve' ? 'approved' : 'rejected';
+                $suratUnitManager->status_sekretaris = $request->approval_action === 'approve' ? 'approved' : 'rejected';
                 $suratUnitManager->keterangan_sekretaris = $request->keterangan_sekretaris;
                 $suratUnitManager->waktu_review_sekretaris = now();
                 $suratUnitManager->sekretaris_id = $user->id;
@@ -490,7 +490,7 @@ class SuratUnitManagerApprovalController extends Controller
 
                 DB::commit();
 
-                $actionText = $request->action === 'approve' ? 'disetujui' : 'ditolak';
+                $actionText = $request->approval_action === 'approve' ? 'disetujui' : 'ditolak';
                 
                 return response()->json([
                     'success' => true,
@@ -527,10 +527,10 @@ class SuratUnitManagerApprovalController extends Controller
             }
 
             $query = SuratUnitManager::with([
-                'unit.jabatan',
-                'manager.jabatan',
-                'sekretaris.jabatan',
-                'dirut.jabatan',
+                'unit',
+                'manager',
+                'sekretaris',
+                'dirut',
                 'perusahaanData',
                 'files'
             ])->where('status_sekretaris', 'approved');
@@ -618,7 +618,7 @@ class SuratUnitManagerApprovalController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'action' => 'required|in:approve,reject',
+                'approval_action' => 'required|in:approve,reject',
                 'keterangan_dirut' => 'nullable|string'
             ]);
 
@@ -633,7 +633,7 @@ class SuratUnitManagerApprovalController extends Controller
             DB::beginTransaction();
 
             try {
-                $suratUnitManager->status_dirut = $request->action === 'approve' ? 'approved' : 'rejected';
+                $suratUnitManager->status_dirut = $request->approval_action === 'approve' ? 'approved' : 'rejected';
                 $suratUnitManager->keterangan_dirut = $request->keterangan_dirut;
                 $suratUnitManager->waktu_review_dirut = now();
                 $suratUnitManager->dirut_id = $user->id;
@@ -641,7 +641,7 @@ class SuratUnitManagerApprovalController extends Controller
 
                 DB::commit();
 
-                $actionText = $request->action === 'approve' ? 'disetujui' : 'ditolak';
+                $actionText = $request->approval_action === 'approve' ? 'disetujui' : 'ditolak';
                 
                 return response()->json([
                     'success' => true,

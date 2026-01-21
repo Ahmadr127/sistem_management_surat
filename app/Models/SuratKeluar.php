@@ -79,39 +79,39 @@ class SuratKeluar extends Model
     /**
      * Scope untuk Surat Masuk (Surat Keluar yang didisposisikan ke user)
      */
-    public function scopeSuratMasukForUser($query, $user)
+    /**
+     * Scope untuk Surat Masuk dengan logic yang clean dan dynamic
+     */
+    public function scopeForSuratMasuk($query, $user)
     {
-        return $query->where(function($q) use ($user) {
-            // Kondisi 1: Ditujukan ke user
-            $q->whereHas('disposisi.tujuan', function($sub) use ($user) {
-                $sub->where('users.id', $user->id);
+        return $query->where(function ($q) use ($user) {
+            // Definisi logic filter berdasarkan role
+            // Bisa dipindahkan ke config atau database jika ingin lebih dinamis
+            $filters = [
+                // Sekretaris (Role 1): Melihat semua surat
+                1 => fn($q) => $q->whereRaw('1=1'),
+                
+                // Direktur (Role 2): Surat yang sudah disetujui Sekretaris
+                2 => fn($q) => $q->whereHas('disposisi', fn($d) => $d->where('status_sekretaris', 'approved')),
+                
+                // Direktur ASP (Role 8): Surat yang sudah disetujui Sekretaris ASP (asumsi)
+                8 => fn($q) => $q->whereHas('disposisi', fn($d) => $d->where('status_sekretaris_asp', 'approved')),
+            ];
+
+            // Default filter untuk Manager (4, 7, 6) dan Staff (0)
+            // Menampilkan surat yang didisposisikan ke Unit mereka
+            $defaultFilter = fn($q) => $q->whereHas('disposisi.tujuan', function ($t) use ($user) {
+                if ($user->organization_unit_id) {
+                    $t->where('organization_unit_id', $user->organization_unit_id);
+                } else {
+                    // Fallback jika user tidak punya unit, cek by ID
+                    $t->where('users.id', $user->id);
+                }
             });
 
-            // Kondisi 2: Dibuat oleh user (jika sudah ada disposisi approved?)
-            $q->orWhere(function($sub) use ($user) {
-                $sub->where('created_by', $user->id)
-                    ->whereHas('disposisi', function($disp) {
-                        $disp->where('status_dirut', 'approved');
-                    });
-            });
-
-            // Kondisi 3: Permission-based View All
-            // Sekretaris (generate_nomor_surat)
-            if ($user->hasPermission('generate_nomor_surat')) {
-                $q->orWhereRaw('1=1'); // View All
-            }
-            
-            // Direktur (approve_disposisi)
-            if ($user->hasPermission('approve_disposisi')) {
-                 $q->orWhereHas('disposisi', function($sub) {
-                     $sub->where('status_sekretaris', 'approved');
-                 });
-            }
-            
-            // Admin (manage_users)
-            if ($user->hasPermission('manage_users')) {
-                $q->orWhereRaw('1=1');
-            }
+            // Eksekusi filter yang sesuai
+            $filter = $filters[$user->role] ?? $defaultFilter;
+            $filter($q);
         });
     }
 

@@ -357,8 +357,7 @@ class DisposisiController extends Controller
             // Get the disposisi with all related data
             $disposisi = Disposisi::where('surat_keluar_id', $suratId)
                 ->with(['tujuan' => function($query) {
-                    $query->select('users.id', 'name', 'jabatan_id', 'email')
-                          ->with('jabatan:id,nama_jabatan');
+                    $query->select('users.id', 'name', 'email');
                 }])
                 ->first();
             
@@ -419,8 +418,7 @@ class DisposisiController extends Controller
             
             // Get users who are the target of the disposisi with keterangan_penerima
             $tujuan = $disposisi->tujuan()
-                ->select('users.id', 'users.name', 'users.jabatan_id', 'users.email')
-                ->with('jabatan:id,nama_jabatan')
+                ->select('users.id', 'users.name', 'users.email')
                 ->get();
             
             \Log::info('Data tujuan disposisi ditemukan: ' . $tujuan->count());
@@ -618,16 +616,14 @@ class DisposisiController extends Controller
             
             // Get current selected users for this disposisi
             $selectedUsers = $disposisi->tujuan()
-                ->select('users.id', 'users.name', 'users.jabatan_id', 'users.email', 'users.role')
-                ->with('jabatan:id,nama_jabatan')
+                ->select('users.id', 'users.name', 'users.email', 'users.role')
                 ->get();
                 
             // Get all available users including both staff (role 0) and admin (role 3)
             $availableUsers = User::where('status_akun', 'aktif')
                 ->whereIn('role', [1, 2, 4, 5, 6, 7, 8]) // Tambahkan role 2 (Direktur) dan role lain jika perlu
                 ->where('id', '!=', auth()->id()) // Exclude current user
-                ->select('id', 'name', 'jabatan_id', 'email', 'role')
-                ->with('jabatan:id,nama_jabatan')
+                ->select('id', 'name', 'email', 'role')
                 ->orderBy('name')
                 ->get();
                 
