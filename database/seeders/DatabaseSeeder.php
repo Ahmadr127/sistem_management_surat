@@ -21,10 +21,11 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             GeneralManagerSeeder::class,
             ManagerKeuanganSeeder::class,
-            IndependentManagerSeeder::class,
-            ManagerKeuanganIndependenSeeder::class,
+          
             ManagerITSeeder::class,
             KomiteSeeder::class,
+            SekretarisAspSeeder::class,
+            ManagerKeuanganIndependenSeeder::class,
             
             // New permission system seeders
             PermissionSeeder::class,
