@@ -14,6 +14,7 @@
             background: url("images/bg.png") center center / cover no-repeat fixed;
         }
     </style>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
 </head>
 
 <body class="flex items-center justify-center min-h-screen bg-gray-100">
@@ -94,12 +95,16 @@
                         placeholder="Masukkan Username">
                 </div>
 
-                <div class="relative group">
+                <div class="relative group" x-data="{ showPassword: false }">
                     <i
                         class="fa fa-lock absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors"></i>
-                    <input type="password" name="password" required
-                        class="w-full pl-10 md:pl-12 pr-3 md:pr-4 py-3 md:py-4 text-sm md:text-base border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
+                    <input :type="showPassword ? 'text' : 'password'" name="password" required
+                        class="w-full pl-10 md:pl-12 pr-10 md:pr-12 py-3 md:py-4 text-sm md:text-base border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors"
                         placeholder="Masukkan Password">
+                    <button type="button" @click="showPassword = !showPassword"
+                        class="absolute right-3 md:right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-green-500 focus:outline-none">
+                        <i class="fa" :class="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+                    </button>
                 </div>
 
                 <button type="submit"
