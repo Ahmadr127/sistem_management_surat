@@ -97,26 +97,11 @@ Route::middleware(['auth', 'checkRole:0,1,2,3,4,5,7,8'])->group(function () {
         Route::get('/', [SuratUnitManagerController::class, 'index'])->name('index');
         Route::get('/create', [SuratUnitManagerController::class, 'create'])->name('create');
         
-        // Route universal untuk persetujuan surat - auto redirect berdasarkan role
-        Route::get('/approval', [SuratUnitManagerApprovalController::class, 'redirectToApproval'])->name('approval');
-
-        // Letakkan route spesifik di atas route dinamis
-        Route::prefix('manager')->name('manager.')->group(function () {
-            Route::get('/', [SuratUnitManagerApprovalController::class, 'managerIndex'])->name('index');
-            Route::get('/{suratUnitManager}', [SuratUnitManagerApprovalController::class, 'managerShow'])->name('show');
-            Route::post('/{suratUnitManager}/approval', [SuratUnitManagerApprovalController::class, 'managerApproval'])->name('approval');
-        });
-
-        Route::prefix('sekretaris')->name('sekretaris.')->group(function () {
-            Route::get('/', [SuratUnitManagerApprovalController::class, 'sekretarisIndex'])->name('index');
-            Route::get('/{suratUnitManager}', [SuratUnitManagerApprovalController::class, 'sekretarisShow'])->name('show');
-            Route::post('/{suratUnitManager}/approval', [SuratUnitManagerApprovalController::class, 'sekretarisApproval'])->name('approval');
-        });
-
-        Route::prefix('dirut')->name('dirut.')->group(function () {
-            Route::get('/', [SuratUnitManagerApprovalController::class, 'dirutIndex'])->name('index');
-            Route::get('/{suratUnitManager}', [SuratUnitManagerApprovalController::class, 'dirutShow'])->name('show');
-            Route::post('/{suratUnitManager}/approval', [SuratUnitManagerApprovalController::class, 'dirutApproval'])->name('approval');
+        // Route universal untuk persetujuan surat
+        Route::prefix('approval')->name('approval.')->group(function () {
+            Route::get('/', [SuratUnitManagerApprovalController::class, 'approvalIndex'])->name('index');
+            Route::get('/{id}', [SuratUnitManagerApprovalController::class, 'approvalShow'])->name('show');
+            Route::post('/{id}', [SuratUnitManagerApprovalController::class, 'processApproval'])->name('process');
         });
 
         Route::post('/', [SuratUnitManagerController::class, 'store'])->name('store');
@@ -193,6 +178,8 @@ Route::middleware(['auth', 'checkRole:3'])->group(function () {
     
     // User Management - View
     Route::get('/manageuser', [UserController::class, 'index'])->name('manageuser.index');
+    Route::get('/manageuser/create', [UserController::class, 'create'])->name('manageuser.create');
+    Route::get('/manageuser/{user}/edit', [UserController::class, 'edit'])->name('manageuser.edit');
     
     
     // Permission Management
@@ -358,22 +345,13 @@ Route::middleware(['auth'])->group(function() {
 
 Route::delete('/suratkeluar/{surat}/file/{file}', [App\Http\Controllers\SuratKeluarController::class, 'deleteFile'])->name('suratkeluar.file.delete');
 
-// Route untuk Manager Keuangan approval (role 7)
-Route::middleware(['auth', 'checkRole:0,1,2,3,4,5,7,8'])->group(function () {
-    Route::prefix('surat-unit-manager/manager-keuangan')->name('surat-unit-manager.manager-keuangan.')->group(function () {
-        Route::get('/', [SuratUnitManagerApprovalController::class, 'managerKeuanganIndex'])->name('index');
-        Route::get('/{suratUnitManager}', [SuratUnitManagerApprovalController::class, 'managerKeuanganShow'])->name('show');
-        Route::post('/{suratUnitManager}/approval', [SuratUnitManagerApprovalController::class, 'managerKeuanganApproval'])->name('approval');
-    });
-});
-
 // Route khusus untuk approval sudah ditangani di dalam group checkRole:0,1,2,3,4,5,7,8
 // Manager (role 4) -> surat-unit-manager.manager.index
 // Sekretaris (role 1, 5) -> surat-unit-manager.sekretaris.index  
 // Direktur (role 2, 8) -> surat-unit-manager.dirut.index
 // Manager Keuangan (role 7) -> surat-unit-manager.manager-keuangan.index
 
-Route::post('/api/disposisi/{id}/keterangan-penerima', [App\Http\Controllers\DisposisiController::class, 'updateKeteranganPenerima'])->name('api.disposisi.keterangan-penerima');
+
 Route::post('/api/disposisi/{id}/keterangan-pengirim', [App\Http\Controllers\DisposisiController::class, 'updateKeteranganPengirim'])->name('api.disposisi.keterangan-pengirim');
 
 

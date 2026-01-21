@@ -48,7 +48,7 @@ class RolePermissionSeeder extends Seeder
                 'view_dashboard',
                 'manage_surat_masuk',       // Full access to surat masuk
                 'manage_surat_keluar',      // Full access to surat keluar
-                'approve_surat_unit',       // Can approve surat unit (sekretaris level)
+                // 'approve_surat_unit',    // REMOVED: Can approve surat unit (sekretaris level)
                 'generate_nomor_surat',     // Can generate nomor surat
                 'view_laporan',
                 'view_arsip',

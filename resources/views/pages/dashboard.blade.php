@@ -164,16 +164,8 @@
         {{-- Persetujuan Surat Card --}}
         @if(auth()->user()->hasPermission('approve_surat_unit') && isset($stats['persetujuan']))
         @php
-            $approvalUrl = route('surat-unit-manager.manager.index'); // default
-            $user = auth()->user();
-            
-            if ($user->hasPermission('manage_pum')) { // Manager Keuangan
-                $approvalUrl = route('surat-unit-manager.manager-keuangan.index');
-            } elseif ($user->hasPermission('manage_surat_keluar')) { // Sekretaris
-                $approvalUrl = route('surat-unit-manager.sekretaris.index');
-            } elseif ($user->hasPermission('approve_disposisi')) { // Direktur
-                $approvalUrl = route('surat-unit-manager.dirut.index');
-            }
+            // Gunakan route generic untuk semua role
+            $approvalUrl = route('surat-unit-manager.approval.index');
         @endphp
         <a href="{{ $approvalUrl }}" class="group flex-1 min-w-[280px]">
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-lg hover:border-red-200 transition-all duration-300 hover:-translate-y-1 h-full">

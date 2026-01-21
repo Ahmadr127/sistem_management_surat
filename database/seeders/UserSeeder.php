@@ -56,6 +56,7 @@ class UserSeeder extends Seeder
                     'organization_unit_id' => null,
                     'status_akun' => 'aktif',
                 ],
+
                 [
                     'name' => 'Staff Departemen IT',
                     'username' => 'staff_it',

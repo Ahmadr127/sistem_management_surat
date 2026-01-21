@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Role;
 use App\Models\OrganizationUnit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -17,6 +18,30 @@ class UserController extends Controller
         $managers = User::where('role', 4)->where('status_akun', 'aktif')->get();
         $generalManagers = User::where('role', 6)->where('status_akun', 'aktif')->get();
         return view('pages.super_admin.manageuser', compact('managers', 'generalManagers'));
+    }
+
+    public function create()
+    {
+        $managers = User::where('role', 4)->where('status_akun', 'aktif')->select('id', 'name')->get();
+        $generalManagers = User::where('role', 6)->where('status_akun', 'aktif')->select('id', 'name')->get();
+        $organizationUnits = OrganizationUnit::select('id', 'name', 'type_id')->with('type')->get()->map(function($unit) {
+            $unit->name = $unit->name . ' (' . ($unit->type->name ?? '-') . ')';
+            return $unit;
+        });
+        
+        return view('pages.super_admin.user.add', compact('managers', 'generalManagers', 'organizationUnits'));
+    }
+
+    public function edit(User $user)
+    {
+        $managers = User::where('role', 4)->where('status_akun', 'aktif')->select('id', 'name')->get();
+        $generalManagers = User::where('role', 6)->where('status_akun', 'aktif')->select('id', 'name')->get();
+        $organizationUnits = OrganizationUnit::select('id', 'name', 'type_id')->with('type')->get()->map(function($unit) {
+            $unit->name = $unit->name . ' (' . ($unit->type->name ?? '-') . ')';
+            return $unit;
+        });
+        
+        return view('pages.super_admin.user.edit', compact('user', 'managers', 'generalManagers', 'organizationUnits'));
     }
 
     public function getUsers()
@@ -51,6 +76,12 @@ class UserController extends Controller
             $data = $request->all();
             $data['password'] = Hash::make($request->password);
 
+            // Sync role_id based on legacy role
+            $roleModel = Role::where('legacy_role_id', $request->role)->first();
+            if ($roleModel) {
+                $data['role_id'] = $roleModel->id;
+            }
+
             User::create($data);
 
             return response()->json([
@@ -84,6 +115,12 @@ class UserController extends Controller
             
             if ($request->filled('password')) {
                 $data['password'] = Hash::make($request->password);
+            }
+
+            // Sync role_id based on legacy role
+            $roleModel = Role::where('legacy_role_id', $request->role)->first();
+            if ($roleModel) {
+                $data['role_id'] = $roleModel->id;
             }
 
             $user->update($data);

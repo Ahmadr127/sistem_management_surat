@@ -15,39 +15,170 @@ class SuratUnitManagerApprovalController extends Controller
      * Public method untuk redirect user ke halaman approval yang sesuai dengan role
      * Ini adalah entry point universal dari sidebar
      */
+    /**
+     * Public method untuk redirect user ke halaman approval yang sesuai dengan role
+     * Ini adalah entry point universal dari sidebar
+     */
     public function redirectToApproval()
     {
-        $user = auth()->user();
-        
-        Log::info('RedirectToApproval called for user: ' . $user->id . ' Role: ' . $user->role);
-        Log::info('Has permission approve_surat_unit: ' . ($user->hasPermission('approve_surat_unit') ? 'Yes' : 'No'));
+        // Langsung arahkan ke route approval generic
+        return redirect()->route('surat-unit-manager.approval.index');
+    }
 
-        // Cek permission dulu
-        if (!$user->hasPermission('approve_surat_unit')) {
-            Log::warning('User does not have permission to approve surat unit');
-            return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses ke halaman persetujuan surat');
+    /**
+     * Generic Index Method for All Approvals
+     */
+    public function approvalIndex(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            
+            // Cek permission saja, JANGAN cek role ID
+            if (!$user->hasPermission('approve_surat_unit')) {
+                return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses ke halaman persetujuan surat');
+            }
+
+            $query = SuratUnitManager::with([
+                'unit', 'manager', 'sekretaris', 'dirut', 'perusahaanData', 'files'
+            ]);
+
+            // Context selalu manager (Kepala Unit)
+            // Halaman ini didedikasikan untuk approval tingkat unit
+            $context = 'manager';
+
+            // Filter surat berdasarkan Unit User yang login
+            // User hanya bisa melihat surat dari unitnya sendiri
+            if ($user->role != 3) { // Not Super Admin
+                $query->byManager($user->id);
+            }
+            
+            // Filter status default: Pending Manager
+            if (!$request->has('status')) {
+                $query->byStatusManager('pending');
+            }
+
+            // Apply explicit status filter if present
+            if ($request->has('status') && $request->status !== '') {
+                $query->byStatusManager($request->status);
+            }
+
+            // Search filter
+            if ($request->has('search')) {
+                $query->search($request->search);
+            }
+
+            $suratUnitManager = $query->orderBy('created_at', 'desc')->paginate(10);
+
+            // Use a single generic view
+            return view('pages.surat_unit_manager.approval_index', compact('suratUnitManager', 'context'));
+        } catch (\Exception $e) {
+            Log::error('Error in approvalIndex: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat data');
         }
-        
-        // Redirect berdasarkan role
-        $role = $user->role;
-        
-        if ($role == 4) { // Manager
-            Log::info('Redirecting to manager index');
-            return redirect()->route('surat-unit-manager.manager.index');
-        } elseif ($role == 7) { // Manager Keuangan
-            Log::info('Redirecting to manager keuangan index');
-            return redirect()->route('surat-unit-manager.manager-keuangan.index');
-        } elseif (in_array($role, [1, 5])) { // Sekretaris atau Sekretaris ASP
-            Log::info('Redirecting to sekretaris index');
-            return redirect()->route('surat-unit-manager.sekretaris.index');
-        } elseif (in_array($role, [2, 8])) { // Direktur atau Direktur ASP
-            Log::info('Redirecting to dirut index');
-            return redirect()->route('surat-unit-manager.dirut.index');
+    }
+
+    /**
+     * Generic Show Method
+     */
+    public function approvalShow($id)
+    {
+        try {
+            $surat = SuratUnitManager::with([
+                'unit', 'manager', 'sekretaris', 'dirut', 'perusahaanData', 'files', 'histories.user'
+            ])->findOrFail($id);
+
+            $user = auth()->user();
+            
+            // Cek permission
+            if (!$user->hasPermission('approve_surat_unit')) {
+                return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses.');
+            }
+
+            $context = 'manager';
+
+            return view('pages.surat_unit_manager.approval_show', compact('surat', 'context'));
+        } catch (\Exception $e) {
+            Log::error('Error in approvalShow: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Surat tidak ditemukan');
         }
-        
-        // Default untuk Super Admin atau role lainnya: redirect ke manager page (view all)
-        Log::info('Redirecting to default (manager index)');
-        return redirect()->route('surat-unit-manager.manager.index');
+    }
+
+    /**
+     * Generic Process Approval Method
+     */
+    public function processApproval(Request $request, $id)
+    {
+        try {
+            $surat = SuratUnitManager::findOrFail($id);
+            $user = auth()->user();
+            
+            // Cek permission
+            if (!$user->hasPermission('approve_surat_unit')) {
+                return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses.');
+            }
+
+            $context = 'manager';
+            
+            $validator = Validator::make($request->all(), [
+                'action' => 'required|in:approve,reject',
+                'catatan' => 'nullable|string'
+            ]);
+
+            if ($validator->fails()) {
+                return redirect()->back()->withErrors($validator)->withInput();
+            }
+
+            $action = $request->action; // 'approve' or 'reject'
+            $status = ($action === 'approve') ? 'approved' : 'rejected';
+            $catatan = $request->catatan;
+
+            DB::beginTransaction();
+
+            // Logic Manager Approval
+            $surat->status_manager = $status;
+            $surat->catatan_manager = $catatan;
+            $surat->waktu_approval_manager = now();
+            $surat->manager_id = $user->id; // Record who actually approved it
+            
+            // If rejected, stop flow
+            if ($status === 'rejected') {
+                $surat->status_sekretaris = null; // Reset next steps if needed
+                $surat->status_dirut = null;
+            } else {
+                // If approved, set next step pending
+                $surat->status_sekretaris = 'pending';
+            }
+
+            $surat->save();
+
+            // Log history
+            $surat->histories()->create([
+                'user_id' => $user->id,
+                'action' => $action,
+                'keterangan' => "Persetujuan oleh Manager Unit: " . ($catatan ?? '-'),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent()
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('surat-unit-manager.approval.index')
+                             ->with('success', 'Status surat berhasil diperbarui');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error in processApproval: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal memproses persetujuan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Helper to determine approval context
+     * (Deprecated/Unused for now as we force 'manager')
+     */
+    private function getApprovalContext($user)
+    {
+        return 'manager';
     }
 
     /**

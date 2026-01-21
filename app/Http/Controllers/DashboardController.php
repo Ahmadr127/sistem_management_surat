@@ -32,19 +32,37 @@ class DashboardController extends Controller
     {
         $stats = [];
 
-        // Stats untuk Surat Masuk (manage_surat_masuk permission)
+        // 1. Stats Surat Masuk (Card Biru)
+        // Logic: Sama persis dengan SuratMasukController@index
         if ($user->hasPermission('manage_surat_masuk')) {
-            $suratMasukQuery = $this->getSuratMasukQuery($user);
+            $suratMasukQuery = SuratKeluar::forSuratMasuk($user);
+            
+            // Hitung 'belum_dibaca' sebagai 'perlu ditindaklanjuti'
+            $pendingCount = 0;
+            
+            if ($user->role == 2 || $user->role == 8) { // Direktur & Direktur ASP
+                // Direktur perlu menindaklanjuti surat yang status_dirut-nya masih pending
+                $pendingCount = (clone $suratMasukQuery)->whereHas('disposisi', function($q) {
+                    $q->where('status_dirut', 'pending');
+                })->count();
+            } elseif ($user->role == 1 || $user->role == 5) { // Sekretaris & Sekretaris ASP
+                // Sekretaris perlu menindaklanjuti surat yang status_sekretaris-nya masih pending
+                $pendingCount = (clone $suratMasukQuery)->whereHas('disposisi', function($q) {
+                    $q->where('status_sekretaris', 'pending');
+                })->count();
+            }
+
             $stats['surat_masuk'] = [
                 'total' => (clone $suratMasukQuery)->count(),
-                'belum_dibaca' => (clone $suratMasukQuery)->whereDoesntHave('disposisi')->count(),
-                'bulan_ini' => (clone $suratMasukQuery)->whereMonth('tanggal_surat', now()->month)->whereYear('tanggal_surat', now()->year)->count(),
+                'belum_dibaca' => $pendingCount,
+                'bulan_ini' => (clone $suratMasukQuery)->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count(),
             ];
         }
 
-        // Stats untuk Surat Keluar (manage_surat_keluar permission)
+        // 2. Stats Surat Keluar (Card Hijau)
+        // Logic: Sama persis dengan SuratKeluarController@index (suratKeluarForUser)
         if ($user->hasPermission('manage_surat_keluar')) {
-            $suratKeluarQuery = $this->getSuratKeluarQuery($user);
+            $suratKeluarQuery = SuratKeluar::suratKeluarForUser($user);
             $stats['surat_keluar'] = [
                 'total' => (clone $suratKeluarQuery)->count(),
                 'menunggu_persetujuan' => (clone $suratKeluarQuery)->whereHas('disposisi', function($q) {
@@ -55,17 +73,25 @@ class DashboardController extends Controller
             ];
         }
 
-        // Stats untuk Generate Nomor (generate_nomor_surat permission) 
-        if ($user->hasPermission('generate_nomor_surat')) {
-            $stats['generate_nomor'] = [
-                'total_hari_ini' => SuratKeluar::whereDate('created_at', now()->toDateString())->count(),
-                'total_bulan_ini' => SuratKeluar::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count(),
+        // 3. Stats Persetujuan Surat (Card Merah)
+        // Logic: Sama persis dengan SuratUnitManagerApprovalController@approvalIndex
+        // Khusus untuk Manager Unit/Keuangan menyetujui surat dari unitnya
+        if ($user->hasPermission('approve_surat_unit')) {
+            // Gunakan filter byManager (filter by Unit ID) dan status pending manager
+            $persetujuanQuery = SuratUnitManager::byManager($user->id)->byStatusManager('pending');
+            
+            $stats['persetujuan'] = [
+                'menunggu_approval' => $persetujuanQuery->count(),
+                // Total yang sudah diproses (Approved/Rejected) oleh user ini
+                'total_disetujui' => SuratUnitManager::where('manager_id', $user->id)->where('status_manager', 'approved')->count(),
+                'total_ditolak' => SuratUnitManager::where('manager_id', $user->id)->where('status_manager', 'rejected')->count(),
             ];
         }
 
-        // Stats untuk Surat Unit Manager (create_surat_unit permission)
+        // 4. Stats Surat Unit Manager (Card Kuning - Jika ada)
+        // Logic: Sama persis dengan SuratUnitManagerController@index
         if ($user->hasPermission('create_surat_unit')) {
-            $suratUnitQuery = $this->getSuratUnitQuery($user);
+            $suratUnitQuery = SuratUnitManager::suratUnitForUser($user);
             $stats['surat_unit'] = [
                 'total' => (clone $suratUnitQuery)->count(),
                 'menunggu_manager' => (clone $suratUnitQuery)->where('status_manager', 'pending')->count(),
@@ -74,13 +100,11 @@ class DashboardController extends Controller
             ];
         }
 
-        // Stats untuk Persetujuan Surat (approve_surat_unit permission)
-        if ($user->hasPermission('approve_surat_unit')) {
-            $persetujuanQuery = $this->getPersetujuanQuery($user);
-            $stats['persetujuan'] = [
-                'menunggu_approval' => (clone $persetujuanQuery)->count(),
-                'total_disetujui' => $this->getTotalApproved($user),
-                'total_ditolak' => $this->getTotalRejected($user),
+        // Stats untuk Generate Nomor
+        if ($user->hasPermission('generate_nomor_surat')) {
+            $stats['generate_nomor'] = [
+                'total_hari_ini' => SuratKeluar::whereDate('created_at', now()->toDateString())->count(),
+                'total_bulan_ini' => SuratKeluar::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count(),
             ];
         }
 
@@ -196,7 +220,7 @@ class DashboardController extends Controller
                         'title' => 'Menunggu Persetujuan',
                         'description' => $surat->perihal ?? $surat->nomor_surat,
                         'time' => $surat->created_at,
-                        'url' => route('surat-unit-manager.manager.index'),
+                        'url' => route('surat-unit-manager.approval.index'),
                     ];
                 });
             $activities = $activities->merge($persetujuan);
@@ -211,11 +235,11 @@ class DashboardController extends Controller
                     return [
                         'type' => 'surat_unit',
                         'icon' => 'fa-file-alt',
-                        'color' => 'purple',
-                        'title' => 'Surat Unit Manager',
+                        'color' => 'green',
+                        'title' => 'Surat Unit Baru',
                         'description' => $surat->perihal ?? $surat->nomor_surat,
                         'time' => $surat->created_at,
-                        'url' => route('surat-unit-manager.index'),
+                        'url' => route('surat-unit-manager.show', $surat->id),
                     ];
                 });
             $activities = $activities->merge($suratUnit);
@@ -234,10 +258,10 @@ class DashboardController extends Controller
         if ($user->hasPermission('manage_surat_masuk')) {
             $actions[] = [
                 'title' => 'Lihat Surat Masuk',
-                'description' => 'Kelola surat masuk',
+                'description' => 'Cek surat masuk',
                 'icon' => 'fa-inbox',
                 'color' => 'blue',
-                'url' => url('/suratmasuk'),
+                'url' => route('suratmasuk.index'),
             ];
         }
 
@@ -272,19 +296,8 @@ class DashboardController extends Controller
         }
 
         if ($user->hasPermission('approve_surat_unit')) {
-            // Determine approval URL based on user permission
-            $approvalUrl = route('surat-unit-manager.manager.index'); // default
-
-            if ($user->hasPermission('manage_pum')) { 
-                // Manager Keuangan
-                $approvalUrl = route('surat-unit-manager.manager-keuangan.index');
-            } elseif ($user->hasPermission('manage_surat_keluar')) { 
-                // Sekretaris
-                $approvalUrl = route('surat-unit-manager.sekretaris.index');
-            } elseif ($user->hasPermission('approve_disposisi')) { 
-                // Direktur
-                $approvalUrl = route('surat-unit-manager.dirut.index');
-            }
+            // Use generic approval route
+            $approvalUrl = route('surat-unit-manager.approval.index');
             
             $actions[] = [
                 'title' => 'Persetujuan Surat',

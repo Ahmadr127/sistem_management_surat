@@ -252,12 +252,15 @@
     // Set user role globally
     window.userRole = {{ auth()->user()->role }};
 
-    // Auto-submit form on filter change
-    document.querySelectorAll('select[name="jenis_surat"], select[name="sifat_surat"], select[name="status_sekretaris"], select[name="status_dirut"]').forEach(select => {
-        select.addEventListener('change', function() {
-            document.getElementById('filterForm').submit();
+    // Auto-submit form on filter change - ONLY for selects inside the filter form
+    const filterForm = document.getElementById('filterForm');
+    if (filterForm) {
+        filterForm.querySelectorAll('select').forEach(select => {
+            select.addEventListener('change', function() {
+                filterForm.submit();
+            });
         });
-    });
+    }
 
     // Watch for searchable dropdown selection
     document.addEventListener('alpine:init', () => {

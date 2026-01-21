@@ -489,7 +489,7 @@ class DisposisiController extends Controller
                         $disposisi->waktu_review_sekretaris = now();
                     }
                 }
-                else if (auth()->user()->role == 2) { // Direktur
+                else if (auth()->user()->role == 2 || auth()->user()->role == 8) { // Direktur & Direktur ASP
                     $disposisi->status_dirut = $request->status_dirut;
                     $disposisi->keterangan_dirut = $request->keterangan_dirut;
                     
@@ -543,66 +543,7 @@ class DisposisiController extends Controller
         }
     }
 
-    /**
-     * Update keterangan penerima disposisi oleh user tujuan
-     */
-    public function updateKeteranganPenerima(Request $request, $id)
-    {
-        \Log::debug('updateKeteranganPenerima - Mulai', [
-            'disposisi_id' => $id,
-            'user_id' => auth()->id(),
-            'request_all' => $request->all(),
-            'headers' => $request->headers->all(),
-            'ip' => $request->ip(),
-        ]);
-        try {
-            $userId = auth()->id();
-            $keterangan = $request->input('keterangan_penerima');
-            \Log::debug('updateKeteranganPenerima - Cek tujuan', [
-                'user_id' => $userId,
-                'disposisi_id' => $id,
-                'keterangan_penerima' => $keterangan
-            ]);
-            // Pastikan user adalah tujuan disposisi
-            $isTujuan = \DB::table('tbl_disposisi_user')
-                ->where('disposisi_id', $id)
-                ->where('user_id', $userId)
-                ->exists();
-            \Log::debug('updateKeteranganPenerima - isTujuan', [
-                'isTujuan' => $isTujuan
-            ]);
-            if (!$isTujuan) {
-                \Log::warning('updateKeteranganPenerima - User bukan tujuan disposisi', [
-                    'user_id' => $userId,
-                    'disposisi_id' => $id
-                ]);
-                return response()->json(['success' => false, 'message' => 'Anda bukan tujuan disposisi ini'], 403);
-            }
-            $affected = \DB::table('tbl_disposisi_user')
-                ->where('disposisi_id', $id)
-                ->where('user_id', $userId)
-                ->update(['keterangan_penerima' => $keterangan]);
-            \Log::info('updateKeteranganPenerima - Update keterangan_penerima', [
-                'affected_rows' => $affected,
-                'user_id' => $userId,
-                'disposisi_id' => $id,
-                'keterangan_penerima' => $keterangan
-            ]);
-            return response()->json(['success' => true, 'message' => 'Keterangan penerima berhasil disimpan']);
-        } catch (\Exception $e) {
-            \Log::error('updateKeteranganPenerima - Exception', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'user_id' => auth()->id(),
-                'disposisi_id' => $id,
-                'request_all' => $request->all()
-            ]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
-            ], 500);
-        }
-    }
+
 
     /**
      * Get tujuan disposisi along with available users for selection
@@ -619,13 +560,24 @@ class DisposisiController extends Controller
                 ->select('users.id', 'users.name', 'users.email', 'users.role')
                 ->get();
                 
-            // Get all available users including both staff (role 0) and admin (role 3)
+            // Get all available users based on role logic (matching tujuan-disposisi.blade.php)
+            $authUser = auth()->user();
             $availableUsers = User::where('status_akun', 'aktif')
-                ->whereIn('role', [1, 2, 4, 5, 6, 7, 8]) // Tambahkan role 2 (Direktur) dan role lain jika perlu
-                ->where('id', '!=', auth()->id()) // Exclude current user
-                ->select('id', 'name', 'email', 'role')
+                ->where('id', '!=', $authUser->id)
+                ->where(function($query) use ($authUser) {
+                    // Filter: Hanya tampilkan Manager (4), GM (6), dan Manager Keuangan (7)
+                    // Hapus Direktur (2, 8) dan Sekretaris (1, 5) sesuai request
+                    $query->whereIn('role', [4, 6, 7]);
+                })
+                ->select('id', 'name', 'email', 'role', 'organization_unit_id') 
+                ->with('organizationUnit')
                 ->orderBy('name')
-                ->get();
+                ->get()
+                ->map(function($user) {
+                    $user->unit_name = $user->organizationUnit ? $user->organizationUnit->name : '-';
+                    $user->role_name = $user->role_display_name;
+                    return $user;
+                });
                 
             // Set up pagination info
             $page = request()->input('page', 1);

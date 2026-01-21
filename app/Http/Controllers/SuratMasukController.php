@@ -121,25 +121,38 @@ class SuratMasukController extends Controller
                 'perusahaanData'
             ]);
             
-            // Filter untuk role 0 (staff) atau role 5 (Sekretaris ASP)
+            // Filter untuk role 0 (staff), 4 (manager), 5 (Sekretaris ASP), dll
             if ($request->has('user_id')) {
                 $userId = $request->user_id;
-                Log::info('Filtering surat for user_id: ' . $userId);
+                $user = \App\Models\User::find($userId);
+                $userOrgUnitId = $user ? $user->organization_unit_id : null;
+                
+                Log::info('Filtering surat for user_id: ' . $userId . ' OrgUnit: ' . $userOrgUnitId);
                 
                 // Jika include_created = true, tambahkan surat yang dibuat oleh user
                 if ($request->has('include_created') && $request->include_created === 'true') {
-                    $query->where(function($q) use ($userId) {
-                        // Surat yang ditujukan kepada user
-                        $q->whereHas('disposisi.tujuan', function($subq) use ($userId) {
-                            $subq->where('users.id', $userId);
+                    $query->where(function($q) use ($userId, $userOrgUnitId) {
+                        // Surat yang ditujukan kepada user (atau unitnya)
+                        $q->whereHas('disposisi.tujuan', function($subq) use ($userId, $userOrgUnitId) {
+                            if ($userOrgUnitId) {
+                                // Cek apakah ada target disposisi yang memiliki organization_unit_id yang sama
+                                $subq->where('users.organization_unit_id', $userOrgUnitId);
+                            } else {
+                                // Jika user tidak punya org unit, fallback ke specific user id
+                                $subq->where('users.id', $userId);
+                            }
                         });
                         // Atau surat yang dibuat oleh user
                         $q->orWhere('created_by', $userId);
                     });
                 } else {
-                    // Hanya surat yang ditujukan kepada user
-                    $query->whereHas('disposisi.tujuan', function($q) use ($userId) {
-                        $q->where('users.id', $userId);
+                    // Hanya surat yang ditujukan kepada user (atau unitnya)
+                    $query->whereHas('disposisi.tujuan', function($q) use ($userId, $userOrgUnitId) {
+                        if ($userOrgUnitId) {
+                            $q->where('users.organization_unit_id', $userOrgUnitId);
+                        } else {
+                            $q->where('users.id', $userId);
+                        }
                     });
                 }
             } 
@@ -192,20 +205,6 @@ class SuratMasukController extends Controller
             
             // Transform response agar ada perusahaanData (kode dan nama_perusahaan)
             $transformed = $suratMasuk->map(function($surat) {
-                $user = auth()->user();
-                $userAdalahPenerimaDisposisi = false;
-                $disposisiId = null;
-                $keteranganPenerima = null;
-                if ($surat->disposisi) {
-                    foreach ($surat->disposisi->tujuan as $tujuan) {
-                        if ($tujuan->id == $user->id) {
-                            $userAdalahPenerimaDisposisi = true;
-                            $disposisiId = $surat->disposisi->id;
-                            $keteranganPenerima = $tujuan->pivot->keterangan_penerima ?? null;
-                            break;
-                        }
-                    }
-                }
                 return [
                     'id' => $surat->id,
                     'nomor_surat' => $surat->nomor_surat,
@@ -223,10 +222,6 @@ class SuratMasukController extends Controller
                     'creator' => $surat->creator,
                     'disposisi' => $surat->disposisi,
                     'files' => $surat->files,
-                    // Tambahan untuk fitur keterangan penerima
-                    'user_adalah_penerima_disposisi' => $userAdalahPenerimaDisposisi,
-                    'disposisi_id' => $disposisiId,
-                    'keterangan_penerima' => $keteranganPenerima,
                 ];
             });
             

@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             IndependentManagerSeeder::class,
             ManagerKeuanganIndependenSeeder::class,
             ManagerITSeeder::class,
+            KomiteSeeder::class,
             
             // New permission system seeders
             PermissionSeeder::class,

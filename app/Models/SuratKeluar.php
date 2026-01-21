@@ -91,11 +91,14 @@ class SuratKeluar extends Model
                 // Sekretaris (Role 1): Melihat semua surat
                 1 => fn($q) => $q->whereRaw('1=1'),
                 
+                // Sekretaris ASP (Role 5): Melihat semua surat (sama seperti Sekretaris)
+                5 => fn($q) => $q->whereRaw('1=1'),
+                
                 // Direktur (Role 2): Surat yang sudah disetujui Sekretaris
                 2 => fn($q) => $q->whereHas('disposisi', fn($d) => $d->where('status_sekretaris', 'approved')),
                 
-                // Direktur ASP (Role 8): Surat yang sudah disetujui Sekretaris ASP (asumsi)
-                8 => fn($q) => $q->whereHas('disposisi', fn($d) => $d->where('status_sekretaris_asp', 'approved')),
+                // Direktur ASP (Role 8): Surat yang sudah disetujui Sekretaris ASP
+                8 => fn($q) => $q->whereHas('disposisi', fn($d) => $d->where('status_sekretaris', 'approved')),
             ];
 
             // Default filter untuk Manager (4, 7, 6) dan Staff (0)
@@ -117,18 +120,10 @@ class SuratKeluar extends Model
 
     /**
      * Scope untuk Surat Keluar (Management)
+     * Semua user hanya melihat surat yang dibuat sendiri
      */
     public function scopeSuratKeluarForUser($query, $user)
     {
-        return $query->where(function($q) use ($user) {
-            $q->where('created_by', $user->id);
-
-            // Sekretaris (generate_nomor_surat) & Direktur (approve_disposisi) & Admin (manage_users) -> View All
-            if ($user->hasPermission('generate_nomor_surat') || 
-                $user->hasPermission('approve_disposisi') || 
-                $user->hasPermission('manage_users')) {
-                $q->orWhereRaw('1=1');
-            }
-        });
+        return $query->where('created_by', $user->id);
     }
 }

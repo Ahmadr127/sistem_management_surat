@@ -45,11 +45,11 @@
                         <h1 class="text-2xl font-semibold text-gray-800">Manajemen User</h1>
                         <p class="text-sm text-gray-500 mt-1">Kelola semua user dalam sistem</p>
                     </div>
-                    <button @click="openCreateModal()"
+                    <a href="{{ route('manageuser.create') }}"
                         class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 flex items-center gap-2">
                         <i class="ri-add-line"></i>
                         Tambah User
-                    </button>
+                    </a>
                 </div>
             </div>
 
@@ -176,10 +176,10 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div class="flex space-x-2">
-                                            <button @click="editUser(user)"
+                                            <a :href="`/manageuser/${user.id}/edit`"
                                                 class="text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
                                                 <i class="ri-edit-line"></i>
-                                            </button>
+                                            </a>
                                             <button @click="toggleUserStatus(user)"
                                                 :class="{
                                                     'text-green-600 hover:text-green-900': user.status_akun === 'nonaktif',
@@ -255,190 +255,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Modal -->
-        <div x-show="showModal" x-cloak x-transition:enter="transition ease-out duration-300"
-            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-            x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-            class="fixed inset-0 z-50 overflow-y-auto">
-            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
-                <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-                <div
-                    class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
-                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4"
-                                    x-text="formMode === 'create' ? 'Tambah User Baru' : 'Edit User'"></h3>
-                                <form @submit.prevent="formMode === 'create' ? createUser() : updateUser()">
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <!-- Name -->
-                                        <div class="col-span-2">
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">Nama</label>
-                                            <input type="text" x-model="formData.name" required
-                                                class="w-full px-4 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                        </div>
-
-                                        <!-- Username -->
-                                        <div class="col-span-2">
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
-                                            <input type="text" x-model="formData.username" required
-                                                class="w-full px-4 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                        </div>
-
-                                        <!-- Email -->
-                                        <div class="col-span-2">
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                                            <input type="email" x-model="formData.email"
-                                                class="w-full px-4 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                        </div>
-
-                                        <!-- Password -->
-                                        <div class="col-span-2">
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                                Password
-                                                <span x-show="formMode === 'edit'" class="text-sm text-gray-500">(Kosongkan jika tidak
-                                                    ingin mengubah)</span>
-                                            </label>
-                                            <input type="password" x-model="formData.password" :required="formMode === 'create'"
-                                                class="w-full px-4 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                        </div>
-
-                                        <!-- Role -->
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
-                                            <select x-model="formData.role" required
-                                                class="w-full px-4 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                                <option value="0">Staff</option>
-                                                <option value="4">Manager</option>
-                                                <option value="6">General Manager</option>
-                                                <option value="1">Sekretaris</option>
-                                                <option value="5">Sekretaris ASP</option>
-                                                <option value="2">Direktur</option>
-                                                <option value="7">Manager Keuangan</option>
-                                                <option value="8">Direktur ASP</option>
-                                                <option value="3">Admin</option>
-                                            </select>
-                                        </div>
-
-                                        <!-- Organization Unit -->
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">Unit Organisasi</label>
-                                            <div class="relative" x-data="{ open: false, search: '' }">
-                                                <button type="button" @click="open = !open"
-                                                    class="w-full px-4 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent flex justify-between items-center">
-                                                    <span x-text="getSelectedUnitName() || 'Pilih Unit Organisasi'"></span>
-                                                    <i class="ri-arrow-down-s-line" :class="{ 'rotate-180': open }"></i>
-                                                </button>
-                                                
-                                                <div x-show="open" @click.away="open = false" x-cloak
-                                                    class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
-                                                    <!-- Search Input -->
-                                                    <div class="p-2 border-b border-gray-200">
-                                                        <input type="text" x-model="search" placeholder="Cari unit..."
-                                                            class="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-                                                    </div>
-                                                    
-                                                    <!-- Unit List -->
-                                                    <div class="max-h-48 overflow-y-auto">
-                                                        <template x-for="unit in unitList.filter(u => u.name.toLowerCase().includes(search.toLowerCase()))" :key="unit.id">
-                                                            <button type="button" @click="selectUnit(unit); open = false"
-                                                                class="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-                                                                :class="{ 'bg-green-50 text-green-700': formData.organization_unit_id == unit.id }">
-                                                                <span x-text="unit.name"></span>
-                                                                <span class="text-xs text-gray-500 ml-2" x-text="'(' + unit.type.name + ')'"></span>
-                                                            </button>
-                                                        </template>
-                                                        
-                                                        <!-- No results message -->
-                                                        <div x-show="unitList.filter(u => u.name.toLowerCase().includes(search.toLowerCase())).length === 0" 
-                                                            class="px-4 py-2 text-sm text-gray-500 text-center">
-                                                            Tidak ada unit yang ditemukan
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Manager (hanya untuk staff) -->
-                                        <div x-show="formData.role == 0" class="col-span-2">
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">Manager</label>
-                                            <select x-model="formData.manager_id"
-                                                class="w-full px-4 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                                <option value="">Pilih Manager</option>
-                                                <template x-for="manager in managers" :key="manager.id">
-                                                    <option :value="manager.id" x-text="manager.name"></option>
-                                                </template>
-                                            </select>
-                                        </div>
-
-                                        <!-- General Manager (hanya untuk manager) -->
-                                        <div x-show="formData.role == 4" class="col-span-2">
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                                General Manager
-                                                <span class="text-sm text-gray-500">(Opsional - kosongkan jika manager independen)</span>
-                                            </label>
-                                            <select x-model="formData.general_manager_id"
-                                                class="w-full px-4 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                                <option value="">Pilih General Manager (Opsional)</option>
-                                                <template x-for="generalManager in generalManagers" :key="generalManager.id">
-                                                    <option :value="generalManager.id" x-text="generalManager.name"></option>
-                                                </template>
-                                            </select>
-                                        </div>
-
-                                        <!-- General Manager untuk Manager Keuangan -->
-                                        <div x-show="formData.role == 7" class="col-span-2">
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                                General Manager
-                                                <span class="text-sm text-gray-500">(Opsional - kosongkan jika manager keuangan independen)</span>
-                                            </label>
-                                            <select x-model="formData.general_manager_id"
-                                                class="w-full px-4 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                                <option value="">Pilih General Manager (Opsional)</option>
-                                                <template x-for="generalManager in generalManagers" :key="generalManager.id">
-                                                    <option :value="generalManager.id" x-text="generalManager.name"></option>
-                                                </template>
-                                            </select>
-                                        </div>
-
-                                        <!-- Status -->
-                                        <div class="col-span-2">
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">Status Akun</label>
-                                            <div class="flex gap-4">
-                                                <label class="inline-flex items-center">
-                                                    <input type="radio" x-model="formData.status_akun" value="aktif"
-                                                        class="form-radio text-green-600">
-                                                    <span class="ml-2">Aktif</span>
-                                                </label>
-                                                <label class="inline-flex items-center">
-                                                    <input type="radio" x-model="formData.status_akun" value="nonaktif"
-                                                        class="form-radio text-red-600">
-                                                    <span class="ml-2">Non-Aktif</span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="mt-6 flex justify-end space-x-3">
-                                        <button type="button" @click="closeModal()"
-                                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                            Batal
-                                        </button>
-                                        <button type="submit"
-                                            class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                            <span x-text="formMode === 'create' ? 'Tambah' : 'Update'"></span>
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 @endsection
 
@@ -447,35 +263,15 @@
         document.addEventListener('alpine:init', () => {
             Alpine.data('userManagement', () => ({
                 users: [],
-                unitList: [],
-                managers: @json($managers),
-                generalManagers: @json($generalManagers),
                 searchQuery: '',
                 roleFilter: '',
                 statusFilter: '',
-                showModal: false,
-                formMode: 'create',
-                formData: {
-                    id: null,
-                    name: '',
-                    username: '',
-                    email: '',
-                    password: '',
-                    role: 0, // Default to Staff
-                    organization_unit_id: '',
-                    manager_id: '',
-                    general_manager_id: '',
-                    status_akun: 'aktif'
-                },
                 currentPage: 1,
                 itemsPerPage: 10,
 
                 async init() {
                     console.log('Initializing userManagement...');
-                    await Promise.all([
-                        this.fetchUsers(),
-                        this.fetchUnits()
-                    ]);
+                    await this.fetchUsers();
                     this.$watch('searchQuery', () => { this.currentPage = 1; });
                     this.$watch('roleFilter', () => { this.currentPage = 1; });
                     this.$watch('statusFilter', () => { this.currentPage = 1; });
@@ -494,24 +290,6 @@
                     } catch (error) {
                         console.error('Error fetching users:', error);
                         this.showError('Gagal memuat data user.');
-                    }
-                },
-
-                async fetchUnits() {
-                    try {
-                        const response = await fetch('/api/organization-units/list', {
-                            method: 'GET',
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                            credentials: 'same-origin'
-                        });
-                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                        const result = await response.json();
-                        if (result.status === 'success') {
-                            this.unitList = result.data;
-                        }
-                    } catch (error) {
-                        console.error('Error fetching units:', error);
-                        this.showError('Gagal memuat data unit organisasi.');
                     }
                 },
 
@@ -534,88 +312,6 @@
                     return new Date(date).toLocaleDateString('id-ID', {
                         day: 'numeric', month: 'long', year: 'numeric'
                     });
-                },
-
-                openCreateModal() {
-                    console.log('Opening create modal...');
-                    this.formMode = 'create';
-                    this.resetForm();
-                    this.showModal = true;
-                    console.log('Modal should be visible:', this.showModal);
-                },
-
-                editUser(user) {
-                    console.log('Opening edit modal for user:', user);
-                    this.formMode = 'edit';
-                    this.formData = {
-                        id: user.id,
-                        name: user.name,
-                        username: user.username,
-                        email: user.email,
-                        password: '',
-                        role: user.role,
-                        organization_unit_id: user.organization_unit_id,
-                        manager_id: user.manager_id || '',
-                        general_manager_id: user.general_manager_id || '',
-                        status_akun: user.status_akun
-                    };
-                    this.showModal = true;
-                    console.log('Modal should be visible:', this.showModal);
-                },
-
-                resetForm() {
-                    this.formData = {
-                        id: null,
-                        name: '',
-                        username: '',
-                        email: '',
-                        password: '',
-                        role: 0,
-                        organization_unit_id: '',
-                        manager_id: '',
-                        general_manager_id: '',
-                        status_akun: 'aktif'
-                    };
-                },
-
-                async submitForm(url, method) {
-                    try {
-                        const response = await fetch(url, {
-                            method: method,
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                            },
-                            body: JSON.stringify(this.formData)
-                        });
-
-                        const result = await response.json();
-
-                        if (response.ok && result.status === 'success') {
-                            this.showModal = false;
-                            this.fetchUsers();
-                            this.showSuccess(result.message);
-                        } else {
-                            // Handle validation errors or other server errors
-                            let errorMessage = result.message || 'Terjadi kesalahan.';
-                            if(result.errors) {
-                                errorMessage = Object.values(result.errors).flat().join(' ');
-                            }
-                            this.showError(errorMessage);
-                        }
-                    } catch (error) {
-                        console.error('Error submitting form:', error);
-                        this.showError('Gagal mengirim data ke server.');
-                    }
-                },
-
-                createUser() {
-                    this.submitForm('/api/users', 'POST');
-                },
-
-                updateUser() {
-                    this.submitForm(`/api/users/${this.formData.id}`, 'PUT');
                 },
                 
                 confirmDelete(user) {
@@ -727,17 +423,6 @@
                 changePage(page) {
                     if (page < 1 || page > this.totalPages) return;
                     this.currentPage = page;
-                },
-                closeModal() {
-                    this.showModal = false;
-                    this.resetForm();
-                },
-                getSelectedUnitName() {
-                    const selectedUnit = this.unitList.find(u => u.id === this.formData.organization_unit_id);
-                    return selectedUnit ? selectedUnit.name : null;
-                },
-                selectUnit(unit) {
-                    this.formData.organization_unit_id = unit.id;
                 }
             }));
         });

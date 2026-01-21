@@ -23,11 +23,12 @@ class SuratKeluarController extends Controller
     {
         try {
             // Ambil data surat keluar dengan eager loading disposisi dan tujuan disposisi
+            // Filter hanya surat yang dibuat oleh user yang sedang login
             $query = SuratKeluar::with([
                 'disposisi.tujuan',
                 'creator.organizationUnit',
                 'perusahaanData'
-            ]);
+            ])->suratKeluarForUser(auth()->user());
 
             // Search filter
         if ($request->has('search') && $request->search) {
@@ -83,8 +84,9 @@ class SuratKeluarController extends Controller
                                      ->orderBy('nama_perusahaan')
                                      ->get();
 
-            // Prepare surat options for searchable dropdown
+            // Prepare surat options for searchable dropdown - juga filter by user
             $suratOptions = SuratKeluar::with(['perusahaanData'])
+                                       ->suratKeluarForUser(auth()->user())
                                        ->orderBy('tanggal_surat', 'desc')
                                        ->get()
                                        ->map(function($surat) {
@@ -963,6 +965,14 @@ class SuratKeluarController extends Controller
                 'perusahaanData',
                 'files'
             ])
+            ->where(function($query) {
+                $user = auth()->user();
+                // Show letters created by user OR letters received by user (surat masuk)
+                $query->where('created_by', $user->id)
+                      ->orWhere(function($q) use ($user) {
+                          $q->forSuratMasuk($user);
+                      });
+            })
             ->orderBy('tanggal_surat', 'desc')
             ->get();
             

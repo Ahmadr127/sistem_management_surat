@@ -25,72 +25,37 @@
             <!-- Hidden input untuk pengirim_id - selalu gunakan user yang login -->
             <input type="hidden" name="pengirim_id" id="pengirim_id" value="{{ auth()->id() }}">
 
-            <!-- Toggle untuk Sekretaris sebagai Dirut -->
-            @if (auth()->user()->role === 1)
-                <div class="mb-6 bg-indigo-50 p-4 rounded-lg border border-indigo-100">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <i class="ri-user-settings-line text-indigo-600 text-lg mr-2"></i>
-                            <div>
-                                <h4 class="text-sm font-medium text-indigo-800">Opsi Pengirim</h4>
-                                <p class="text-xs text-indigo-600 mt-0.5">Anda dapat membuat surat atas nama direktur</p>
-                            </div>
-                        </div>
-                        <label class="flex items-center cursor-pointer">
-                            <div class="relative">
-                                <input type="checkbox" id="toggle-as-dirut" name="as_dirut" class="sr-only">
-                                <div class="block bg-gray-200 w-10 h-5 rounded-full"></div>
-                                <div class="dot absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition"></div>
-                            </div>
-                            <span class="ml-2 text-sm font-medium text-indigo-800">Kirim sebagai Direktur</span>
-                        </label>
+            <!-- Opsi Pengirim (Toggle) -->
+            @if (auth()->user()->role === 1 || auth()->user()->role === 5)
+                <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-wrap items-center gap-6">
+                    <div class="flex items-center text-gray-700 font-medium">
+                        <i class="ri-user-settings-line text-lg mr-2"></i>
+                        <span>Opsi Pengirim:</span>
                     </div>
-                </div>
-            @endif
 
-            <!-- Toggle untuk Sekretaris ASP sebagai Direktur -->
-            @if (auth()->user()->role === 5)
-                <div class="mb-6 bg-indigo-50 p-4 rounded-lg border border-indigo-100">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <i class="ri-user-settings-line text-indigo-600 text-lg mr-2"></i>
-                            <div>
-                                <h4 class="text-sm font-medium text-indigo-800">Opsi Pengirim</h4>
-                                <p class="text-xs text-indigo-600 mt-0.5">Anda dapat membuat surat atas nama direktur</p>
-                            </div>
-                        </div>
-                        <label class="flex items-center cursor-pointer">
-                            <div class="relative">
-                                <input type="checkbox" id="toggle-as-dirut-asp" name="as_dirut" class="sr-only">
-                                <div class="block bg-gray-200 w-10 h-5 rounded-full"></div>
-                                <div class="dot absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition"></div>
-                            </div>
-                            <span class="ml-2 text-sm font-medium text-indigo-800">Kirim sebagai Direktur</span>
+                    @if (auth()->user()->role === 1)
+                        <!-- Toggle untuk Sekretaris -->
+                        <label class="inline-flex items-center cursor-pointer group">
+                            <input type="checkbox" id="toggle-as-dirut" name="as_dirut" class="sr-only peer">
+                            <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                            <span class="ms-3 text-sm font-medium text-gray-600 group-hover:text-gray-900 transition-colors">Kirim sebagai Direktur</span>
                         </label>
-                    </div>
-                </div>
-            @endif
+                    @endif
 
-            <!-- Toggle untuk Sekretaris ASP sebagai Manager Keuangan -->
-            @if (auth()->user()->role === 5)
-                <div class="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <i class="ri-user-settings-line text-blue-600 text-lg mr-2"></i>
-                            <div>
-                                <h4 class="text-sm font-medium text-blue-800">Opsi Pengirim</h4>
-                                <p class="text-xs text-blue-600 mt-0.5">Anda dapat membuat surat atas nama manager keuangan</p>
-                            </div>
-                        </div>
-                        <label class="flex items-center cursor-pointer">
-                            <div class="relative">
-                                <input type="checkbox" id="toggle-as-manager-keuangan" name="as_manager_keuangan" class="sr-only">
-                                <div class="block bg-gray-200 w-10 h-5 rounded-full"></div>
-                                <div class="dot absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition"></div>
-                            </div>
-                            <span class="ml-2 text-sm font-medium text-blue-800">Kirim sebagai Manager Keuangan</span>
+                    @if (auth()->user()->role === 5)
+                        <!-- Toggle untuk Sekretaris ASP -->
+                        <label class="inline-flex items-center cursor-pointer group">
+                            <input type="checkbox" id="toggle-as-dirut-asp" name="as_dirut" class="sr-only peer">
+                            <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                            <span class="ms-3 text-sm font-medium text-gray-600 group-hover:text-gray-900 transition-colors">Kirim sebagai Direktur</span>
                         </label>
-                    </div>
+
+                        <label class="inline-flex items-center cursor-pointer group">
+                            <input type="checkbox" id="toggle-as-manager-keuangan" name="as_manager_keuangan" class="sr-only peer">
+                            <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            <span class="ms-3 text-sm font-medium text-gray-600 group-hover:text-gray-900 transition-colors">Kirim sebagai Manager Keuangan</span>
+                        </label>
+                    @endif
                 </div>
             @endif
 
@@ -684,54 +649,107 @@
             }
         }
 
+        // Logic for Role 5 Toggles (Sekretaris ASP)
+        if (userRole === 5) {
+            const updateRole5Buttons = () => {
+                const isDirut = asDirutAspToggle?.checked;
+                const isKeuangan = asManagerKeuanganToggle?.checked;
+                
+                // Get fresh references to buttons inside the function to avoid ReferenceError
+                const btnAsp = document.getElementById('generateNomorAspBtn');
+                const btnDirut = document.getElementById('generateNomorDirutAspBtn');
+                const btnKeuangan = document.getElementById('generateNomorManagerKeuanganBtn');
+                
+                // Hide all generate buttons first
+                if (btnAsp) btnAsp.style.display = 'none';
+                if (btnDirut) btnDirut.style.display = 'none';
+                if (btnKeuangan) btnKeuangan.style.display = 'none';
+                
+                if (isDirut) {
+                    // Show Dirut button
+                    if (btnDirut) btnDirut.style.display = 'inline-flex';
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Mode Surat Direktur',
+                        text: 'Surat akan dikirim atas nama Direktur',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true
+                    });
+                } else if (isKeuangan) {
+                    // Show Keuangan button
+                    if (btnKeuangan) btnKeuangan.style.display = 'inline-flex';
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Mode Manager Keuangan',
+                        text: 'Surat akan dikirim atas nama Manager Keuangan',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true
+                    });
+                } else {
+                    // Default: Show ASP button
+                    if (btnAsp) btnAsp.style.display = 'inline-flex';
+                }
+            };
+
+            if (asDirutAspToggle) {
+                asDirutAspToggle.addEventListener('change', function() {
+                    // Mutual exclusion: Uncheck Keuangan if Dirut is checked
+                    if (this.checked && asManagerKeuanganToggle) {
+                        asManagerKeuanganToggle.checked = false;
+                    }
+                    updateRole5Buttons();
+                    // Reset nomor surat
+                    if (nomorSuratInput) nomorSuratInput.value = '';
+                });
+            }
+            
+            if (asManagerKeuanganToggle) {
+                asManagerKeuanganToggle.addEventListener('change', function() {
+                    // Mutual exclusion: Uncheck Dirut if Keuangan is checked
+                    if (this.checked && asDirutAspToggle) {
+                        asDirutAspToggle.checked = false;
+                    }
+                    updateRole5Buttons();
+                    // Reset nomor surat
+                    if (nomorSuratInput) nomorSuratInput.value = '';
+                });
+            }
+            
+            // Initial call to set correct state
+            // Use setTimeout to ensure DOM is fully ready if needed, though DOMContentLoaded handles it.
+            // But to be safe against the ReferenceError seen in logs:
+            setTimeout(updateRole5Buttons, 0);
+        }
+
+        // Logic for Role 1 Toggle (Sekretaris)
         if (asDirutToggle) {
             asDirutToggle.addEventListener('change', function() {
                 const isChecked = this.checked;
-                const dotElement = document.querySelector('.dot');
-                const tujuanDisposisiContainer = document.querySelector('#tujuan-selection-container')
-                    ?.closest('.space-y-2');
-
-                console.group('Toggle As Dirut State Change');
-                console.log('Toggle checked:', isChecked);
-
-                if (dotElement) {
-                    dotElement.classList.toggle('translate-x-5', isChecked);
+                
+                if (isChecked) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Mode Surat Direktur',
+                        text: 'Surat akan dikirim atas nama Direktur',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true
+                    });
                 }
-
-                // Visual feedback when toggled
-                const toggleContainer = this.closest('div.bg-indigo-50');
-                if (toggleContainer) {
-                    if (isChecked) {
-                        console.log('Toggle activated - Setting up for Direktur mode');
-
-                        toggleContainer.classList.remove('bg-indigo-50', 'border-indigo-100');
-                        toggleContainer.classList.add('bg-green-50', 'border-green-100');
-
-                                    // Tampilkan SweetAlert sukses
-                                    Swal.fire({
-                                        icon: 'success',
-                                        title: 'Mode Surat Direktur',
-                                        text: 'Surat akan dikirim atas nama direktur dan didisposisikan ke Direktur Utama',
-                                        toast: true,
-                                        position: 'top-end',
-                                        showConfirmButton: false,
-                                        timer: 3000,
-                                        timerProgressBar: true
-                                    });
-                    } else {
-                        console.log('Toggle deactivated - Reverting to normal mode');
-
-                        toggleContainer.classList.remove('bg-green-50', 'border-green-100');
-                        toggleContainer.classList.add('bg-indigo-50', 'border-indigo-100');
-                    }
-                }
-                console.groupEnd();
 
                 // Reset dan generate ulang nomor surat saat toggle berubah
-                if (nomorSuratInput && nomorSuratInput.value) {
-                    // Reset nomor surat and generate again
+                if (nomorSuratInput) {
                     nomorSuratInput.value = '';
-                    generateNomorSurat();
                 }
             });
         }

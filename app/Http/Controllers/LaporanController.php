@@ -106,7 +106,8 @@ class LaporanController extends Controller
                 },
                 'disposisi.tujuan' => function($q) {
                     $q->select('users.id', 'users.name', 'organization_unit_id');
-                }
+                },
+                'creator'
             ])
             ->orderBy('tanggal_surat', 'desc');
         
@@ -230,7 +231,8 @@ class LaporanController extends Controller
                 },
                 'disposisi.tujuan' => function($q) {
                     $q->select('users.id', 'users.name', 'organization_unit_id');
-                }
+                },
+                'creator'
             ])
             ->whereHas('disposisi', function($q) use ($user) {
                 $q->whereHas('tujuan', function($sq) use ($user) {
@@ -316,7 +318,8 @@ class LaporanController extends Controller
                 },
                 'disposisi.tujuan' => function($q) {
                     $q->select('users.id', 'users.name', 'organization_unit_id');
-                }
+                },
+                'creator'
             ])
             ->orderBy('tanggal_surat', 'desc');
             
@@ -471,7 +474,8 @@ class LaporanController extends Controller
                 },
                 'disposisi.tujuan' => function($q) {
                     $q->select('users.id', 'users.name', 'organization_unit_id');
-                }
+                },
+                'creator'
             ])
             ->orderBy('tanggal_surat', 'desc');
             

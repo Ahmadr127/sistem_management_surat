@@ -179,7 +179,11 @@ class SuratUnitManager extends Model
 
     public function scopeByManager($query, $managerId)
     {
-        return $query->where('manager_id', $managerId);
+        $manager = \App\Models\User::find($managerId);
+        if ($manager && $manager->organization_unit_id) {
+            return $query->where('unit_id', $manager->organization_unit_id);
+        }
+        return $query->where('manager_id', $managerId); // Fallback
     }
 
     public function scopeByStatusManager($query, $status)

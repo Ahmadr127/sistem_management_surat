@@ -9,6 +9,7 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('images/logo.png') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     {{-- Sidebar CSS --}}
     <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
@@ -217,8 +218,8 @@
                         @endif
                         
                         @if(auth()->user()->hasPermission('approve_surat_unit'))
-                        <a href="{{ route('surat-unit-manager.approval') }}" 
-                           class="flex items-center px-3 py-2 text-green-100 rounded-lg hover:bg-green-800 hover:text-white transition-colors text-sm {{ request()->is('surat-unit-manager/manager*') || request()->is('surat-unit-manager/sekretaris*') || request()->is('surat-unit-manager/dirut*') || request()->is('surat-unit-manager/manager-keuangan*') ? 'bg-green-800 text-white' : '' }}"
+                        <a href="{{ route('surat-unit-manager.approval.index') }}" 
+                           class="flex items-center px-3 py-2 text-green-100 rounded-lg hover:bg-green-800 hover:text-white transition-colors text-sm {{ request()->is('surat-unit-manager/approval*') ? 'bg-green-800 text-white' : '' }}"
                            title="Persetujuan Surat">
                             <i class="fas fa-check-circle w-4 mr-2"></i>
                             <span class="sidebar-text">Persetujuan Surat</span>
