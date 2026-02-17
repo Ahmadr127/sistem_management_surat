@@ -73,7 +73,7 @@ Route::middleware(['auth', 'checkRole:0,1,2,3,4,5,7,8'])->group(function () {
         Route::get('/', [SuratKeluarController::class, 'index'])->name('index');
         Route::get('/create', [SuratKeluarController::class, 'create'])->name('create');
         Route::post('/', [SuratKeluarController::class, 'store'])->name('store');
-        Route::get('/get-last-number', [SuratKeluarController::class, 'getLastNumber'])->name('getLastNumber');
+
         Route::get('/{suratKeluar}/file/{fileId}/view', [SuratKeluarController::class, 'viewFile'])->name('file.view');
         Route::get('/{suratKeluar}/file/{fileId}/download', [SuratKeluarController::class, 'downloadFile'])->name('file.download');
         Route::get('/{suratKeluar}', [SuratKeluarController::class, 'show'])->name('show');
