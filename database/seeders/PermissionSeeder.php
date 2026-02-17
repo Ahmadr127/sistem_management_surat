@@ -39,6 +39,7 @@ class PermissionSeeder extends Seeder
             // Disposisi
             ['name' => 'manage_disposisi', 'display_name' => 'Kelola Disposisi', 'description' => 'Dapat mengelola disposisi'],
             ['name' => 'approve_disposisi', 'display_name' => 'Approve Disposisi', 'description' => 'Dapat menyetujui disposisi'],
+            ['name' => 'manage_disposisi_assignments', 'display_name' => 'Kelola Aturan Disposisi', 'description' => 'Dapat mengelola aturan disposisi'],
 
             // Approval
             ['name' => 'approve_surat_unit', 'display_name' => 'Approve Surat Unit', 'description' => 'Dapat menyetujui surat unit manager'],

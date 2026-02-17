@@ -104,7 +104,7 @@
                         </a>
                         @endif
                         
-                        @if(auth()->user()->role === 3)
+                        @if(auth()->user()->hasPermission('manage_disposisi_assignments'))
                         <a href="{{ route('disposisi-assignments.index') }}" 
                            class="flex items-center px-3 py-2 text-green-100 rounded-lg hover:bg-green-800 hover:text-white transition-colors text-sm {{ request()->routeIs('disposisi-assignments.*') ? 'bg-green-800 text-white' : '' }}"
                            title="Aturan Disposisi">
