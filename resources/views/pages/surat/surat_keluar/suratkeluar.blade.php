@@ -151,7 +151,7 @@
                         </div>
 
                         <!-- Jenis Surat -->
-                        @if (auth()->user()->role === 0 || auth()->user()->role === 3 || auth()->user()->role === 4)
+                        @if (auth()->user()->role === 0 || auth()->user()->role === 3 || auth()->user()->role === 4 || auth()->user()->role === 6 || auth()->user()->role === 7)
                             <input type="hidden" name="jenis_surat" id="jenis_surat" value="internal">
                         @elseif (auth()->user()->role === 1 || auth()->user()->role === 5 || auth()->user()->role === 8)
                             <div class="space-y-2">
@@ -529,7 +529,7 @@
                     } else {
                         perusahaanHidden.value = '';
                     }
-                } else if (userRole === 0 || userRole === 3 || userRole === 4) { // Staff/unit, Admin, atau Manager
+                } else if (userRole === 0 || userRole === 3 || userRole === 4 || userRole === 6 || userRole === 7) { // Staff/unit, Admin, Manager, GM, Manager Keuangan
                     if (this.value === 'internal') {
                         if (generateNomorBtn) {
                             generateNomorBtn.style.display = 'inline-flex';

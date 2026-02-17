@@ -125,10 +125,7 @@
                                 <tr class="hover:bg-gray-50 transition-colors duration-150">
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-10 w-10">
-                                                <img class="h-10 w-10 rounded-full object-cover" :src="user.foto_url" :alt="user.name">
-                                            </div>
-                                            <div class="ml-4">
+                                            <div>
                                                 <div class="text-sm font-medium text-gray-900" x-text="user.name"></div>
                                                 <div class="text-sm text-gray-500" x-text="formatDate(user.created_at)"></div>
                                             </div>
