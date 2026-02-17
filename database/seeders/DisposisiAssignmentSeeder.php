@@ -43,15 +43,17 @@ class DisposisiAssignmentSeeder extends Seeder
             }
         }
 
-        // 2. Define Rules by User (Example: Budi Manager IT)
-        // Find a user to act as "Budi Manager IT" or create one if not exists for demo
-        $user = User::where('email', 'manager_it@admin.com')->first();
+        // 2. Define Rules by User (Budi Manager IT from ManagerITSeeder)
+        $user = User::where('email', 'manager.it@example.com')->first();
         
         if ($user) {
             // User Budi -> Direktur, Manager, General Manager, Manager Keuangan, Direktur ASP
             // Target IDs: 2, 4, 6, 7, 8
             $userTargets = [2, 4, 6, 7, 8];
             
+            // Clear existing specific rules for this user to avoid duplicates if re-seeding
+            DB::table('disposisi_assignments')->where('source_user_id', $user->id)->delete();
+
             foreach ($userTargets as $targetRole) {
                 DB::table('disposisi_assignments')->insert([
                     'source_role' => null, // User specific
@@ -64,7 +66,7 @@ class DisposisiAssignmentSeeder extends Seeder
             
             $this->command->info("✓ User-specific rules created for {$user->name} (ID: {$user->id})");
         } else {
-            $this->command->warn("! User 'manager_it@admin.com' not found. Skipping user-specific rules.");
+             $this->command->warn("! User 'manager.it@example.com' not found. Please run 'php artisan db:seed --class=ManagerITSeeder' first.");
         }
 
         $this->command->info('✓ Disposisi Assignments seeded successfully!');
