@@ -26,7 +26,7 @@
             <input type="hidden" name="pengirim_id" id="pengirim_id" value="{{ auth()->id() }}">
 
             <!-- Opsi Pengirim (Toggle) -->
-            @if (auth()->user()->role === 1 || auth()->user()->role === 5)
+            @if (auth()->user()->role == 1 || auth()->user()->role == 5)
                 <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-wrap items-center gap-6">
                     <div class="flex items-center text-gray-700 font-medium">
                         <i class="ri-user-settings-line text-lg mr-2"></i>
@@ -75,14 +75,14 @@
                             <div class="flex justify-between items-center">
                                 <label class="text-sm font-semibold text-gray-800">Nomor Surat</label>
                                 <div class="relative flex gap-2">
-                                    @if (auth()->user()->role === 1)
+                                    @if (auth()->user()->role == 1)
                                         <!-- Untuk Sekretaris (role 1): hanya tampilkan Generate Nomor biasa -->
                                         <button type="button" id="generateNomorBtn"
                                             class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 group">
                                             <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
                                             Generate Nomor
                                         </button>
-                                    @elseif (auth()->user()->role === 5)
+                                    @elseif (auth()->user()->role == 5)
                                         <!-- Untuk Sekretaris ASP (role 5): tampilkan Generate Nomor ASP dan Manager Keuangan -->
                                         <button type="button" id="generateNomorAspBtn"
                                             class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 group">
@@ -99,14 +99,14 @@
                                             <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
                                             Generate Nomor Direktur
                                         </button>
-                                    @elseif (auth()->user()->role === 8)
+                                    @elseif (auth()->user()->role == 8)
                                         <!-- Untuk Direktur ASP (role 8): hanya tampilkan Generate Nomor ASP -->
                                         <button type="button" id="generateNomorAspBtn"
                                             class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 group">
                                             <i class="ri-refresh-line mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i>
                                             Generate Nomor ASP
                                         </button>
-                                    @elseif (auth()->user()->role === 0 || auth()->user()->role === 3 || auth()->user()->role === 4)
+                                    @elseif (auth()->user()->role == 0 || auth()->user()->role == 3 || auth()->user()->role == 4)
                                         <!-- Untuk Staff (role 0), Admin (role 3), atau Manager (role 4): tampilkan Generate Nomor biasa -->
                                         <button type="button" id="generateNomorBtn"
                                             class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 group">
@@ -151,9 +151,9 @@
                         </div>
 
                         <!-- Jenis Surat -->
-                        @if (auth()->user()->role === 0 || auth()->user()->role === 3 || auth()->user()->role === 4 || auth()->user()->role === 6 || auth()->user()->role === 7)
+                        @if (auth()->user()->role == 0 || auth()->user()->role == 3 || auth()->user()->role == 4 || auth()->user()->role == 6 || auth()->user()->role == 7)
                             <input type="hidden" name="jenis_surat" id="jenis_surat" value="internal">
-                        @elseif (auth()->user()->role === 1 || auth()->user()->role === 5 || auth()->user()->role === 8)
+                        @elseif (auth()->user()->role == 1 || auth()->user()->role == 5 || auth()->user()->role == 8)
                             <div class="space-y-2">
                                 <label class="text-sm font-semibold text-gray-800">Jenis Surat</label>
                                 <div class="relative">
@@ -294,7 +294,7 @@
                     @endif
                     
                     <!-- Hidden input untuk status default Direktur ASP -->
-                    @if (auth()->user()->role === 8)
+                    @if (auth()->user()->role == 8)
                         <input type="hidden" name="status_sekretaris_default" value="approved">
                     @endif
                     
