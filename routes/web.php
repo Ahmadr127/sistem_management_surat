@@ -201,6 +201,14 @@ Route::middleware(['auth', 'checkRole:3'])->group(function () {
         ->name('organization-units.add-member');
     Route::delete('organization-units/{organizationUnit}/remove-member/{user}', [App\Http\Controllers\OrganizationUnitController::class, 'removeMember'])
         ->name('organization-units.remove-member');
+
+    // Disposisi Assignment Management - Custom Routes for Grouped Logic
+    Route::get('disposisi-assignments', [App\Http\Controllers\DisposisiAssignmentController::class, 'index'])->name('disposisi-assignments.index');
+    Route::get('disposisi-assignments/create', [App\Http\Controllers\DisposisiAssignmentController::class, 'create'])->name('disposisi-assignments.create');
+    Route::post('disposisi-assignments', [App\Http\Controllers\DisposisiAssignmentController::class, 'store'])->name('disposisi-assignments.store');
+    Route::get('disposisi-assignments/{source_role}/edit', [App\Http\Controllers\DisposisiAssignmentController::class, 'edit'])->name('disposisi-assignments.edit');
+    Route::put('disposisi-assignments/{source_role}', [App\Http\Controllers\DisposisiAssignmentController::class, 'update'])->name('disposisi-assignments.update');
+    Route::delete('disposisi-assignments/{source_role}', [App\Http\Controllers\DisposisiAssignmentController::class, 'destroy'])->name('disposisi-assignments.destroy');
 });
 
 // Route untuk admin, sekretaris, dan super admin

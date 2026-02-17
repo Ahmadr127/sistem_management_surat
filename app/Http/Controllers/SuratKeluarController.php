@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SuratKeluar;
 use App\Models\User;
 use App\Models\Disposisi;
+use App\Models\DisposisiAssignment;
 use App\Models\Perusahaan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -997,9 +998,40 @@ class SuratKeluarController extends Controller
     public function create()
     {
         try {
+            // Get allowed target roles for the current user's role or specific user
+            $userRole = auth()->user()->role;
+            $userId = auth()->id();
+
+            // 1. Check user specific rules
+            $allowedTargetRoles = \App\Models\DisposisiAssignment::where('source_user_id', $userId)
+                ->pluck('target_role')
+                ->toArray();
+            
+            // 2. If no user specific rules, check role based rules
+            if (empty($allowedTargetRoles)) {
+                $allowedTargetRoles = \App\Models\DisposisiAssignment::where('source_role', $userRole)
+                    ->pluck('target_role')
+                    ->toArray();
+            }
+            
+            // If no specific rules found, fallback to existing logic or show no users?
+            // Existing logic had specific hardcoded roles.
+            // If allowedTargetRoles is empty, maybe fallback to default if desired, otherwise empty.
+            // For now, if empty, it returns empty list unless we want to keep some defaults.
+            // However, the goal is to make it dynamic.
+            
+            if (empty($allowedTargetRoles)) {
+               // Optional: Fallback for roles that haven't been configured yet?
+               // But user wanted to replace hardcoded logic.
+               // Let's assume admin will configure it.
+               // However, to prevent broken UI during transition, I might want to merge with legacy hardcodes if table is empty?
+               // No, user wants dynamic blade. I should stick to the table.
+            }
+
             $users = User::with('organizationUnit')
                 ->where('status_akun', 'aktif')
                 ->where('id', '!=', auth()->id())
+                ->whereIn('role', $allowedTargetRoles)
                 ->get();
 
             // Get perusahaan data for dropdown

@@ -103,6 +103,15 @@
                         </a>
                         @endif
                         
+                        @if(auth()->user()->role === 3)
+                        <a href="{{ route('disposisi-assignments.index') }}" 
+                           class="flex items-center px-3 py-2 text-green-100 rounded-lg hover:bg-green-800 hover:text-white transition-colors text-sm {{ request()->routeIs('disposisi-assignments.*') ? 'bg-green-800 text-white' : '' }}"
+                           title="Aturan Disposisi">
+                            <i class="fas fa-exchange-alt w-4 mr-2"></i>
+                            <span class="sidebar-text">Aturan Disposisi</span>
+                        </a>
+                        @endif
+                        
                     </div>
                 </div>
                 @endif

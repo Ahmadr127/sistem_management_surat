@@ -65,84 +65,39 @@
             <!-- User List -->
             <div class="overflow-y-auto p-1 custom-scrollbar">
                 <div class="space-y-0.5" id="user-list-container">
-                    @php
-                        $allowedRolesAsp = [1, 2, 6, 7, 8];
-                        $authUser = auth()->user();
-                    @endphp
-                    
                     @foreach ($users as $user)
                         @php
-                            $shouldShow = ($authUser->role === 5 && in_array($user->role, $allowedRolesAsp)) || 
-                                          ($authUser->role !== 5 && in_array($user->role, [1,2,4,5,7,8]));
                             $jabatanName = $user->jabatan_name ?? 'Tidak ada jabatan';
                         @endphp
                         
-                        @if ($shouldShow)
-                            <div class="user-item flex items-center px-3 py-2 rounded-md cursor-pointer hover:bg-gray-50 transition-colors group"
-                                 :class="{'bg-green-50': selectedIds.includes({{ $user->id }})}"
-                                 @click="toggleUser('{{ $user->id }}', '{{ $user->name }}')"
-                                 data-name="{{ strtolower($user->name) }}"
-                                 data-jabatan="{{ strtolower($jabatanName) }}">
-                                
-                                <div class="flex items-center h-5">
-                                    <input type="checkbox" 
-                                           id="user-{{ $user->id }}" 
-                                           value="{{ $user->id }}"
-                                           name="tujuan_disposisi[]"
-                                           class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer"
-                                           :checked="selectedIds.includes({{ $user->id }})"
-                                           @click.stop="toggleUser('{{ $user->id }}', '{{ $user->name }}')">
-                                </div>
-                                <div class="ml-3 text-sm">
-                                    <label for="user-{{ $user->id }}" class="font-medium text-gray-700 group-hover:text-gray-900 cursor-pointer">
-                                        {{ $user->name }}
-                                    </label>
-                                    <span class="text-gray-500 text-xs block">{{ $jabatanName }}</span>
-                                </div>
-                                <div class="ml-auto" x-show="selectedIds.includes({{ $user->id }})">
-                                    <i class="ri-check-line text-green-600"></i>
-                                </div>
-                            </div>
-                        @endif
-                    @endforeach
-
-                    {{-- GM Logic --}}
-                    @php
-                        $gmUser = null;
-                        if ($authUser->role === 4 && $authUser->general_manager_id) {
-                            $gmUser = $users->first(function($u) use ($authUser) {
-                                return $u->role === 6 && $u->id == $authUser->general_manager_id;
-                            });
-                        }
-                    @endphp
-                    @if ($gmUser)
-                        @php $gmJabatanName = $gmUser->jabatan_name ?? 'General Manager'; @endphp
                         <div class="user-item flex items-center px-3 py-2 rounded-md cursor-pointer hover:bg-gray-50 transition-colors group"
-                             :class="{'bg-green-50': selectedIds.includes({{ $gmUser->id }})}"
-                             @click="toggleUser('{{ $gmUser->id }}', '{{ $gmUser->name }}')"
-                             data-name="{{ strtolower($gmUser->name) }}"
-                             data-jabatan="{{ strtolower($gmJabatanName) }}">
+                                :class="{'bg-green-50': selectedIds.includes({{ $user->id }})}"
+                                @click="toggleUser('{{ $user->id }}', '{{ $user->name }}')"
+                                data-name="{{ strtolower($user->name) }}"
+                                data-jabatan="{{ strtolower($jabatanName) }}">
                             
                             <div class="flex items-center h-5">
                                 <input type="checkbox" 
-                                       id="user-{{ $gmUser->id }}" 
-                                       value="{{ $gmUser->id }}"
-                                       name="tujuan_disposisi[]"
-                                       class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer"
-                                       :checked="selectedIds.includes({{ $gmUser->id }})"
-                                       @click.stop="toggleUser('{{ $gmUser->id }}', '{{ $gmUser->name }}')">
+                                        id="user-{{ $user->id }}" 
+                                        value="{{ $user->id }}"
+                                        name="tujuan_disposisi[]"
+                                        class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer"
+                                        :checked="selectedIds.includes({{ $user->id }})"
+                                        @click.stop="toggleUser('{{ $user->id }}', '{{ $user->name }}')">
                             </div>
                             <div class="ml-3 text-sm">
-                                <label for="user-{{ $gmUser->id }}" class="font-medium text-gray-700 group-hover:text-gray-900 cursor-pointer">
-                                    {{ $gmUser->name }}
+                                <label for="user-{{ $user->id }}" class="font-medium text-gray-700 group-hover:text-gray-900 cursor-pointer">
+                                    {{ $user->name }}
                                 </label>
-                                <span class="text-gray-500 text-xs block">{{ $gmJabatanName }}</span>
+                                <span class="text-gray-500 text-xs block">{{ $jabatanName }}</span>
                             </div>
-                            <div class="ml-auto" x-show="selectedIds.includes({{ $gmUser->id }})">
+                            <div class="ml-auto" x-show="selectedIds.includes({{ $user->id }})">
                                 <i class="ri-check-line text-green-600"></i>
                             </div>
                         </div>
-                    @endif
+                    @endforeach
+
+
 
                     <div x-show="filteredCount === 0" class="px-3 py-4 text-center text-gray-500 text-sm">
                         <i class="ri-user-unfollow-line text-2xl mb-1 block"></i>

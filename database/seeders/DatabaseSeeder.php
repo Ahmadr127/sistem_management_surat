@@ -34,6 +34,9 @@ class DatabaseSeeder extends Seeder
             
             // Update existing users with new role system
             UserRoleUpdateSeeder::class,
+            
+            // Disposisi Rules
+            DisposisiAssignmentSeeder::class,
         ]);
     }
 }
