@@ -404,7 +404,7 @@
                 `;
 
                 // Buat URL sesuai dengan role
-                let url = '/api/surat-masuk';
+                let url = '/ajax/surat-masuk';
                 const params = new URLSearchParams();
 
                 if (userRole === 0 || userRole === 3) { // Staff atau Admin

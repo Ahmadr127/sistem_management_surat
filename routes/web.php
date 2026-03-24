@@ -477,8 +477,8 @@ Route::middleware(['auth'])->prefix('api')->group(function () {
 // Routes untuk Surat Masuk
 Route::middleware(['auth'])->group(function () {
     Route::get('/suratmasuk', [SuratMasukController::class, 'index'])->name('suratmasuk.index');
-    Route::get('/api/surat-masuk', [SuratMasukController::class, 'getSuratMasuk'])->name('api.suratmasuk');
-    Route::post('/api/surat-masuk/{id}/read', [SuratMasukController::class, 'markAsRead']);
+    Route::get('/ajax/surat-masuk', [SuratMasukController::class, 'getSuratMasuk'])->name('ajax.suratmasuk');
+    Route::post('/ajax/surat-masuk/{id}/read', [SuratMasukController::class, 'markAsRead']);
 });
 
 // Tambahkan route API untuk surat masuk
