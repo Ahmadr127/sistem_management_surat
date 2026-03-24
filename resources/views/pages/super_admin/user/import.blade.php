@@ -1,6 +1,6 @@
-@extends('layouts.app')
+@extends('home')
 
-@section('title', 'Import Users')
+@section('title', 'Import Users - SISM Azra')
 
 @section('content')
 <div class="max-w-4xl mx-auto">
@@ -8,7 +8,7 @@
         <div class="p-6 bg-white border-b border-gray-200">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold text-gray-900">Import Users dari Excel</h2>
-                <a href="{{ route('users.index') }}" class="text-gray-600 hover:text-gray-900">
+                <a href="{{ route('manageuser.index') }}" class="text-gray-600 hover:text-gray-900">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
