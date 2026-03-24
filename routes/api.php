@@ -12,6 +12,15 @@ use App\Http\Controllers\Api\DisposisiApiController;
 |--------------------------------------------------------------------------
 */
 
+// Public Route for Diagnostics
+Route::get('/ping', function (Request $request) {
+    return response()->json([
+        'status' => 'ok',
+        'auth_header' => $request->header('Authorization'),
+        'bearer_token' => $request->bearerToken(),
+    ]);
+});
+
 // Public SSO Login Route
 Route::post('/sso/login-via-token', [SsoController::class, 'loginViaToken']);
 
