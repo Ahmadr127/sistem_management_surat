@@ -23,6 +23,7 @@ class SsoController extends Controller
 
         try {
             $response = Http::withToken($request->access_token)
+                ->acceptJson()
                 ->withoutVerifying()
                 ->get("{$ssoBaseUrl}/api/user");
 
