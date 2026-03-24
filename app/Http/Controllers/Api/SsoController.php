@@ -36,6 +36,7 @@ class SsoController extends Controller
             }
 
             $ssoUser = $response->json();
+            \Illuminate\Support\Facades\Log::debug('SSO User Response:', $ssoUser);
             $ssoUserData = $ssoUser['data'] ?? $ssoUser;
 
             if (empty($ssoUserData['nik'])) {
