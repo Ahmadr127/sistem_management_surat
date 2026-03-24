@@ -145,7 +145,7 @@
 
                 <!-- Submit Button -->
                 <div class="flex items-center justify-end space-x-3">
-                    <a href="{{ route('users.index') }}" 
+                    <a href="{{ route('manageuser.index') }}" 
                        class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg"
                        id="cancelBtn">
                         Batal
