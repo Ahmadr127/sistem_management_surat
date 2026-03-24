@@ -21,6 +21,22 @@ Route::get('/ping', function (Request $request) {
     ]);
 });
 
+Route::get('/verify-token', function (Request $request) {
+    $tokenString = $request->bearerToken();
+    if (!$tokenString) return response()->json(['error' => 'No bearer token provided']);
+    
+    $token = \Laravel\Sanctum\PersonalAccessToken::findToken($tokenString);
+    if (!$token) return response()->json(['error' => 'Token not found in DB! Hash mismatch or wrong database.']);
+    
+    return response()->json([
+        'token_id' => $token->id,
+        'token_name' => $token->name,
+        'tokenable_type' => $token->tokenable_type,
+        'tokenable_id' => $token->tokenable_id,
+        'user' => $token->tokenable,
+    ]);
+});
+
 // Public SSO Login Route
 Route::post('/sso/login-via-token', [SsoController::class, 'loginViaToken']);
 
