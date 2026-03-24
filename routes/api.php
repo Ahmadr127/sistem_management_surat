@@ -37,6 +37,20 @@ Route::get('/verify-token', function (Request $request) {
     ]);
 });
 
+Route::get('/verify-manual', function (Request $request) {
+    try {
+        $user = auth('sanctum')->authenticate();
+        return response()->json(['status' => 'auth_success', 'user' => $user]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'auth_failed',
+            'exception_class' => get_class($e),
+            'message' => $e->getMessage(),
+            'trace' => collect($e->getTrace())->map(fn($t) => ($t['file'] ?? '') . ':' . ($t['line'] ?? ''))->filter()->take(10)->values()
+        ]);
+    }
+});
+
 // Public SSO Login Route
 Route::post('/sso/login-via-token', [SsoController::class, 'loginViaToken']);
 
