@@ -55,7 +55,19 @@ Route::get('/verify-manual', function (Request $request) {
 Route::post('/sso/login-via-token', [SsoController::class, 'loginViaToken']);
 
 // Protected Mobile API Routes
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(function (Request $request, Closure $next) {
+    if (!auth('sanctum')->check()) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Unauthenticated.'
+        ], 401);
+    }
+    
+    // Set the default guard to sanctum for the rest of the request
+    auth()->shouldUse('sanctum');
+    
+    return $next($request);
+})->group(function () {
     
     // User Profile
     Route::get('/user', function (Request $request) {
