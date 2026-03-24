@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             // Organization structure seeders (MUST RUN FIRST)
             OrganizationTypeSeeder::class,
             OrganizationUnitSeeder::class,
+            OrganizationUsersSeeder::class,
 
             // New permission system seeders (MUST RUN BEFORE USERS)
             PermissionSeeder::class,

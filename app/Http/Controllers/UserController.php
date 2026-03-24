@@ -47,7 +47,7 @@ class UserController extends Controller
     public function getUsers()
     {
         $users = User::with(['organizationUnit', 'manager', 'generalManager'])
-            ->select('id', 'name', 'username', 'email', 'role', 'organization_unit_id', 'manager_id', 'general_manager_id', 'status_akun', 'foto_profile', 'created_at')
+            ->select('id', 'name', 'nik', 'username', 'email', 'role', 'organization_unit_id', 'manager_id', 'general_manager_id', 'status_akun', 'foto_profile', 'created_at')
             ->get()
             ->map(function ($user) {
                 $user->foto_url = $user->foto_url; // Ensure foto_url is included
@@ -62,6 +62,7 @@ class UserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'nik' => 'nullable|string|max:20|unique:users,nik',
             'username' => 'required|string|max:255|unique:users',
             'email' => 'nullable|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:3',
@@ -100,6 +101,7 @@ class UserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'nik' => 'nullable|string|max:20|unique:users,nik,' . $user->id,
             'username' => 'required|string|max:255|unique:users,username,' . $user->id,
             'email' => 'nullable|string|email|max:255|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:3',

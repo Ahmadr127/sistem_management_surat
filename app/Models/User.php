@@ -11,10 +11,12 @@ use Illuminate\Support\Facades\Auth;
 // Do NOT use SoftDeletes
 // use Illuminate\Database\Eloquent\SoftDeletes;
 
+use Laravel\Sanctum\HasApiTokens;
+
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
     // Do not use SoftDeletes
 
     /**
@@ -24,6 +26,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'nik',
         'username',
         'email',
         'password',

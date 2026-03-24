@@ -10,6 +10,8 @@ use App\Http\Controllers\DisposisiCommentController;
 use App\Http\Controllers\UserController;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use App\Http\Controllers\SuratMasukController;
 use App\Http\Controllers\PerusahaanController;
 use App\Http\Controllers\SuratUnitManagerController;
@@ -28,6 +30,88 @@ Route::middleware('guest')->group(function () {
     Route::get('login', [AuthController::class, 'index'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 });
+
+// SSO Routes
+Route::get('/auth/sso/redirect', function (\Illuminate\Http\Request $request) {
+    if (!env('SSO_CLIENT_ID')) {
+        return redirect('/login')->withErrors(['sso' => 'SSO is not configured.']);
+    }
+    
+    $state = Str::random(40);
+    $request->session()->put('sso_state', $state);
+
+    $query = http_build_query([
+        'client_id'     => env('SSO_CLIENT_ID'),
+        'redirect_uri'  => env('SSO_REDIRECT_URI'),
+        'response_type' => 'code',
+        'scope'         => '',
+        'state'         => $state,
+    ]);
+
+    return redirect(env('SSO_BASE_URL') . '/oauth/authorize?' . $query);
+})->middleware('web')->name('auth.sso.redirect');
+
+Route::get('/auth/sso/callback', function (\Illuminate\Http\Request $request) {
+    if ($request->state && session('sso_state')) {
+        abort_if($request->state !== session('sso_state'), 419, 'Invalid SSO state.');
+    }
+
+    $tokenResponse = Http::asForm()
+        ->withoutVerifying()
+        ->post(env('SSO_BASE_URL') . '/oauth/token', [
+            'grant_type'    => 'authorization_code',
+            'client_id'     => env('SSO_CLIENT_ID'),
+            'client_secret' => env('SSO_CLIENT_SECRET'),
+            'redirect_uri'  => env('SSO_REDIRECT_URI'),
+            'code'          => $request->code,
+        ]);
+
+    if (! $tokenResponse->successful()) {
+        $body = $tokenResponse->json();
+        $errDetail = $body['error_description'] ?? $body['error'] ?? 'Gagal berinteraksi dengan SSO.';
+        return redirect('/login')->withErrors(['sso' => $errDetail]);
+    }
+
+    $accessToken = $tokenResponse->json('access_token');
+
+    try {
+        $ssoUserResponse = Http::withToken($accessToken)
+            ->withoutVerifying()
+            ->get(env('SSO_BASE_URL') . '/api/user');
+        $ssoUser = $ssoUserResponse->json('data') ?? $ssoUserResponse->json();
+
+        if (empty($ssoUser['nik'])) {
+            return redirect('/login')->withErrors(['sso' => 'User SSO tidak memiliki NIK.']);
+        }
+    } catch (\Exception $e) {
+        return redirect('/login')->withErrors(['sso' => 'Koneksi ke SSO gagal: ' . $e->getMessage()]);
+    }
+
+    $localUser = User::where('nik', $ssoUser['nik'])->first();
+
+    if ($localUser) {
+        $localUser->update([
+            'name'     => $ssoUser['name'],
+            'email'    => $ssoUser['email'] ?? $localUser->email,
+            'username' => $ssoUser['username'] ?? $localUser->username,
+        ]);
+    } else {
+        $localUser = User::create([
+            'nik'      => $ssoUser['nik'],
+            'name'     => $ssoUser['name'],
+            'email'    => $ssoUser['email']    ?? ($ssoUser['username'] . '@rs-azra.co.id'),
+            'username' => $ssoUser['username'] ?? str_replace(' ', '.', strtolower($ssoUser['name'])),
+            'password' => bcrypt(Str::random(32)),
+            'role'     => 0, // Default to Staff
+            'status_akun' => 'aktif',
+        ]);
+    }
+
+    Auth::login($localUser, remember: true);
+    $request->session()->regenerate();
+
+    return redirect()->intended('/dashboard');
+})->middleware('web')->name('auth.sso.callback');
 
 // Route untuk semua user yang sudah login
 Route::middleware(['auth', 'checkUserStatus'])->group(function () {
@@ -181,6 +265,11 @@ Route::middleware(['auth', 'checkRole:3'])->group(function () {
     Route::get('/manageuser/create', [UserController::class, 'create'])->name('manageuser.create');
     Route::get('/manageuser/{user}/edit', [UserController::class, 'edit'])->name('manageuser.edit');
     
+    // Import Routes
+    Route::get('users-import', [\App\Http\Controllers\UserImportController::class, 'showImportForm'])->name('users.import');
+    Route::post('users-import', [\App\Http\Controllers\UserImportController::class, 'import'])->name('users.import.process');
+    Route::get('users-import/template', [\App\Http\Controllers\UserImportController::class, 'downloadTemplate'])->name('users.import.template');
+    
     
     // Permission Management
     Route::resource('permissions', App\Http\Controllers\PermissionController::class);
@@ -244,6 +333,15 @@ Route::middleware('auth')->prefix('api')->name('api.')->group(function () {
     
     // User routes untuk disposisi (tidak untuk management)
     Route::get('/users/disposisi', [UserController::class, 'getForDisposisi'])->name('users.disposisi');
+    
+    // User management API (for CRUD)
+    Route::middleware('checkRole:3')->group(function () {
+        Route::get('/users', [UserController::class, 'getUsers'])->name('users.index');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+        Route::post('/users/{id}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+    });
     
     // Route untuk users yang digunakan di disposisi (semua role)
     Route::get('/users/disposisi-list', function () {

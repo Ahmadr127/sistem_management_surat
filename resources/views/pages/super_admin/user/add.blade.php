@@ -33,6 +33,13 @@
                                 class="w-full px-4 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
                         </div>
 
+                        <!-- NIK -->
+                        <div class="col-span-2 md:col-span-1">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">NIK <span class="text-xs text-gray-500 font-normal">(Opsional)</span></label>
+                            <input type="text" x-model="formData.nik" placeholder="Masukkan NIK"
+                                class="w-full px-4 py-2.5 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                        </div>
+
                         <!-- Username -->
                         <div class="col-span-2 md:col-span-1">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Username <span class="text-red-500">*</span></label>
@@ -155,6 +162,7 @@
             Alpine.data('userForm', () => ({
                 formData: {
                     name: '',
+                    nik: '',
                     username: '',
                     email: '',
                     password: '',

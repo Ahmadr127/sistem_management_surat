@@ -102,6 +102,9 @@
                                 <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User
                                 </th>
                                 <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    NIK
+                                </th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Username
                                 </th>
                                 <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email
@@ -130,6 +133,9 @@
                                                 <div class="text-sm text-gray-500" x-text="formatDate(user.created_at)"></div>
                                             </div>
                                         </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-900" x-text="user.nik || '-'"></div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm text-gray-900" x-text="user.username"></div>
@@ -293,7 +299,9 @@
                 get filteredUsers() {
                     return this.users.filter(user => {
                         const matchSearch = user.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                            (user.email || '').toLowerCase().includes(this.searchQuery.toLowerCase());
+                            (user.email || '').toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                            (user.nik || '').toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                            user.username.toLowerCase().includes(this.searchQuery.toLowerCase());
                         const matchRole = this.roleFilter === '' || user.role == this.roleFilter;
                         const matchStatus = this.statusFilter === '' || user.status_akun === this.statusFilter;
                         return matchSearch && matchRole && matchStatus;

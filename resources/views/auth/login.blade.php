@@ -111,6 +111,18 @@
                     class="w-full py-3 md:py-4 bg-green-600 text-white text-base md:text-lg font-semibold rounded-xl hover:bg-green-700 transform hover:scale-[1.02] transition-all duration-300 shadow-lg">
                     Masuk
                 </button>
+
+                <div class="relative flex items-center justify-center my-4 md:my-6">
+                    <div class="flex-grow border-t border-gray-300"></div>
+                    <span class="flex-shrink mx-4 text-gray-400 text-sm">atau</span>
+                    <div class="flex-grow border-t border-gray-300"></div>
+                </div>
+
+                <a href="{{ route('auth.sso.redirect') }}"
+                    class="w-full flex items-center justify-center py-3 md:py-4 bg-blue-600 text-white text-sm md:text-base font-semibold rounded-xl hover:bg-blue-700 transform hover:scale-[1.02] transition-all duration-300 shadow-lg">
+                    <i class="fa fa-university mr-2"></i>
+                    Masuk dengan SSO Azra
+                </a>
             </form>
         </div>
     </div>
