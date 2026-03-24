@@ -22,10 +22,14 @@ class SsoController extends Controller
         $ssoBaseUrl = env('SSO_BASE_URL', 'http://localhost');
 
         try {
-            // Verify token with main-sso
             $response = Http::withToken($request->access_token)
                 ->withoutVerifying()
                 ->get("{$ssoBaseUrl}/api/user");
+
+            \Illuminate\Support\Facades\Log::debug('SSO API Raw Response:', [
+                'status' => $response->status(),
+                'body'   => $response->body(),
+            ]);
 
             if ($response->failed()) {
                 return response()->json([
