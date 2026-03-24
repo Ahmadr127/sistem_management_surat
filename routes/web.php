@@ -33,11 +33,18 @@ Route::middleware('guest')->group(function () {
 
 // SSO Routes
 Route::get('/auth/sso/redirect', function (\Illuminate\Http\Request $request) {
+    \Illuminate\Support\Facades\Log::debug('SSO Redirect hit', [
+        'base_url' => env('SSO_BASE_URL'),
+        'client_id' => env('SSO_CLIENT_ID'),
+        'redirect_uri' => env('SSO_REDIRECT_URI')
+    ]);
+
     if (!env('SSO_CLIENT_ID')) {
+        \Illuminate\Support\Facades\Log::error('SSO_CLIENT_ID missing in .env');
         return redirect('/login')->withErrors(['sso' => 'SSO is not configured.']);
     }
     
-    $state = Str::random(40);
+    $state = \Illuminate\Support\Str::random(40);
     $request->session()->put('sso_state', $state);
 
     $query = http_build_query([
@@ -48,17 +55,30 @@ Route::get('/auth/sso/redirect', function (\Illuminate\Http\Request $request) {
         'state'         => $state,
     ]);
 
-    return redirect(env('SSO_BASE_URL') . '/oauth/authorize?' . $query);
+    $url = env('SSO_BASE_URL') . '/oauth/authorize?' . $query;
+    \Illuminate\Support\Facades\Log::debug('Redirecting User to SSO', ['url' => $url]);
+    return redirect($url);
 })->middleware('web')->name('auth.sso.redirect');
 
 Route::get('/auth/sso/callback', function (\Illuminate\Http\Request $request) {
+    \Illuminate\Support\Facades\Log::debug('SSO Callback hit', $request->all());
+
     if ($request->state && session('sso_state')) {
-        abort_if($request->state !== session('sso_state'), 419, 'Invalid SSO state.');
+        if ($request->state !== session('sso_state')) {
+            \Illuminate\Support\Facades\Log::error('SSO State mismatch', [
+                'req' => $request->state,
+                'ses' => session('sso_state')
+            ]);
+            abort(419, 'Invalid SSO state.');
+        }
     }
 
-    $tokenResponse = Http::asForm()
+    $tokenUrl = env('SSO_BASE_URL') . '/oauth/token';
+    \Illuminate\Support\Facades\Log::debug('Exchanging code for access token', ['url' => $tokenUrl]);
+
+    $tokenResponse = \Illuminate\Support\Facades\Http::asForm()
         ->withoutVerifying()
-        ->post(env('SSO_BASE_URL') . '/oauth/token', [
+        ->post($tokenUrl, [
             'grant_type'    => 'authorization_code',
             'client_id'     => env('SSO_CLIENT_ID'),
             'client_secret' => env('SSO_CLIENT_SECRET'),
@@ -67,6 +87,10 @@ Route::get('/auth/sso/callback', function (\Illuminate\Http\Request $request) {
         ]);
 
     if (! $tokenResponse->successful()) {
+        \Illuminate\Support\Facades\Log::error('SSO Token Exchange Error', [
+            'status' => $tokenResponse->status(),
+            'body' => $tokenResponse->json()
+        ]);
         $body = $tokenResponse->json();
         $errDetail = $body['error_description'] ?? $body['error'] ?? 'Gagal berinteraksi dengan SSO.';
         return redirect('/login')->withErrors(['sso' => $errDetail]);
@@ -75,15 +99,29 @@ Route::get('/auth/sso/callback', function (\Illuminate\Http\Request $request) {
     $accessToken = $tokenResponse->json('access_token');
 
     try {
-        $ssoUserResponse = Http::withToken($accessToken)
+        $userUrl = env('SSO_BASE_URL') . '/api/user';
+        \Illuminate\Support\Facades\Log::debug('Fetching user data from SSO', ['url' => $userUrl]);
+        
+        $ssoUserResponse = \Illuminate\Support\Facades\Http::withToken($accessToken)
             ->withoutVerifying()
-            ->get(env('SSO_BASE_URL') . '/api/user');
+            ->get($userUrl);
+        
+        if (!$ssoUserResponse->successful()) {
+            \Illuminate\Support\Facades\Log::error('SSO User Fetch Error', [
+                'status' => $ssoUserResponse->status(),
+                'body' => $ssoUserResponse->json()
+            ]);
+            return redirect('/login')->withErrors(['sso' => 'Gagal mengambil data user.']);
+        }
+
         $ssoUser = $ssoUserResponse->json('data') ?? $ssoUserResponse->json();
+        \Illuminate\Support\Facades\Log::debug('User data retrieved', ['nik' => $ssoUser['nik'] ?? 'NONE']);
 
         if (empty($ssoUser['nik'])) {
             return redirect('/login')->withErrors(['sso' => 'User SSO tidak memiliki NIK.']);
         }
     } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error('SSO Exception: ' . $e->getMessage());
         return redirect('/login')->withErrors(['sso' => 'Koneksi ke SSO gagal: ' . $e->getMessage()]);
     }
 
@@ -96,13 +134,14 @@ Route::get('/auth/sso/callback', function (\Illuminate\Http\Request $request) {
             'username' => $ssoUser['username'] ?? $localUser->username,
         ]);
     } else {
+        \Illuminate\Support\Facades\Log::debug('Creating new local user from SSO data');
         $localUser = User::create([
             'nik'      => $ssoUser['nik'],
             'name'     => $ssoUser['name'],
             'email'    => $ssoUser['email']    ?? ($ssoUser['username'] . '@rs-azra.co.id'),
             'username' => $ssoUser['username'] ?? str_replace(' ', '.', strtolower($ssoUser['name'])),
-            'password' => bcrypt(Str::random(32)),
-            'role'     => 0, // Default to Staff
+            'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(32)),
+            'role'     => 0,
             'status_akun' => 'aktif',
         ]);
     }
@@ -112,6 +151,18 @@ Route::get('/auth/sso/callback', function (\Illuminate\Http\Request $request) {
 
     return redirect()->intended('/dashboard');
 })->middleware('web')->name('auth.sso.callback');
+
+// Route Debugging untuk Hosting
+Route::get('/debug-routes', function () {
+    $routes = collect(\Illuminate\Support\Facades\Route::getRoutes())->map(function ($route) {
+        return [
+            'method' => implode('|', $route->methods()),
+            'uri' => $route->uri(),
+            'name' => $route->getName(),
+        ];
+    });
+    return response()->json($routes);
+});
 
 // Route untuk semua user yang sudah login
 Route::middleware(['auth', 'checkUserStatus'])->group(function () {
