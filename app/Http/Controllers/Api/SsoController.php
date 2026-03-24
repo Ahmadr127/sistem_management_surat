@@ -36,10 +36,20 @@ class SsoController extends Controller
             }
 
             $ssoUser = $response->json();
-            \Illuminate\Support\Facades\Log::debug('SSO User Response:', $ssoUser);
+            \Illuminate\Support\Facades\Log::debug('SSO User Response:', $ssoUser ?? []);
+            
+            if (!$ssoUser) {
+                \Illuminate\Support\Facades\Log::error('SSO Response is empty or invalid JSON');
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Empty response from SSO server.',
+                ], 500);
+            }
+
             $ssoUserData = $ssoUser['data'] ?? $ssoUser;
 
             if (empty($ssoUserData['nik'])) {
+                \Illuminate\Support\Facades\Log::warning('SSO User Data missing NIK:', $ssoUserData);
                 return response()->json([
                     'status'  => 'error',
                     'message' => 'SSO user does not have a NIK. Cannot authenticate.',
