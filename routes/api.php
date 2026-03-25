@@ -39,7 +39,7 @@ Route::get('/verify-token', function (Request $request) {
 
 Route::get('/verify-manual', function (Request $request) {
     try {
-        $user = auth('sanctum')->authenticate();
+        $user = auth('api')->authenticate();
         return response()->json(['status' => 'auth_success', 'user' => $user]);
     } catch (\Exception $e) {
         return response()->json([

@@ -15,15 +15,15 @@ class ForceSanctumAuth
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!auth('sanctum')->check()) {
+        if (!auth('api')->check()) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Unauthenticated.'
             ], 401);
         }
         
-        // Set the default guard to sanctum for the rest of the request
-        auth()->shouldUse('sanctum');
+        // Set the default guard to api for the rest of the request
+        auth()->shouldUse('api');
         
         return $next($request);
     }

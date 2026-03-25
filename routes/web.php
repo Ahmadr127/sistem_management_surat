@@ -421,10 +421,6 @@ Route::middleware('auth')->prefix('api')->name('api.')->group(function () {
     // Laporan routes
     Route::get('/laporan', [LaporanController::class, 'getData'])->name('laporan');
     
-    // Surat Masuk routes
-    Route::get('/surat-masuk', [SuratMasukController::class, 'getSuratMasuk'])->name('suratmasuk');
-    Route::post('/surat-masuk/{id}/read', [SuratMasukController::class, 'markAsRead']);
-    
     // Get Direktur ID
     Route::get('/get-direktur-id', [SuratKeluarController::class, 'getDirekturId'])->name('get-direktur-id');
 });
