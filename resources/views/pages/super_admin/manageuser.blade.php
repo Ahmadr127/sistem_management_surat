@@ -106,52 +106,38 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User
-                                </th>
-                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    NIK
-                                </th>
-                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Username
-                                </th>
-                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email
-                                </th>
-                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role
-                                </th>
-                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Posisi</th>
-                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Manager</th>
-                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    General Manager</th>
-                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Status</th>
-                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi
-                                </th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Posisi</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Manager</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gen. Manager</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <template x-for="user in paginatedUsers" :key="user.id">
+                            <template x-for="(user, index) in paginatedUsers" :key="user.id">
                                 <tr class="hover:bg-gray-50 transition-colors duration-150">
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500 text-center" x-text="(currentPage - 1) * itemsPerPage + index + 1"></td>
+                                    <td class="px-3 py-3 whitespace-nowrap">
                                         <div class="flex items-center">
                                             <div>
                                                 <div class="text-sm font-medium text-gray-900" x-text="user.name"></div>
-                                                <div class="text-sm text-gray-500" x-text="formatDate(user.created_at)"></div>
+                                                <div class="text-xs text-gray-500" x-text="user.nik || '-'"></div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900" x-text="user.nik || '-'"></div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-3 py-3 whitespace-nowrap">
                                         <div class="text-sm text-gray-900" x-text="user.username"></div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-3 py-3 whitespace-nowrap">
                                         <div class="text-sm text-gray-900" x-text="user.email || '-'"></div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
+                                    <td class="px-3 py-3 whitespace-nowrap">
+                                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
                                             :class="{
                                                 'bg-purple-100 text-purple-800': user.role === 3,
                                                 'bg-blue-100 text-blue-800': user.role === 1,
@@ -166,17 +152,16 @@
                                             x-text="formatRole(user.role)">
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                        x-text="user.jabatan_name || '-'"></td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900" x-text="user.jabatan_name || '-'"></td>
+                                    <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
                                         <span x-text="user.manager ? user.manager.name : '-'"></span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
                                         <span x-text="user.general_manager ? user.general_manager.name : '-'"></span>
-                                        <span x-show="user.role == 4 && !user.general_manager" class="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">Independen</span>
+                                        <span x-show="user.role == 4 && !user.general_manager" class="ml-1 px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full">Independen</span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
+                                    <td class="px-3 py-3 whitespace-nowrap">
+                                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
                                             :class="{
                                                 'bg-green-100 text-green-800': user.status_akun === 'aktif',
                                                 'bg-red-100 text-red-800': user.status_akun === 'nonaktif'
@@ -184,7 +169,7 @@
                                             x-text="user.status_akun">
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <td class="px-3 py-3 whitespace-nowrap text-sm font-medium">
                                         <div class="flex space-x-2">
                                             <a :href="`/manageuser/${user.id}/edit`"
                                                 class="text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
@@ -244,11 +229,13 @@
                                     class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
                                     <i class="ri-arrow-left-s-line"></i>
                                 </button>
-                                <template x-for="page in totalPages" :key="page">
-                                    <button @click="changePage(page)"
+                                <template x-for="page in visiblePages" :key="page">
+                                    <button @click="page !== '...' ? changePage(page) : null"
+                                        :disabled="page === '...'"
                                         :class="{
                                             'bg-green-50 border-green-500 text-green-600': page === currentPage,
-                                            'bg-white border-gray-300 text-gray-500 hover:bg-gray-50': page !== currentPage
+                                            'bg-white border-gray-300 text-gray-500 hover:bg-gray-50': page !== currentPage && page !== '...',
+                                            'bg-white border-gray-100 text-gray-400 cursor-default': page === '...'
                                         }"
                                         class="relative inline-flex items-center px-4 py-2 border text-sm font-medium">
                                         <span x-text="page"></span>
@@ -420,6 +407,44 @@
                 // Pagination methods
                 get totalPages() {
                     return Math.ceil(this.filteredUsers.length / this.itemsPerPage) || 1;
+                },
+                get visiblePages() {
+                    let current = this.currentPage;
+                    let last = this.totalPages;
+                    let delta = 2;
+                    let left = current - delta;
+                    let right = current + delta + 1;
+                    let range = [];
+                    let rangeWithDots = [];
+                    let l;
+
+                    for (let i = 1; i <= last; i++) {
+                        if (i == 1 || i == last || i >= left && i < right) {
+                            range.push(i);
+                        }
+                    }
+
+                    for (let i of range) {
+                        if (l) {
+                            if (i - l === 2) {
+                                rangeWithDots.push(l + 1);
+                            } else if (i - l !== 1) {
+                                rangeWithDots.push('...');
+                            }
+                        }
+                        rangeWithDots.push(i);
+                        l = i;
+                    }
+
+                    // Tambahkan key unik pada titik-titik (contoh: '...1', '...2') agar x-for re-render dengan aman
+                    let dotsCount = 0;
+                    return rangeWithDots.map(i => {
+                        if (i === '...') {
+                            dotsCount++;
+                            return '...' + dotsCount;
+                        }
+                        return i;
+                    });
                 },
                 get paginatedUsers() {
                     const start = (this.currentPage - 1) * this.itemsPerPage;
