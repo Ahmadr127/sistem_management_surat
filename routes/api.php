@@ -55,7 +55,12 @@ Route::get('/verify-manual', function (Request $request) {
 Route::post('/sso/login-via-token', [SsoController::class, 'loginViaToken']);
 
 // Protected Mobile API Routes
-Route::middleware([\App\Http\Middleware\ForceSanctumAuth::class])->group(function () {
+Route::middleware([
+    \Illuminate\Cookie\Middleware\EncryptCookies::class,
+    \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+    \Illuminate\Session\Middleware\StartSession::class,
+    \App\Http\Middleware\ForceSanctumAuth::class,
+])->group(function () {
     
     // User Profile
     Route::get('/user', function (Request $request) {
