@@ -73,10 +73,16 @@ Route::middleware([\App\Http\Middleware\ForceSanctumAuth::class])->group(functio
     Route::post('/disposisi/{id}/keterangan', [DisposisiApiController::class, 'updateKeterangan']);
     Route::post('/disposisi/{id}/mark-as-read', [DisposisiApiController::class, 'markAsRead']);
 
-    // Fungsionalitas Disposisi oleh Manajerial (Direktur, Sekretaris)
+    // Fungsionalitas Disposisi oleh Manajerial (Mobile & Web Ajax)
+    Route::get('/disposisi/surat/{suratId}', [\App\Http\Controllers\DisposisiController::class, 'getDisposisiBySurat']);
     Route::get('/disposisi/{id}', [\App\Http\Controllers\DisposisiController::class, 'show']);
+    Route::post('/disposisi/store', [\App\Http\Controllers\DisposisiController::class, 'store']);
     Route::post('/disposisi/{id}/update', [\App\Http\Controllers\DisposisiController::class, 'update']);
+    Route::post('/disposisi/{id}/keterangan-penerima', [\App\Http\Controllers\DisposisiController::class, 'updateKeteranganPenerima']);
+    Route::post('/disposisi/{id}/keterangan-pengirim', [\App\Http\Controllers\DisposisiController::class, 'updateKeteranganPengirim']);
     Route::get('/disposisi/{id}/tujuan', [\App\Http\Controllers\DisposisiController::class, 'getTujuanDisposisiWithUsers']);
+    
+    // User list endpoint for Disposisi
     Route::get('/users/disposisi', [\App\Http\Controllers\UserController::class, 'getForDisposisi']);
 
 });

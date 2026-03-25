@@ -15,16 +15,21 @@ class ForceSanctumAuth
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!auth('api')->check()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthenticated.'
-            ], 401);
+        // Check for Mobile Bearer Token
+        if (auth('api')->check()) {
+            auth()->shouldUse('api');
+            return $next($request);
+        }
+
+        // Check for Web Session (Ajax from Alpine/Vue)
+        if (auth('web')->check()) {
+            auth()->shouldUse('web');
+            return $next($request);
         }
         
-        // Set the default guard to api for the rest of the request
-        auth()->shouldUse('api');
-        
-        return $next($request);
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Unauthenticated.'
+        ], 401);
     }
 }

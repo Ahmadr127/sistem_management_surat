@@ -376,14 +376,7 @@ Route::middleware('auth')->prefix('api')->name('api.')->group(function () {
     Route::get('/surat-keluar/by-format', [SuratKeluarController::class, 'getByFormat'])->name('suratkeluar.byformat');
     Route::get('/surat-keluar/{id}', [SuratKeluarController::class, 'getDetail'])->name('surat-keluar.detail');
     
-    // Disposisi routes - order matters for route resolution!
-    Route::get('/disposisi/surat/{suratId}', [DisposisiController::class, 'getDisposisiBySurat'])->name('disposisi.by-surat');
-    Route::get('/disposisi/{id}/tujuan', [DisposisiController::class, 'getTujuanDisposisi'])->name('disposisi.tujuan');
-    Route::get('/disposisi/{id}', [DisposisiController::class, 'show'])->name('disposisi.show');
-    Route::post('/disposisi/{id}/update', [DisposisiController::class, 'update'])->name('disposisi.update');
-    
-    // User routes untuk disposisi (tidak untuk management)
-    Route::get('/users/disposisi', [UserController::class, 'getForDisposisi'])->name('users.disposisi');
+    // Disposisi routes moved to routes/api.php
     
     // User management API (for CRUD)
     Route::middleware('checkRole:3')->group(function () {
@@ -454,21 +447,7 @@ Route::get('/suratkeluar/{suratKeluar}/preview', [SuratKeluarController::class, 
 // API untuk disposisi
 // Route::get('/api/disposisi/{disposisi}/tujuan', [DisposisiController::class, 'getTujuanDisposisi']);
 
-// API routes untuk disposisi (tambahkan role 2)
-Route::middleware(['auth'])->prefix('api')->group(function () {
-    Route::post('/disposisi/{id}/update', [DisposisiController::class, 'update'])->name('api.disposisi.update');
-    Route::get('/disposisi/{id}', [DisposisiController::class, 'show'])->name('api.disposisi.show');
-    // Removing duplicate route
-    // Route::get('/disposisi/{id}/tujuan', [DisposisiController::class, 'getTujuanDisposisi'])->name('api.disposisi.tujuan');
-    Route::get('/users/disposisi', [UserController::class, 'getForDisposisi'])->name('api.users.disposisi');
-    Route::get('/surat-keluar', [SuratKeluarController::class, 'getSuratKeluar'])->name('api.surat.index');
-});
-
-// API routes untuk disposisi
-Route::middleware(['auth'])->prefix('api')->group(function () {
-    // Tambahkan route yang mengembalikan available users dan tujuan yang sudah dipilih dalam satu endpoint
-    Route::get('/disposisi/{id}/tujuan', [DisposisiController::class, 'getTujuanDisposisiWithUsers'])->name('api.disposisi.tujuan.with-users');
-});
+// (API routes moved to routes/api.php)
 
 // Routes untuk Surat Masuk
 Route::middleware(['auth'])->group(function () {
@@ -485,8 +464,7 @@ Route::get('/api/surat-keluar', [SuratKeluarController::class, 'getSuratKeluar']
     ->name('api.suratkeluar')
     ->middleware(['auth']);
 
-// Tambahkan route untuk update disposisi
-Route::post('/api/disposisi/{id}/update', [DisposisiController::class, 'update'])->name('api.disposisi.update');
+// Route update disposisi moved to api.php
 
 // Add these routes for the reporting feature
 Route::middleware(['auth'])->group(function() {
@@ -503,8 +481,4 @@ Route::delete('/suratkeluar/{surat}/file/{file}', [App\Http\Controllers\SuratKel
 // Sekretaris (role 1, 5) -> surat-unit-manager.sekretaris.index  
 // Direktur (role 2, 8) -> surat-unit-manager.dirut.index
 // Manager Keuangan (role 7) -> surat-unit-manager.manager-keuangan.index
-
-
-Route::post('/api/disposisi/{id}/keterangan-pengirim', [App\Http\Controllers\DisposisiController::class, 'updateKeteranganPengirim'])->name('api.disposisi.keterangan-pengirim');
-
 
