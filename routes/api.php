@@ -73,6 +73,10 @@ Route::middleware([\App\Http\Middleware\ForceSanctumAuth::class])->group(functio
     Route::post('/disposisi/{id}/keterangan', [DisposisiApiController::class, 'updateKeterangan']);
     Route::post('/disposisi/{id}/mark-as-read', [DisposisiApiController::class, 'markAsRead']);
 
+    // Fungsionalitas Disposisi oleh Manajerial (Direktur, Sekretaris)
+    Route::get('/disposisi/{id}', [\App\Http\Controllers\DisposisiController::class, 'show']);
+    Route::post('/disposisi/{id}/update', [\App\Http\Controllers\DisposisiController::class, 'update']);
+    Route::get('/disposisi/{id}/tujuan', [\App\Http\Controllers\DisposisiController::class, 'getTujuanDisposisiWithUsers']);
+    Route::get('/users/disposisi', [\App\Http\Controllers\UserController::class, 'getForDisposisi']);
+
 });
-
-
