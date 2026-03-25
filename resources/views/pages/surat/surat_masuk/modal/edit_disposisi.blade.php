@@ -104,7 +104,7 @@
         </div>
 
         {{-- Tujuan Disposisi menggunakan searchable-dropdown --}}
-        <div id="tujuan-disposisi-section-masuk">
+        <div id="tujuan-disposisi-section-masuk" style="display: none;">
             <h4 class="text-md font-medium text-gray-800 mb-3">Tujuan Disposisi</h4>
             
             <div id="tujuan-disposisi-container-masuk">
@@ -153,6 +153,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.stopPropagation();
             });
         });
+        
+        // Listen to status_dirut change to show/hide tujuan disposisi
+        const statusDirutSelect = document.getElementById('status_dirut_masuk');
+        const tujuanSection = document.getElementById('tujuan-disposisi-section-masuk');
+        
+        if (statusDirutSelect && tujuanSection) {
+            statusDirutSelect.addEventListener('change', function() {
+                if (window.userRole !== 1 && window.userRole !== 5) {
+                    tujuanSection.style.display = (this.value === 'approved' || this.value === 'disetujui') ? 'block' : 'none';
+                }
+            });
+        }
     }
 });
 
@@ -208,14 +220,22 @@ async function loadDisposisiDataMasuk(suratId) {
             document.getElementById('status_dirut_masuk').value = disposisi.status_dirut || 'pending';
             document.getElementById('keterangan_dirut_masuk').value = disposisi.keterangan_dirut || '';
             
-            // Set waktu review
+            // Set waktu review (default ke waktu saat ini jika kosong)
+            const now = new Date();
+            const tzOffset = now.getTimezoneOffset() * 60000;
+            const localISOTime = new Date(now.getTime() - tzOffset).toISOString().slice(0, 16);
+
             if (disposisi.waktu_review_sekretaris) {
                 const waktuSekretaris = disposisi.waktu_review_sekretaris.replace(' ', 'T').substring(0, 16);
                 document.getElementById('waktu_review_sekretaris_masuk').value = waktuSekretaris;
+            } else {
+                document.getElementById('waktu_review_sekretaris_masuk').value = localISOTime;
             }
             if (disposisi.waktu_review_dirut) {
                 const waktuDirut = disposisi.waktu_review_dirut.replace(' ', 'T').substring(0, 16);
                 document.getElementById('waktu_review_dirut_masuk').value = waktuDirut;
+            } else {
+                document.getElementById('waktu_review_dirut_masuk').value = localISOTime;
             }
             
             // Show/hide sections based on role
@@ -231,7 +251,9 @@ async function loadDisposisiDataMasuk(suratId) {
             } else if (userRole === 2 || userRole === 8) { // Direktur & Direktur ASP
                 sekretarisSection.style.display = 'none';
                 direkturSection.style.display = 'block';
-                tujuanSection.style.display = 'block';
+                
+                const currentStatus = document.getElementById('status_dirut_masuk').value;
+                tujuanSection.style.display = (currentStatus === 'approved' || currentStatus === 'disetujui') ? 'block' : 'none';
                 
                 // Load tujuan disposisi only if disposisi exists
                 if (disposisi.id) {
@@ -244,7 +266,9 @@ async function loadDisposisiDataMasuk(suratId) {
             } else { // Admin or other roles
                 sekretarisSection.style.display = 'block';
                 direkturSection.style.display = 'block';
-                tujuanSection.style.display = 'block';
+                
+                const currentStatus = document.getElementById('status_dirut_masuk').value;
+                tujuanSection.style.display = (currentStatus === 'approved' || currentStatus === 'disetujui') ? 'block' : 'none';
                 
                 if (disposisi.id) {
                     loadTujuanDisposisiMasuk(disposisi.id);
