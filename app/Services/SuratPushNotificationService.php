@@ -65,4 +65,67 @@ class SuratPushNotificationService
 
         $this->notifyUsersByIds($userIds, $title, $body, $data);
     }
+
+    /**
+     * Disposisi baru: status sekretaris masih pending — kabari Sekretaris (role 1 & 5).
+     */
+    public function notifySekretarisPerluReview(Disposisi $disposisi): void
+    {
+        $users = $this->activeUsersByRoles([1, 5]);
+        if ($users->isEmpty()) {
+            return;
+        }
+
+        $disposisi->loadMissing('suratKeluar');
+        $surat = $disposisi->suratKeluar;
+        $perihal = $surat?->perihal ?? 'Surat masuk';
+        $title = 'Review disposisi';
+        $body = 'Disposisi menunggu persetujuan Anda: '.$perihal;
+
+        $data = [
+            'type' => 'surat_perlu_review_sekretaris',
+            'source' => 'sism',
+            'surat_id' => (string) ($disposisi->surat_keluar_id ?? ''),
+            'disposisi_id' => (string) $disposisi->id,
+        ];
+
+        $this->notifyUsers($users, $title, $body, $data);
+    }
+
+    /**
+     * Sekretaris sudah menyetujui — kabari Direktur (role 2 & 8) bahwa surat menunggu keputusan.
+     */
+    public function notifyDirekturSuratMenunggu(Disposisi $disposisi): void
+    {
+        $users = $this->activeUsersByRoles([2, 8]);
+        if ($users->isEmpty()) {
+            return;
+        }
+
+        $disposisi->loadMissing('suratKeluar');
+        $surat = $disposisi->suratKeluar;
+        $perihal = $surat?->perihal ?? 'Surat masuk';
+        $title = 'Surat menunggu direktur';
+        $body = 'Sekretaris telah menyetujui. Perlu keputusan Anda: '.$perihal;
+
+        $data = [
+            'type' => 'surat_menunggu_direktur',
+            'source' => 'sism',
+            'surat_id' => (string) ($disposisi->surat_keluar_id ?? ''),
+            'disposisi_id' => (string) $disposisi->id,
+        ];
+
+        $this->notifyUsers($users, $title, $body, $data);
+    }
+
+    /**
+     * @param  array<int>  $roles  Legacy role integers
+     */
+    protected function activeUsersByRoles(array $roles): Collection
+    {
+        return User::query()
+            ->whereIn('role', $roles)
+            ->where('status_akun', 'aktif')
+            ->get();
+    }
 }
