@@ -39,6 +39,27 @@ class SuratMasukApiController extends Controller
                   });
             });
         }
+
+        // Status disposisi (sama logika badge di mobile: pakai status_dirut jika terisi, else status_sekretaris)
+        $status = $request->get('status');
+        if (is_string($status) && $status !== '' && $status !== 'all') {
+            $allowed = ['pending', 'approved', 'rejected'];
+            if (in_array($status, $allowed, true)) {
+                $query->whereHas('disposisi', function ($q) use ($status) {
+                    $q->where(function ($q2) use ($status) {
+                        $q2->where(function ($q3) use ($status) {
+                            $q3->whereNotNull('status_dirut')
+                                ->where('status_dirut', '!=', '')
+                                ->where('status_dirut', $status);
+                        })->orWhere(function ($q3) use ($status) {
+                            $q3->where(function ($q4) {
+                                $q4->whereNull('status_dirut')->orWhere('status_dirut', '');
+                            })->where('status_sekretaris', $status);
+                        });
+                    });
+                });
+            }
+        }
         
         // Order by newest
         $suratMasuk = $query->latest('tanggal_surat')

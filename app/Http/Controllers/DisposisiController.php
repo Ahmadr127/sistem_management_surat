@@ -362,11 +362,10 @@ class DisposisiController extends Controller
             // Find the SuratKeluar first
             $suratKeluar = \App\Models\SuratKeluar::findOrFail($suratId);
             
-            // Get the disposisi with all related data
+            // Muat tujuan lengkap (tanpa select terbatas — select() pada belongsToMany
+            // sering membuat relasi kosong / tidak ter-serialize ke JSON).
             $disposisi = Disposisi::where('surat_keluar_id', $suratId)
-                ->with(['tujuan' => function($query) {
-                    $query->select('users.id', 'name', 'email');
-                }])
+                ->with(['tujuan'])
                 ->first();
             
             if (!$disposisi) {

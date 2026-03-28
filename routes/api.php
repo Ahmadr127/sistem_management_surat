@@ -102,5 +102,7 @@ Route::middleware([
     Route::post('/fcm-token', [FcmTokenController::class, 'store']);
     Route::delete('/fcm-token', [FcmTokenController::class, 'destroy']);
     Route::post('/test-notification', [FcmTokenController::class, 'testNotification']);
+    /** Alias semantik (sama dengan test-notification): uji kirim push FCM untuk user login. */
+    Route::post('/surat/ping-firebase', [FcmTokenController::class, 'testNotification']);
 
 });
