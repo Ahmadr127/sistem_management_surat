@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\SsoController;
 use App\Http\Controllers\Api\SuratMasukApiController;
 use App\Http\Controllers\Api\DisposisiApiController;
+use App\Http\Controllers\Api\FcmTokenController;
+use App\Http\Controllers\Api\NotificationApiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -89,5 +91,16 @@ Route::middleware([
     
     // User list endpoint for Disposisi
     Route::get('/users/disposisi', [\App\Http\Controllers\UserController::class, 'getForDisposisi']);
+
+    // Push notifications (mobile inbox + FCM)
+    Route::get('/notifications', [NotificationApiController::class, 'index']);
+    Route::patch('/notifications/{id}/read', [NotificationApiController::class, 'markAsRead']);
+    Route::put('/notifications/{id}/read', [NotificationApiController::class, 'markAsRead']);
+    Route::post('/notifications/read-all', [NotificationApiController::class, 'markAllAsRead']);
+    Route::post('/notifications/mark-all-read', [NotificationApiController::class, 'markAllAsRead']);
+
+    Route::post('/fcm-token', [FcmTokenController::class, 'store']);
+    Route::delete('/fcm-token', [FcmTokenController::class, 'destroy']);
+    Route::post('/test-notification', [FcmTokenController::class, 'testNotification']);
 
 });

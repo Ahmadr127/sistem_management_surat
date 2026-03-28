@@ -12,6 +12,7 @@ use App\Models\SuratMasuk;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Services\SuratPushNotificationService;
 
 class DisposisiController extends Controller
 {
@@ -76,6 +77,13 @@ class DisposisiController extends Controller
             $disposisi->tujuan()->attach($request->tujuan);
 
             DB::commit();
+
+            try {
+                app(SuratPushNotificationService::class)
+                    ->notifyDisposisiTujuan($disposisi, $request->tujuan);
+            } catch (\Throwable $e) {
+                \Log::warning('SuratPushNotificationService@store', ['e' => $e->getMessage()]);
+            }
             
             \Log::info('DisposisiController@store - Disposisi berhasil dibuat dengan ID: ' . $disposisi->id);
 
@@ -519,6 +527,20 @@ class DisposisiController extends Controller
                 $disposisi->save();
                 
                 DB::commit();
+
+                try {
+                    $u = auth()->user();
+                    if ($u && ($u->role == 2 || $u->role == 8) && $request->has('tujuan_disposisi')) {
+                        $raw = $request->input('tujuan_disposisi');
+                        $ids = is_array($raw) ? $raw : [$raw];
+                        $ids = array_values(array_filter(array_map('intval', $ids)));
+                        $disposisi->refresh();
+                        app(SuratPushNotificationService::class)
+                            ->notifyDisposisiTujuan($disposisi, $ids);
+                    }
+                } catch (\Throwable $e) {
+                    \Log::warning('SuratPushNotificationService@update', ['e' => $e->getMessage()]);
+                }
                 
                 return response()->json([
                     'success' => true,
