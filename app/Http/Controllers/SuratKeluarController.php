@@ -319,14 +319,14 @@ class SuratKeluarController extends Controller
                 // Send notifications if disposisi was created
                 if (isset($disposisi) && isset($tujuanIds) && !empty($tujuanIds)) {
                     try {
-                        $svc = app(SuratPushNotificationService::class);
+                        $excludedIds = [];
                         if ($disposisi->status_sekretaris === 'pending') {
-                            $svc->notifySekretarisPerluReview($disposisi);
+                            $excludedIds = $svc->notifySekretarisPerluReview($disposisi);
                         } elseif ($disposisi->status_sekretaris === 'approved' && $disposisi->status_dirut === 'pending') {
-                            $svc->notifyDirekturSuratMenunggu($disposisi);
+                            $excludedIds = $svc->notifyDirekturSuratMenunggu($disposisi);
                         }
-                        // Always notify targets
-                        $svc->notifyDisposisiTujuan($disposisi, (array) $tujuanIds);
+                        // Notify target users, excluding those already notified as reviewers
+                        $svc->notifyDisposisiTujuan($disposisi, (array) $tujuanIds, $excludedIds);
                     } catch (\Throwable $e) {
                         \Log::warning('SuratPushNotificationService@store', [
                             'message' => $e->getMessage(),
@@ -570,14 +570,15 @@ class SuratKeluarController extends Controller
                     // Refresh disposisi to get the latest state from DB
                     $disposisi->refresh();
                     
+                    $excludedIds = [];
                     if ($disposisi->status_sekretaris === 'pending') {
-                        $svc->notifySekretarisPerluReview($disposisi);
+                        $excludedIds = $svc->notifySekretarisPerluReview($disposisi);
                     } elseif ($disposisi->status_sekretaris === 'approved' && $disposisi->status_dirut === 'pending') {
-                        $svc->notifyDirekturSuratMenunggu($disposisi);
+                        $excludedIds = $svc->notifyDirekturSuratMenunggu($disposisi);
                     }
                     
-                    // Notify target users
-                    $svc->notifyDisposisiTujuan($disposisi, (array) $request->tujuan_disposisi);
+                    // Notify target users, excluding those already notified as reviewers
+                    $svc->notifyDisposisiTujuan($disposisi, (array) $request->tujuan_disposisi, $excludedIds);
                 } catch (\Throwable $e) {
                     \Log::warning('SuratPushNotificationService@update', [
                         'message' => $e->getMessage(),

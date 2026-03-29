@@ -10,6 +10,7 @@ use App\Models\UserDeviceToken;
 use App\Support\FcmTokenFormatter;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+
 class SuratPushNotificationService
 {
     /**
@@ -21,10 +22,10 @@ class SuratPushNotificationService
         $this->notifyUsers($users, $title, $body, $data);
     }
 
-    public function notifyUsers(Collection $users, string $title, string $body, array $data = []): void
+    public function notifyUsers(Collection $users, string $title, string $body, array $data = []): array
     {
         if ($users->isEmpty()) {
-            return;
+            return [];
         }
 
         foreach ($users as $user) {
@@ -67,10 +68,13 @@ class SuratPushNotificationService
                 'title' => $title,
             ]);
         }
+
+        return $userIds;
     }
 
-    public function notifyDisposisiTujuan(Disposisi $disposisi, array $userIds): void
+    public function notifyDisposisiTujuan(Disposisi $disposisi, array $userIds, array $excludeUserIds = []): void
     {
+        $userIds = array_diff($userIds, $excludeUserIds);
         if (empty($userIds)) {
             return;
         }
@@ -94,11 +98,11 @@ class SuratPushNotificationService
     /**
      * Disposisi baru: status sekretaris masih pending — kabari Sekretaris (role 1 & 5).
      */
-    public function notifySekretarisPerluReview(Disposisi $disposisi): void
+    public function notifySekretarisPerluReview(Disposisi $disposisi): array
     {
         $users = $this->activeUsersByRoles([1, 5]);
         if ($users->isEmpty()) {
-            return;
+            return [];
         }
 
         $disposisi->loadMissing('suratKeluar');
@@ -114,17 +118,17 @@ class SuratPushNotificationService
             'disposisi_id' => (string) $disposisi->id,
         ];
 
-        $this->notifyUsers($users, $title, $body, $data);
+        return $this->notifyUsers($users, $title, $body, $data);
     }
 
     /**
      * Sekretaris sudah menyetujui — kabari Direktur (role 2 & 8) bahwa surat menunggu keputusan.
      */
-    public function notifyDirekturSuratMenunggu(Disposisi $disposisi): void
+    public function notifyDirekturSuratMenunggu(Disposisi $disposisi): array
     {
         $users = $this->activeUsersByRoles([2, 8]);
         if ($users->isEmpty()) {
-            return;
+            return [];
         }
 
         $disposisi->loadMissing('suratKeluar');
@@ -140,7 +144,7 @@ class SuratPushNotificationService
             'disposisi_id' => (string) $disposisi->id,
         ];
 
-        $this->notifyUsers($users, $title, $body, $data);
+        return $this->notifyUsers($users, $title, $body, $data);
     }
 
     /**

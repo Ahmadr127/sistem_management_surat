@@ -80,12 +80,13 @@ class DisposisiController extends Controller
 
             try {
                 $svc = app(SuratPushNotificationService::class);
+                $excludedIds = [];
                 if ($disposisi->status_sekretaris === 'pending') {
-                    $svc->notifySekretarisPerluReview($disposisi);
+                    $excludedIds = $svc->notifySekretarisPerluReview($disposisi);
                 } elseif ($disposisi->status_sekretaris === 'approved' && $disposisi->status_dirut === 'pending') {
-                    $svc->notifyDirekturSuratMenunggu($disposisi);
+                    $excludedIds = $svc->notifyDirekturSuratMenunggu($disposisi);
                 }
-                $svc->notifyDisposisiTujuan($disposisi, $request->tujuan);
+                $svc->notifyDisposisiTujuan($disposisi, $request->tujuan, $excludedIds);
             } catch (\Throwable $e) {
                 \Log::warning('SuratPushNotificationService@store', ['e' => $e->getMessage()]);
             }
@@ -536,17 +537,18 @@ class DisposisiController extends Controller
                 try {
                     $svc = app(SuratPushNotificationService::class);
                     $u = auth()->user();
+                    $excludedIds = [];
                     if ($u && ($u->role == 1 || $u->role == 5)
                         && $prevSekretarisStatus !== 'approved'
                         && $disposisi->status_sekretaris === 'approved') {
-                        $svc->notifyDirekturSuratMenunggu($disposisi->fresh());
+                        $excludedIds = $svc->notifyDirekturSuratMenunggu($disposisi->fresh());
                     }
                     if ($u && ($u->role == 2 || $u->role == 8) && $request->has('tujuan_disposisi')) {
                         $raw = $request->input('tujuan_disposisi');
                         $ids = is_array($raw) ? $raw : [$raw];
                         $ids = array_values(array_filter(array_map('intval', $ids)));
                         $disposisi->refresh();
-                        $svc->notifyDisposisiTujuan($disposisi, $ids);
+                        $svc->notifyDisposisiTujuan($disposisi, $ids, $excludedIds);
                     }
                 } catch (\Throwable $e) {
                     \Log::warning('SuratPushNotificationService@update', ['e' => $e->getMessage()]);
