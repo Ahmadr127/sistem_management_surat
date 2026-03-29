@@ -319,6 +319,7 @@ class SuratKeluarController extends Controller
                 // Send notifications if disposisi was created
                 if (isset($disposisi) && isset($tujuanIds) && !empty($tujuanIds)) {
                     try {
+                        $svc = app(SuratPushNotificationService::class);
                         $excludedIds = [];
                         if ($disposisi->status_sekretaris === 'pending') {
                             $excludedIds = $svc->notifySekretarisPerluReview($disposisi);
