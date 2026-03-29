@@ -315,6 +315,25 @@ class SuratKeluarController extends Controller
                 // Commit transaction
             DB::commit();
 
+                // Send notifications if disposisi was created
+                if (isset($disposisi) && isset($tujuanIds) && !empty($tujuanIds)) {
+                    try {
+                        $svc = app(SuratPushNotificationService::class);
+                        if ($disposisi->status_sekretaris === 'pending') {
+                            $svc->notifySekretarisPerluReview($disposisi);
+                        } elseif ($disposisi->status_sekretaris === 'approved' && $disposisi->status_dirut === 'pending') {
+                            $svc->notifyDirekturSuratMenunggu($disposisi);
+                        }
+                        // Always notify targets
+                        $svc->notifyDisposisiTujuan($disposisi, (array) $tujuanIds);
+                    } catch (\Throwable $e) {
+                        \Log::warning('SuratPushNotificationService@store', [
+                            'message' => $e->getMessage(),
+                            'surat_id' => $suratKeluar->id
+                        ]);
+                    }
+                }
+
                 // Check if it's an AJAX request
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json([
@@ -542,6 +561,29 @@ class SuratKeluarController extends Controller
             }
             
             DB::commit();
+            
+            // Send notifications if disposisi was created or updated
+            if (isset($disposisi) && $request->has('tujuan_disposisi') && !empty($request->tujuan_disposisi)) {
+                try {
+                    $svc = app(SuratPushNotificationService::class);
+                    // Refresh disposisi to get the latest state from DB
+                    $disposisi->refresh();
+                    
+                    if ($disposisi->status_sekretaris === 'pending') {
+                        $svc->notifySekretarisPerluReview($disposisi);
+                    } elseif ($disposisi->status_sekretaris === 'approved' && $disposisi->status_dirut === 'pending') {
+                        $svc->notifyDirekturSuratMenunggu($disposisi);
+                    }
+                    
+                    // Notify target users
+                    $svc->notifyDisposisiTujuan($disposisi, (array) $request->tujuan_disposisi);
+                } catch (\Throwable $e) {
+                    \Log::warning('SuratPushNotificationService@update', [
+                        'message' => $e->getMessage(),
+                        'surat_id' => $suratKeluar->id
+                    ]);
+                }
+            }
             
             // Load the files relationship for the response
             $suratKeluar->load(['files', 'creator', 'disposisi.tujuan']);
@@ -998,9 +1040,15 @@ class SuratKeluarController extends Controller
     public function create()
     {
         try {
+            // Get user and check if authenticated to prevent "Attempt to read property 'role' on null"
+            $user = auth()->user();
+            if (!$user) {
+                return redirect()->route('login');
+            }
+            
             // Get allowed target roles for the current user's role or specific user
-            $userRole = auth()->user()->role;
-            $userId = auth()->id();
+            $userRole = $user->role;
+            $userId = $user->id;
 
             // 1. Check user specific rules
             $allowedTargetRoles = \App\Models\DisposisiAssignment::where('source_user_id', $userId)
