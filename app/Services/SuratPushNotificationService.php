@@ -7,7 +7,9 @@ use App\Models\Disposisi;
 use App\Models\PushNotification;
 use App\Models\User;
 use App\Models\UserDeviceToken;
+use App\Support\FcmTokenFormatter;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 class SuratPushNotificationService
 {
     /**
@@ -35,12 +37,35 @@ class SuratPushNotificationService
         }
 
         $userIds = $users->pluck('id')->toArray();
-        $tokens = UserDeviceToken::whereIn('user_id', $userIds)
-            ->pluck('device_token')
-            ->toArray();
+        $tokenRows = UserDeviceToken::whereIn('user_id', $userIds)->get();
+        $tokens = $tokenRows->pluck('device_token')->toArray();
 
         if (! empty($tokens)) {
+            $devicesMeta = $tokenRows->map(function (UserDeviceToken $row) {
+                $t = $row->device_token;
+
+                return [
+                    'token_id' => $row->id,
+                    'user_id' => $row->user_id,
+                    'device_type' => $row->device_type,
+                    'token_preview' => FcmTokenFormatter::preview($t),
+                    'sha256_prefix' => FcmTokenFormatter::sha256Prefix($t),
+                ];
+            })->values()->all();
+
+            Log::info('SuratPushNotification: dispatch SendFcmNotification', [
+                'user_ids' => $userIds,
+                'title' => $title,
+                'tokens_count' => count($tokens),
+                'devices' => $devicesMeta,
+            ]);
+
             SendFcmNotification::dispatch($tokens, $title, $body, $data);
+        } else {
+            Log::info('SuratPushNotification: tidak ada device token untuk user_ids', [
+                'user_ids' => $userIds,
+                'title' => $title,
+            ]);
         }
     }
 

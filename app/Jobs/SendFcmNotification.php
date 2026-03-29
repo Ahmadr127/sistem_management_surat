@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\UserDeviceToken;
 use App\Services\FirebaseService;
+use App\Support\FcmTokenFormatter;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -54,6 +55,18 @@ class SendFcmNotification implements ShouldQueue
 
             return;
         }
+
+        Log::info('SendFcmNotification: job mulai', [
+            'title' => $this->title,
+            'tokens_count' => count($this->tokens),
+            'tokens' => array_map(function (string $t) {
+                return [
+                    'preview' => FcmTokenFormatter::preview($t),
+                    'sha256_prefix' => FcmTokenFormatter::sha256Prefix($t),
+                    'length' => strlen($t),
+                ];
+            }, $this->tokens),
+        ]);
 
         try {
             $messaging = $firebaseService->getMessaging();
