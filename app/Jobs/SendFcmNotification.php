@@ -24,113 +24,179 @@ class SendFcmNotification implements ShouldQueue
 
     public int $timeout = 120;
 
-    public function __construct(
-        protected array|string $tokens,
-        protected string $title,
-        protected string $body,
-        protected array $data = []
-    ) {
-        if (is_string($this->tokens)) {
-            $this->tokens = [$this->tokens];
-        }
+    protected array $tokens;
+    protected string $title;
+    protected string $body;
+    protected array $data;
+
+    /**
+     * Create a new job instance.
+     */
+    public function __construct(array|string $tokens, string $title, string $body, array $data = [])
+    {
+        $this->tokens = is_array($tokens) ? $tokens : [$tokens];
+        $this->title  = $title;
+        $this->body   = $body;
+        $this->data   = $data;
     }
 
+    /**
+     * Execute the job.
+     */
     public function handle(FirebaseService $firebaseService): void
     {
-        $filteredTokens = [];
-        foreach ($this->tokens as $token) {
-            if (! is_string($token)) {
+        $messaging = $firebaseService->getMessaging();
+
+        // Runtime evidence: token statistics (avoid logging raw tokens).
+        $tokensSnapshot        = $this->tokens;
+        $tokenCount            = count($tokensSnapshot);
+        $placeholderExactCount = 0;
+        $minLen                = null;
+        $maxLen                = null;
+        $tokenHashSamples      = [];
+        foreach ($tokensSnapshot as $t) {
+            if (! is_string($t)) {
                 continue;
             }
-            $token = trim($token);
-            if ($token === '' || $token === 'YOUR_FCM_TOKEN_HERE' || strlen($token) < 50) {
-                continue;
+            if ($t === 'YOUR_FCM_TOKEN_HERE') {
+                $placeholderExactCount++;
             }
-            $filteredTokens[] = $token;
+            $len    = strlen($t);
+            $minLen = $minLen === null ? $len : min($minLen, $len);
+            $maxLen = $maxLen === null ? $len : max($maxLen, $len);
+            if (count($tokenHashSamples) < 3 && $t !== '') {
+                $tokenHashSamples[] = FcmTokenFormatter::sha256Prefix($t);
+            }
         }
-        $this->tokens = array_values(array_unique($filteredTokens));
 
-        if (empty($this->tokens)) {
-            Log::warning('SendFcmNotification: No tokens provided');
+        Log::info('[FCM DEBUG] Job about to send multicast (sism)', [
+            'token_count'             => $tokenCount,
+            'placeholder_exact_count' => $placeholderExactCount,
+            'token_length'            => ['min' => $minLen, 'max' => $maxLen],
+            'title'                   => $this->title,
+            'device_tokens'           => array_map(
+                fn ($t) => ['preview' => FcmTokenFormatter::preview($t), 'sha256_prefix' => FcmTokenFormatter::sha256Prefix($t)],
+                $this->tokens
+            ),
+        ]);
 
+        $notification = Notification::create($this->title, $this->body);
+
+        // Filter out empty/placeholder/obviously-invalid tokens.
+        $dropped = [
+            'empty'             => 0,
+            'non_string'        => 0,
+            'placeholder_exact' => 0,
+            'too_short'         => 0,
+        ];
+        $tokens = [];
+        foreach ($this->tokens as $t) {
+            if (! is_string($t)) {
+                $dropped['non_string']++;
+                continue;
+            }
+            $t = trim($t);
+            if ($t === '') {
+                $dropped['empty']++;
+                continue;
+            }
+            if ($t === 'YOUR_FCM_TOKEN_HERE') {
+                $dropped['placeholder_exact']++;
+                continue;
+            }
+            // Typical FCM registration tokens are long; short tokens are always invalid.
+            if (strlen($t) < 50) {
+                $dropped['too_short']++;
+                continue;
+            }
+            $tokens[] = $t;
+        }
+        $tokens = array_values(array_unique($tokens));
+        Log::info('[FCM DEBUG] Token filtering summary (sism)', [
+            'kept'    => count($tokens),
+            'dropped' => $dropped,
+        ]);
+
+        if (empty($tokens)) {
             return;
         }
 
-        Log::info('SendFcmNotification: job mulai', [
-            'title' => $this->title,
-            'tokens_count' => count($this->tokens),
-            'tokens' => array_map(function (string $t) {
-                return [
-                    'preview' => FcmTokenFormatter::preview($t),
-                    'sha256_prefix' => FcmTokenFormatter::sha256Prefix($t),
-                    'length' => strlen($t),
-                ];
-            }, $this->tokens),
-        ]);
+        // Send in chunks of 500 (FCM limit for multicast)
+        $chunks             = array_chunk($tokens, 500);
+        $firstFailureLogged = false;
 
-        try {
-            $messaging = $firebaseService->getMessaging();
-            $batches = array_chunk($this->tokens, 500);
-            $invalidTokens = [];
+        foreach ($chunks as $chunk) {
+            $message = CloudMessage::new()
+                ->withNotification($notification)
+                ->withData($this->data)
+                ->withAndroidConfig([
+                    'priority'     => 'high',
+                    'notification' => [
+                        'sound'      => 'default',
+                        'channel_id' => 'sism_notifications',
+                    ],
+                ])
+                ->withApnsConfig([
+                    'payload' => [
+                        'aps' => [
+                            'sound' => 'default',
+                        ],
+                    ],
+                ]);
 
-            foreach ($batches as $batchIndex => $batch) {
-                try {
-                    $notification = Notification::create($this->title, $this->body);
-                    $message = CloudMessage::new()
-                        ->withNotification($notification)
-                        ->withData($this->data);
+            try {
+                Log::info('Sending FCM Notification to ' . count($chunk) . " devices. Title: {$this->title}");
 
-                    $report = $messaging->sendMulticast($message, $batch);
+                $report = $messaging->sendMulticast($message, $chunk);
 
+                Log::info('FCM Send Report: Success: ' . $report->successes()->count() . ', Fail: ' . $report->failures()->count());
+
+                // Cleanup invalid tokens
+                if ($report->hasFailures()) {
                     foreach ($report->failures()->getItems() as $failure) {
-                        $error = $failure->error();
-                        $token = $failure->target()->value();
-                        if ($this->isInvalidTokenError($error)) {
-                            $invalidTokens[] = $token;
+                        $reason      = $failure->error()->getMessage();
+                        $targetToken = $failure->target()->value();
+
+                        // Log only the first failure to keep output small.
+                        if ($firstFailureLogged === false) {
+                            $matchesCleanup =
+                                (str_contains($reason, 'invalid-registration-token') ||
+                                    str_contains($reason, 'registration-token-not-registered'));
+                            Log::info('[FCM DEBUG] First failure reason + cleanup match (sism)', [
+                                'fcm_reason'                         => $reason,
+                                'cleanup_condition_matches_patterns' => $matchesCleanup,
+                                'target_sha256_prefix'               => FcmTokenFormatter::sha256Prefix($targetToken),
+                            ]);
+                            $firstFailureLogged = true;
+                        }
+
+                        // If token is invalid or not registered, delete it
+                        $reasonLower = strtolower($reason);
+                        if (str_contains($reasonLower, 'invalid-registration-token') ||
+                            str_contains($reasonLower, 'registration-token-not-registered') ||
+                            str_contains($reasonLower, 'not a valid fcm registration token') ||
+                            str_contains($reasonLower, 'registration token is not a valid fcm registration token') ||
+                            str_contains($reasonLower, 'requested entity was not found')) {
+                            $deleted   = UserDeviceToken::where('device_token', $targetToken)->delete();
+                            $remaining = UserDeviceToken::where('device_token', $targetToken)->count();
+                            Log::warning("Removing invalid FCM Token (sism). Reason: {$reason}", [
+                                'deleted_rows'             => $deleted,
+                                'remaining_rows_for_token' => $remaining,
+                                'token_sha256_prefix'      => FcmTokenFormatter::sha256Prefix($targetToken),
+                            ]);
+                        } else {
+                            Log::error("FCM Delivery Failed for token (masked, sism). Reason: {$reason}");
                         }
                     }
-
-                    Log::info('SendFcmNotification: Batch sent', [
-                        'batch' => $batchIndex + 1,
-                        'success' => $report->successes()->count(),
-                        'failure' => $report->failures()->count(),
-                    ]);
-                } catch (MessagingException $e) {
-                    Log::error('SendFcmNotification: Messaging error in batch', [
-                        'batch' => $batchIndex + 1,
-                        'error' => $e->getMessage(),
-                    ]);
                 }
-            }
-
-            if (! empty($invalidTokens)) {
-                UserDeviceToken::whereIn('device_token', $invalidTokens)->delete();
-            }
-        } catch (FirebaseException $e) {
-            Log::error('SendFcmNotification: Firebase error', [
-                'error' => $e->getMessage(),
-            ]);
-            throw $e;
-        }
-    }
-
-    private function isInvalidTokenError($error): bool
-    {
-        $errorMessage = $error->getMessage();
-        $patterns = [
-            'registration-token-not-registered',
-            'invalid-registration-token',
-            'invalid-argument',
-            'registration token is invalid',
-            'requested entity was not found',
-        ];
-
-        foreach ($patterns as $pattern) {
-            if (stripos($errorMessage, $pattern) !== false) {
-                return true;
+            } catch (MessagingException $e) {
+                Log::error('SendFcmNotification (sism): Messaging error', ['error' => $e->getMessage()]);
+            } catch (FirebaseException $e) {
+                Log::error('SendFcmNotification (sism): Firebase error', ['error' => $e->getMessage()]);
+                throw $e;
+            } catch (\Exception $e) {
+                Log::error('Failed to send FCM Multicast (sism): ' . $e->getMessage());
             }
         }
-
-        return false;
     }
 }
