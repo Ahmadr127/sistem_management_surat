@@ -79,22 +79,22 @@ class OrganizationUsersSeeder extends Seeder
         $this->command->info('👤 Creating Users...');
 
         $usersData = [
-            ['nik' => '20141969', 'name' => 'DIENI ANANDA PUTRI, DR., MARS', 'username' => 'dieni.putri', 'email' => 'dieni.putri@azra.com', 'unit' => 'MUTU', 'pos' => 'MANAGER MUTU'],
-            ['nik' => '20061105', 'name' => 'GARCINIA SATIVA FIZRIA SETIADI, Dr, MKM', 'username' => 'garcinia.setiadi', 'email' => 'garcinia.setiadi@azra.com', 'unit' => 'PENMED', 'pos' => 'MANAGER PENUNJANG MEDIK'],
+            ['nik' => '20141969', 'name' => 'DIENI ANANDA PUTRI, DR., MARS', 'username' => 'dieni.ananda', 'email' => 'dieni.ananda@azra.com', 'unit' => 'MUTU', 'pos' => 'MANAGER MUTU'],
+            ['nik' => '20061105', 'name' => 'GARCINIA SATIVA FIZRIA SETIADI, Dr, MKM', 'username' => 'garcinia.sativa', 'email' => 'garcinia.sativa@azra.com', 'unit' => 'PENMED', 'pos' => 'MANAGER PENUNJANG MEDIK'],
             ['nik' => '20253017', 'name' => 'INDRA THALIB, B.SN., MM', 'username' => 'indra.thalib', 'email' => 'indra.thalib@azra.com', 'unit' => 'SDM', 'pos' => 'MANAGER SDM'],
             ['nik' => '20253030', 'name' => 'IRMA RISMAYANTI, dr, MM', 'username' => 'irma.rismayanti', 'email' => 'irma.rismayanti@azra.com', 'unit' => 'DIR', 'pos' => 'DIREKTUR RS'],
             ['nik' => '19950015', 'name' => 'LAILA AZRA, DRA.', 'username' => 'laila.azra', 'email' => 'laila.azra@azra.com', 'unit' => 'PTASP', 'pos' => 'KOMISARIS PT. ASP'],
             ['nik' => '20253062', 'name' => 'LILI MARLIANI, DR., MARS', 'username' => 'lili.marliani', 'email' => 'lili.marliani@azra.com', 'unit' => 'PELMED', 'pos' => 'MANAGER PELAYANAN MEDIK'],
             ['nik' => '20212767', 'name' => 'METRI JULIANTI, SE', 'username' => 'metri.julianti', 'email' => 'metri.julianti@azra.com', 'unit' => 'KEU', 'pos' => 'MANAGER KEUANGAN'],
-            ['nik' => '20071107', 'name' => 'M. RANGGA ADITYA', 'username' => 'm.aditya', 'email' => 'm.aditya@azra.com', 'unit' => 'PTASP', 'pos' => 'DIREKTUR PT. ASP'],
+            ['nik' => '20071107', 'name' => 'M. RANGGA ADITYA', 'username' => 'm.rangga', 'email' => 'm.rangga@azra.com', 'unit' => 'PTASP', 'pos' => 'DIREKTUR PT. ASP'],
             ['nik' => '20242964', 'name' => 'MUHAMAD MIFTAHUDIN, M. KOM', 'username' => 'muhamad.miftahudin', 'email' => 'muhamad.miftahudin@azra.com', 'unit' => 'IT', 'pos' => 'MANAGER IT'],
             ['nik' => '20242967', 'name' => 'RIA FAJARROHMI, SE', 'username' => 'ria.fajarrohmi', 'email' => 'ria.fajarrohmi@azra.com', 'unit' => 'AKPAJ', 'pos' => 'SUPERVISOR AKUNTING & PAJAK'],
             ['nik' => '20111600', 'name' => 'RIYADI MAULANA, SH., MH., CLA., CCD', 'username' => 'riyadi.maulana', 'email' => 'riyadi.maulana@azra.com', 'unit' => 'LEGAL', 'pos' => 'MANAGER LEGAL'],
-            ['nik' => '19940189', 'name' => 'SENI MAULIDA FITALOKA, S.Kep,Ns, M.Kep', 'username' => 'seni.fitaloka', 'email' => 'seni.fitaloka@azra.com', 'unit' => 'DIVKEP', 'pos' => 'MANAGER KEPERAWATAN'],
+            ['nik' => '19940189', 'name' => 'SENI MAULIDA FITALOKA, S.Kep,Ns, M.Kep', 'username' => 'seni.maulida', 'email' => 'seni.maulida@azra.com', 'unit' => 'DIVKEP', 'pos' => 'MANAGER KEPERAWATAN'],
             ['nik' => '20020462', 'name' => 'SITI KHOIRIAH', 'username' => 'siti.khoiriah', 'email' => 'siti.khoiriah@azra.com', 'unit' => 'SEKR', 'pos' => 'SEKRETARIS DIREKTUR PT. ASP'],
-            ['nik' => '20253070', 'name' => 'THORIO FARIED ISHAQ, S.I. KOM', 'username' => 'thorio.ishaq', 'email' => 'thorio.ishaq@azra.com', 'unit' => 'UMUM', 'pos' => 'MANAGER UMUM'],
-            ['nik' => '20253008', 'name' => 'TUMPAS BANGKIT PRAYUDA, SE', 'username' => 'tumpas.prayuda', 'email' => 'tumpas.prayuda@azra.com', 'unit' => 'MARK', 'pos' => 'MANAGER MARKETING'],
-            ['nik' => '20242988', 'name' => 'VERONIKA RINI HANDAYANI, A. MD', 'username' => 'veronika.handayani', 'email' => 'veronika.handayani@azra.com', 'unit' => 'SEKR', 'pos' => 'SEKRETARIS DIREKTUR PT. ASP'],
+            ['nik' => '20253070', 'name' => 'THORIO FARIED ISHAQ, S.I. KOM', 'username' => 'thorio.faried', 'email' => 'thorio.faried@azra.com', 'unit' => 'UMUM', 'pos' => 'MANAGER UMUM'],
+            ['nik' => '20253008', 'name' => 'TUMPAS BANGKIT PRAYUDA, SE', 'username' => 'tumpas.bangkit', 'email' => 'tumpas.bangkit@azra.com', 'unit' => 'MARK', 'pos' => 'MANAGER MARKETING'],
+            ['nik' => '20242988', 'name' => 'VERONIKA RINI HANDAYANI, A. MD', 'username' => 'veronika.rini', 'email' => 'veronika.rini@azra.com', 'unit' => 'SEKR', 'pos' => 'SEKRETARIS DIREKTUR PT. ASP'],
             ['nik' => '99999002', 'name' => 'Admin System', 'username' => 'admin', 'email' => 'admin@azra.com', 'unit' => 'IT', 'pos' => 'System Administrator'],
         ];
 
@@ -141,3 +141,4 @@ class OrganizationUsersSeeder extends Seeder
         $this->command->info('✅ Organization users seeded successfully!');
     }
 }
+

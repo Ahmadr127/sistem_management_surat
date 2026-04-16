@@ -112,6 +112,7 @@
                                 <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                                 <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                                 <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Posisi</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Departemen</th>
                                 <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Manager</th>
                                 <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gen. Manager</th>
                                 <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -153,6 +154,19 @@
                                         </span>
                                     </td>
                                     <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900" x-text="user.jabatan_name || '-'"></td>
+                                    <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
+                                        <template x-if="user.organization_unit">
+                                            <div class="flex flex-col gap-1">
+                                                <div class="text-sm border-l-2 border-green-500 pl-2">
+                                                    <span x-text="user.organization_unit.name"></span>
+                                                    <span class="text-xs text-green-600 font-medium ml-1">(Utama)</span>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <template x-if="!user.organization_unit">
+                                            <span class="text-gray-400">-</span>
+                                        </template>
+                                    </td>
                                     <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
                                         <span x-text="user.manager ? user.manager.name : '-'"></span>
                                     </td>
