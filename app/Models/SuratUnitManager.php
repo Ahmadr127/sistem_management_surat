@@ -89,6 +89,11 @@ class SuratUnitManager extends Model
         return $this->hasMany(SuratUnitManagerFile::class, 'surat_unit_manager_id');
     }
 
+    public function histories()
+    {
+        return $this->hasMany(SuratUnitManagerHistory::class, 'surat_unit_manager_id');
+    }
+
     public function getNamaPerusahaanAttribute()
     {
         return $this->perusahaanData ? $this->perusahaanData->nama_perusahaan : $this->perusahaan;
@@ -145,27 +150,23 @@ class SuratUnitManager extends Model
     public function getCurrentStatusAttribute()
     {
         if ($this->isManagerPending()) {
-            return 'Menunggu Persetujuan Manager';
+            return 'Menunggu Persetujuan Kepala Unit';
+        } elseif ($this->isManagerApproved()) {
+            return 'Disetujui Kepala Unit';
         } elseif ($this->isManagerRejected()) {
-            return 'Ditolak Manager';
-        } elseif ($this->isSecretaryPending()) {
-            return 'Menunggu Persetujuan Sekretaris';
-        } elseif ($this->isDirectorPending()) {
-            return 'Menunggu Persetujuan Direktur';
-        } elseif ($this->isDirectorApproved()) {
-            return 'Disetujui';
+            return 'Ditolak Kepala Unit';
         } else {
-            return 'Ditolak';
+            return 'Menunggu Persetujuan';
         }
     }
 
     public function getStatusColorAttribute()
     {
-        if ($this->isManagerPending() || $this->isSecretaryPending() || $this->isDirectorPending()) {
+        if ($this->isManagerPending()) {
             return 'warning';
-        } elseif ($this->isManagerRejected() || $this->status_sekretaris === 'rejected' || $this->status_dirut === 'rejected') {
+        } elseif ($this->isManagerRejected()) {
             return 'danger';
-        } elseif ($this->isDirectorApproved()) {
+        } elseif ($this->isManagerApproved()) {
             return 'success';
         } else {
             return 'info';

@@ -30,17 +30,12 @@
         <!-- Status Badge -->
         <div class="mb-6">
             @php
-                $currentStatus = match($context) {
-                    'manager' => $surat->status_manager,
-                    'sekretaris' => $surat->status_sekretaris,
-                    'dirut' => $surat->status_dirut,
-                    default => 'pending'
-                };
+                $currentStatus = $surat->status_manager;
 
                 $statusColor = $currentStatus === 'approved' ? 'green' : 
                               ($currentStatus === 'rejected' ? 'red' : 'yellow');
-                $statusText = $currentStatus === 'approved' ? 'Disetujui' : 
-                             ($currentStatus === 'rejected' ? 'Ditolak' : 'Menunggu Persetujuan');
+                $statusText = $currentStatus === 'approved' ? 'Disetujui Kepala Unit' : 
+                             ($currentStatus === 'rejected' ? 'Ditolak Kepala Unit' : 'Menunggu Persetujuan Kepala Unit');
             @endphp
             <span class="inline-flex px-4 py-2 text-sm font-semibold rounded-full 
                          @if($statusColor == 'green') bg-green-100 text-green-800
@@ -137,7 +132,7 @@
 
             <!-- Right Column: Approval Form -->
             <div class="space-y-6">
-                <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-6 sticky top-6">
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                         <i class="ri-check-double-line mr-2 text-green-600"></i>
                         Form Persetujuan
@@ -177,18 +172,8 @@
                             Status: <span class="font-semibold">{{ ucfirst($currentStatus) }}</span>
                         </p>
                         @php
-                            $catatan = match($context) {
-                                'manager' => $surat->catatan_manager,
-                                'sekretaris' => $surat->catatan_sekretaris,
-                                'dirut' => $surat->catatan_dirut,
-                                default => '-'
-                            };
-                            $waktu = match($context) {
-                                'manager' => $surat->waktu_approval_manager,
-                                'sekretaris' => $surat->waktu_approval_sekretaris,
-                                'dirut' => $surat->waktu_approval_dirut,
-                                default => null
-                            };
+                            $catatan = $surat->keterangan_manager;
+                            $waktu   = $surat->waktu_review_manager;
                         @endphp
                         @if($catatan)
                         <div class="mt-3 text-left bg-white p-3 rounded border border-gray-200">

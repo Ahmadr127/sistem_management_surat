@@ -52,18 +52,13 @@ class SuratUnitManagerApprovalController extends Controller
                 $query->byManager($user->id);
             }
             
-            // Filter status default: Pending Manager
-            if (!$request->has('status')) {
-                $query->byStatusManager('pending');
-            }
-
-            // Apply explicit status filter if present
+            // Apply status filter hanya jika dipilih secara eksplisit
             if ($request->has('status') && $request->status !== '') {
                 $query->byStatusManager($request->status);
             }
 
             // Search filter
-            if ($request->has('search')) {
+            if ($request->has('search') && $request->search !== '') {
                 $query->search($request->search);
             }
 
@@ -136,18 +131,12 @@ class SuratUnitManagerApprovalController extends Controller
 
             // Logic Manager Approval
             $surat->status_manager = $status;
-            $surat->catatan_manager = $catatan;
-            $surat->waktu_approval_manager = now();
+            $surat->keterangan_manager = $catatan;
+            $surat->waktu_review_manager = now();
             $surat->manager_id = $user->id; // Record who actually approved it
             
-            // If rejected, stop flow
-            if ($status === 'rejected') {
-                $surat->status_sekretaris = null; // Reset next steps if needed
-                $surat->status_dirut = null;
-            } else {
-                // If approved, set next step pending
-                $surat->status_sekretaris = 'pending';
-            }
+            // Alur selesai di Manager — tidak ada tahap selanjutnya
+            // (Sekretaris dan Dirut tidak terlibat dalam alur ini)
 
             $surat->save();
 

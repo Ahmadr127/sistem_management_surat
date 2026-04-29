@@ -15,10 +15,10 @@ class OrganizationUnitController extends Controller
 
         // Filters
         if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
+            $search = strtolower($request->search);
             $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%");
+                $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('LOWER(code) LIKE ?', ["%{$search}%"]);
             });
         }
 
@@ -26,7 +26,7 @@ class OrganizationUnitController extends Controller
             $query->where('type_id', $request->type_id);
         }
 
-        if ($request->has('is_active') && $request->is_active !== '') {
+        if ($request->has('is_active') && $request->is_active != '') {
             $query->where('is_active', $request->is_active);
         }
 

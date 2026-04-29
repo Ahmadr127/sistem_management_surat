@@ -66,19 +66,14 @@
                             </td>
                             <td class="px-4 py-3">
                                 @php
-                                    // Determine status based on context
-                                    $currentStatus = match($context) {
-                                        'manager' => $surat->status_manager,
-                                        'sekretaris' => $surat->status_sekretaris,
-                                        'dirut' => $surat->status_dirut,
-                                        default => 'pending'
-                                    };
+                                    // Status final adalah status_manager
+                                    $currentStatus = $surat->status_manager;
 
                                     $statusClass = match($currentStatus) {
                                         'approved' => 'bg-green-100 text-green-800',
                                         'rejected' => 'bg-red-100 text-red-800',
-                                        'pending' => 'bg-yellow-100 text-yellow-800',
-                                        default => 'bg-gray-100 text-gray-800'
+                                        'pending'  => 'bg-yellow-100 text-yellow-800',
+                                        default    => 'bg-gray-100 text-gray-800'
                                     };
                                 @endphp
                                 <span class="inline-flex px-2 py-1 text-xs leading-5 font-semibold rounded-full {{ $statusClass }}">
