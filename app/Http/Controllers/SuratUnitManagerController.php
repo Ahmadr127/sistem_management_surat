@@ -166,8 +166,6 @@ class SuratUnitManagerController extends Controller
             $query = SuratUnitManager::with([
                 'unit',
                 'manager',
-                'sekretaris',
-                'dirut',
                 'perusahaanData',
                 'files'
             ]);
@@ -179,10 +177,6 @@ class SuratUnitManagerController extends Controller
                 $query->byUnit($user->id);
             } elseif ($user->role == 4) { // Manager
                 $query->byManager($user->id);
-            } elseif ($user->role == 1) { // Sekretaris
-                $query->where('status_manager', 'approved');
-            } elseif ($user->role == 2) { // Direktur
-                $query->where('status_sekretaris', 'approved');
             }
 
             // Search filter
@@ -193,14 +187,6 @@ class SuratUnitManagerController extends Controller
             // Filter berdasarkan status
             if ($request->has('status') && $request->status !== '') {
                 $query->byStatusManager($request->status);
-            }
-
-            if ($request->has('status_sekretaris')) {
-                $query->byStatusSekretaris($request->status_sekretaris);
-            }
-
-            if ($request->has('status_dirut')) {
-                $query->byStatusDirut($request->status_dirut);
             }
 
             // Filter berdasarkan tanggal
@@ -398,7 +384,6 @@ class SuratUnitManagerController extends Controller
                 
                 // Set status awal
                 $suratUnitManager->status_manager = 'pending';
-                $suratUnitManager->status_sekretaris = 'pending';
 
                 $suratUnitManager->save();
 

@@ -237,6 +237,10 @@ Route::middleware(['auth', 'checkRole:0,1,2,3,4,5,7,8'])->group(function () {
             Route::get('/', [SuratUnitManagerApprovalController::class, 'approvalIndex'])->name('index');
             Route::get('/{id}', [SuratUnitManagerApprovalController::class, 'approvalShow'])->name('show');
             Route::post('/{id}', [SuratUnitManagerApprovalController::class, 'processApproval'])->name('process');
+            
+            // Konversi ke Surat Keluar
+            Route::get('/{id}/convert', [\App\Http\Controllers\SuratUnitConversionController::class, 'showConvertForm'])->name('convert-form');
+            Route::post('/{id}/convert', [\App\Http\Controllers\SuratUnitConversionController::class, 'storeConversion'])->name('convert');
         });
 
         Route::post('/', [SuratUnitManagerController::class, 'store'])->name('store');

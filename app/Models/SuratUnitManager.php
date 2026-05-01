@@ -24,25 +24,16 @@ class SuratUnitManager extends Model
         'file_path',
         'keterangan_unit',
         'keterangan_manager',
-        'keterangan_sekretaris',
-        'keterangan_dirut',
         'status_manager',
-        'status_sekretaris',
-        'status_dirut',
+        'surat_keluar_id',
         'waktu_review_manager',
-        'waktu_review_sekretaris',
-        'waktu_review_dirut',
         'unit_id',
-        'manager_id',
-        'sekretaris_id',
-        'dirut_id'
+        'manager_id'
     ];
 
     protected $casts = [
         'tanggal_surat' => 'date',
         'waktu_review_manager' => 'datetime',
-        'waktu_review_sekretaris' => 'datetime',
-        'waktu_review_dirut' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
@@ -54,9 +45,7 @@ class SuratUnitManager extends Model
         'jenis_surat' => 'internal',
         'sifat_surat' => 'normal',
         'perusahaan' => 'RSAZRA',
-        'status_manager' => 'pending',
-        'status_sekretaris' => 'pending',
-        'status_dirut' => 'pending'
+        'status_manager' => 'pending'
     ];
 
     public function unit()
@@ -69,14 +58,9 @@ class SuratUnitManager extends Model
         return $this->belongsTo(User::class, 'manager_id');
     }
 
-    public function sekretaris()
+    public function suratKeluar()
     {
-        return $this->belongsTo(User::class, 'sekretaris_id');
-    }
-
-    public function dirut()
-    {
-        return $this->belongsTo(User::class, 'dirut_id');
+        return $this->belongsTo(SuratKeluar::class, 'surat_keluar_id');
     }
 
     public function perusahaanData()
@@ -127,26 +111,6 @@ class SuratUnitManager extends Model
         return $this->status_manager === 'rejected';
     }
 
-    public function isSecretaryPending()
-    {
-        return $this->status_sekretaris === 'pending';
-    }
-
-    public function isSecretaryApproved()
-    {
-        return $this->status_sekretaris === 'approved';
-    }
-
-    public function isDirectorPending()
-    {
-        return $this->status_dirut === 'pending';
-    }
-
-    public function isDirectorApproved()
-    {
-        return $this->status_dirut === 'approved';
-    }
-
     public function getCurrentStatusAttribute()
     {
         if ($this->isManagerPending()) {
@@ -188,16 +152,6 @@ class SuratUnitManager extends Model
         return $query->where('status_manager', $status);
     }
 
-    public function scopeByStatusSekretaris($query, $status)
-    {
-        return $query->where('status_sekretaris', $status);
-    }
-
-    public function scopeByStatusDirut($query, $status)
-    {
-        return $query->where('status_dirut', $status);
-    }
-
     public function scopeSearch($query, $search)
     {
         return $query->where(function($q) use ($search) {
@@ -233,38 +187,11 @@ class SuratUnitManager extends Model
                         ->where('status_manager', 'pending');
                 });
             }
-
-
-
-            // 3. Approval sebagai Sekretaris (Permission-driven: manage_surat_keluar + approve_surat_unit)
-            if ($user->hasPermission('approve_surat_unit') && $user->hasPermission('manage_surat_keluar')) {
-                $q->orWhere(function($sub) {
-                    $sub->where('status_manager', 'approved')
-                        ->where('status_sekretaris', 'pending');
-                });
-            }
-
-            // 4. Approval sebagai Direktur (Permission-driven: approve_disposisi)
-            if ($user->hasPermission('approve_disposisi')) {
-                $q->orWhere(function($sub) {
-                    $sub->where('status_sekretaris', 'approved')
-                        ->where('status_dirut', 'pending');
-                });
-            }
             
-            // 5. Super Admin (manage_users)
+            // 2. Super Admin (manage_users)
             if ($user->hasPermission('manage_users')) {
                 // Tampilkan semua pending
-                $q->orWhere('status_manager', 'pending')
-
-                  ->orWhere(function($sub) {
-                      $sub->where('status_manager', 'approved')
-                          ->where('status_sekretaris', 'pending');
-                  })
-                  ->orWhere(function($sub) {
-                      $sub->where('status_sekretaris', 'approved')
-                          ->where('status_dirut', 'pending');
-                  });
+                $q->orWhere('status_manager', 'pending');
             }
         });
     }
@@ -276,12 +203,6 @@ class SuratUnitManager extends Model
                 $q->orWhere(function($sub) use ($user) {
                     $sub->where('manager_id', $user->id)->where('status_manager', 'approved');
                 });
-            }
-            if ($user->hasPermission('approve_surat_unit') && $user->hasPermission('manage_surat_keluar')) {
-                $q->orWhere('status_sekretaris', 'approved');
-            }
-            if ($user->hasPermission('approve_disposisi')) {
-                $q->orWhere('status_dirut', 'approved');
             }
             if ($user->hasPermission('manage_users')) {
                 $q->orWhereRaw('1=1');
@@ -296,12 +217,6 @@ class SuratUnitManager extends Model
                 $q->orWhere(function($sub) use ($user) {
                     $sub->where('manager_id', $user->id)->where('status_manager', 'rejected');
                 });
-            }
-            if ($user->hasPermission('approve_surat_unit') && $user->hasPermission('manage_surat_keluar')) {
-                $q->orWhere('status_sekretaris', 'rejected');
-            }
-            if ($user->hasPermission('approve_disposisi')) {
-                $q->orWhere('status_dirut', 'rejected');
             }
             if ($user->hasPermission('manage_users')) {
                 $q->orWhereRaw('1=1');
@@ -319,9 +234,7 @@ class SuratUnitManager extends Model
             $q->orWhere('manager_id', $user->id);
 
             // 3. Permission-based View All
-            if (($user->hasPermission('approve_surat_unit') && $user->hasPermission('manage_surat_keluar')) ||
-                $user->hasPermission('approve_disposisi') ||
-                $user->hasPermission('manage_users')) {
+            if ($user->hasPermission('manage_users')) {
                 $q->orWhereRaw('1=1');
             }
         });

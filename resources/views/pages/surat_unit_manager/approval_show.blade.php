@@ -1,13 +1,13 @@
 @extends('home')
 
-@section('title', 'Review Surat Unit')
+@section('title', 'Review Surat Unit - ' . $surat->nomor_surat)
 
 @section('content')
 <div class="bg-white rounded-lg shadow-sm">
     <!-- Header -->
     <div class="px-8 py-6 border-b border-gray-100 bg-white flex justify-between items-center">
         <div>
-            <h2 class="text-lg font-semibold text-gray-800">Review Surat Unit</h2>
+            <h2 class="text-lg font-semibold text-gray-800">Review Surat Unit - {{ $surat->nomor_surat }}</h2>
             <p class="text-xs text-gray-500 mt-1">
                 Detail surat dan persetujuan sebagai <span class="font-bold text-green-600">{{ ucfirst($context) }}</span>
             </p>
@@ -185,6 +185,26 @@
                         <p class="text-xs text-gray-400 mt-3">
                             Diproses pada: {{ \Carbon\Carbon::parse($waktu)->format('d M Y H:i') }}
                         </p>
+                        @endif
+
+                        @if($currentStatus === 'approved')
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                @if(!$surat->surat_keluar_id)
+                                    <p class="text-sm text-gray-600 mb-3">Surat ini dapat diajukan sebagai Surat Keluar resmi untuk proses lebih lanjut.</p>
+                                    <a href="{{ route('surat-unit-manager.approval.convert-form', $surat->id) }}" 
+                                       class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                        <i class="ri-send-plane-line mr-2"></i> Ajukan sebagai Surat Keluar
+                                    </a>
+                                @else
+                                    <div class="bg-blue-50 text-blue-800 p-3 rounded-lg flex items-start text-left">
+                                        <i class="ri-information-line mt-0.5 mr-2 text-lg"></i>
+                                        <div>
+                                            <p class="font-medium text-sm">Telah dikonversi menjadi Surat Keluar</p>
+                                            <a href="{{ route('suratkeluar.show', $surat->surat_keluar_id) }}" class="text-xs underline hover:text-blue-600 mt-1 inline-block">Lihat Detail Surat Keluar</a>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
                         @endif
                     </div>
                     @endif

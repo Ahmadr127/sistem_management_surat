@@ -1,13 +1,13 @@
 @extends('home')
 
-@section('title', 'Detail Surat Unit Manager - SISM Azra')
+@section('title', 'Detail Surat Unit - ' . $suratUnitManager->nomor_surat)
 
 @section('content')
 <div class="bg-white rounded-lg shadow-sm">
     <!-- Header -->
     <div class="px-8 py-6 border-b border-gray-100 bg-white flex justify-between items-center">
         <div>
-            <h2 class="text-lg font-semibold text-gray-800">Detail Surat Unit Manager</h2>
+            <h2 class="text-lg font-semibold text-gray-800">Detail Surat Unit - {{ $suratUnitManager->nomor_surat }}</h2>
             <p class="text-xs text-gray-500 mt-1">Informasi lengkap surat</p>
         </div>
         <div class="flex items-center space-x-2">

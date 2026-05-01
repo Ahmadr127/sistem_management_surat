@@ -39,7 +39,7 @@ class SuratUnitManagerApprovalController extends Controller
             }
 
             $query = SuratUnitManager::with([
-                'unit', 'manager', 'sekretaris', 'dirut', 'perusahaanData', 'files'
+                'unit', 'manager', 'perusahaanData', 'files'
             ]);
 
             // Context selalu manager (Kepala Unit)
@@ -79,7 +79,7 @@ class SuratUnitManagerApprovalController extends Controller
     {
         try {
             $surat = SuratUnitManager::with([
-                'unit', 'manager', 'sekretaris', 'dirut', 'perusahaanData', 'files', 'histories.user'
+                'unit', 'manager', 'perusahaanData', 'files', 'histories.user'
             ])->findOrFail($id);
 
             $user = auth()->user();
