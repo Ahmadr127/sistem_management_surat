@@ -22,13 +22,13 @@ class RoleSeeder extends Seeder
             ],
             [
                 'name' => 'sekretaris',
-                'display_name' => 'Sekretaris',
+                'display_name' => 'Sekretaris Perusahaan',
                 'description' => 'Sekretaris yang dapat mereview dan menyetujui surat',
                 'legacy_role_id' => 1
             ],
             [
                 'name' => 'direktur',
-                'display_name' => 'Direktur',
+                'display_name' => 'Direktur Utama',
                 'description' => 'Direktur yang dapat menyetujui surat final',
                 'legacy_role_id' => 2
             ],

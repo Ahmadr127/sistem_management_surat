@@ -122,23 +122,15 @@
                         </div>
                     </div>
 
-                    <!-- Perusahaan -->
-                    <div class="space-y-2 perusahaan-container" id="perusahaan-container">
-                        <label class="text-sm font-semibold text-gray-800">Perusahaan</label>
-                        <div class="suggestions-wrapper relative">
-                            <input type="text" 
-                                id="perusahaan_search" 
-                                name="perusahaan_search"
-                                value="{{ $surat->perusahaanData->nama_perusahaan ?? '' }}"
-                                class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200"
-                                placeholder="Cari atau tambah perusahaan baru..."
-                                autocomplete="off">
-                            <input type="hidden" name="perusahaan" id="perusahaan_id" value="{{ $surat->perusahaan }}">
-                            <div id="perusahaan-suggestions" class="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto mt-1" style="display:none;">
-                                <!-- Suggestions will be populated here -->
-                            </div>
-                        </div>
-                    </div>
+                    {{-- Perusahaan Searchable Select Component --}}
+                    <x-perusahaan-select
+                        name="perusahaan"
+                        selected-kode="{{ $surat->perusahaan }}"
+                        selected-nama="{{ $surat->perusahaanData->nama_perusahaan ?? '' }}"
+                        jenis-surat-selector="select[name='jenis_surat']"
+                        :user-role="$userRole"
+                        :required="true"
+                    />
 
                     <!-- Perihal -->
                     <div class="space-y-2">
@@ -446,137 +438,7 @@
             }
         });
 
-        // Perusahaan Autocomplete
-        const jenisSuratSelect = document.querySelector('select[name="jenis_surat"]');
-        const perusahaanContainer = document.getElementById('perusahaan-container');
-        const perusahaanHidden = document.getElementById('perusahaan_hidden');
-        const perusahaanId = document.getElementById('perusahaan_id');
-        const perusahaanSearch = document.getElementById('perusahaan_search');
-        const suggestionsContainer = document.getElementById('perusahaan-suggestions');
-        let searchTimeout;
-
-        // Toggle perusahaan input sesuai jenis surat
-        function togglePerusahaanInput() {
-            if (jenisSuratSelect.value === 'eksternal') {
-                perusahaanContainer.style.display = 'block';
-            } else {
-                perusahaanContainer.style.display = 'none';
-                if (perusahaanId) perusahaanId.value = 'RSAZRA';
-                if (perusahaanSearch) perusahaanSearch.value = '';
-            }
-        }
-        if (jenisSuratSelect && perusahaanContainer) {
-            togglePerusahaanInput();
-            jenisSuratSelect.addEventListener('change', togglePerusahaanInput);
-        }
-
-        // Perusahaan autocomplete (suggestion)
-        if (perusahaanSearch) {
-            console.log('Perusahaan search input found:', perusahaanSearch);
-            
-            perusahaanSearch.addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                const query = this.value.trim();
-                
-                console.log('Input event fired, query:', query);
-                
-                if (query.length < 2) {
-                    suggestionsContainer.style.display = 'none';
-                    return;
-                }
-                
-                searchTimeout = setTimeout(() => {
-                    console.log('Fetching suggestions for:', query);
-                    
-                    fetch(`/api/perusahaan/search?query=${encodeURIComponent(query)}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            console.log('API response:', data);
-                            
-                            if (data.success && data.data.length > 0) {
-                                suggestionsContainer.innerHTML = data.data.map(perusahaan => `
-                                    <div class="suggestion-item p-2 hover:bg-gray-100 cursor-pointer" 
-                                         data-kode="${perusahaan.kode}"
-                                         data-nama="${perusahaan.nama_perusahaan}">${perusahaan.nama_perusahaan}</div>
-                                `).join('');
-                                suggestionsContainer.style.display = 'block';
-                                console.log('Showing suggestions container');
-                            } else {
-                                suggestionsContainer.innerHTML = `
-                                    <div class="suggestion-item p-2 hover:bg-gray-100 cursor-pointer text-green-600" id="add-new-company"><i class="ri-add-line mr-2"></i>Tambah "${query}" sebagai perusahaan baru</div>
-                                `;
-                                suggestionsContainer.style.display = 'block';
-                                console.log('Showing add new company option');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('API Error:', error);
-                        });
-                }, 300);
-            });
-        }
-
-        // Handle click pada suggestion
-        if (suggestionsContainer) {
-            suggestionsContainer.addEventListener('click', function(e) {
-                const target = e.target.closest('.suggestion-item');
-                if (!target) return;
-                
-                console.log('Suggestion item clicked', target);
-                
-                if (target.id === 'add-new-company') {
-                    const newCompanyName = perusahaanSearch.value.trim();
-                    if (newCompanyName) {
-                        fetch('/api/perusahaan/quick-store', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: JSON.stringify({ nama_perusahaan: newCompanyName })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                perusahaanSearch.value = data.data.nama_perusahaan;
-                                perusahaanId.value = data.data.kode;
-                                suggestionsContainer.style.display = 'none';
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Berhasil',
-                                    text: 'Perusahaan baru berhasil ditambahkan',
-                                    showConfirmButton: false,
-                                    timer: 1500
-                                });
-                            } else {
-                                throw new Error(data.message);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Gagal',
-                                text: 'Gagal menambahkan perusahaan baru'
-                            });
-                        });
-                    }
-                } else {
-                    const kode = target.dataset.kode;
-                    const nama = target.dataset.nama;
-                    perusahaanSearch.value = nama;
-                    perusahaanId.value = kode;
-                    suggestionsContainer.style.display = 'none';
-                }
-            });
-        }
-
-        // Hide suggestions saat klik di luar
-        document.addEventListener('click', function(e) {
-            if (suggestionsContainer && !perusahaanSearch?.contains(e.target) && !suggestionsContainer.contains(e.target)) {
-                suggestionsContainer.style.display = 'none';
-            }
-        });
+        // SweetAlert for success message
 
         // SweetAlert for success message
         @if (session('success'))
@@ -690,45 +552,7 @@
         background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2310B981' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
     }
 
-    /* Styling untuk suggestions container */
-    #perusahaan-suggestions {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 0.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        max-height: 200px;
-        overflow-y: auto;
-        z-index: 99999;
-        margin-top: 4px;
-        display: none;
-    }
-
-    .suggestions-list {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 0.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        max-height: 200px;
-        overflow-y: auto;
-        z-index: 99999;
-        margin-top: 4px;
-        display: none;
-    }
-
-    .suggestions-wrapper {
-        position: relative !important;
-        z-index: 50 !important;
-    }
-
-    #perusahaan-container { display: block; }
+    /* Custom styling untuk select/combobox */
 
     /* Debugging helper */
     .debug-outline {

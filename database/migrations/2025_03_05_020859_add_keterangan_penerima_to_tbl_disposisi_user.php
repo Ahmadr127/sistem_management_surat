@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('tbl_disposisi_user', function (Blueprint $table) {
-            $table->text('keterangan_penerima')->nullable()->after('user_id');
-        });
+        if (!Schema::hasColumn('tbl_disposisi_user', 'keterangan_penerima')) {
+            Schema::table('tbl_disposisi_user', function (Blueprint $table) {
+                $table->text('keterangan_penerima')->nullable()->after('user_id');
+            });
+        }
     }
 
     /**

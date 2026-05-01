@@ -95,7 +95,7 @@ class DashboardController extends Controller
             $stats['surat_unit'] = [
                 'total' => (clone $suratUnitQuery)->count(),
                 'menunggu_manager' => (clone $suratUnitQuery)->where('status_manager', 'pending')->count(),
-                'disetujui' => (clone $suratUnitQuery)->where('status_dirut', 'approved')->count(),
+                'disetujui' => (clone $suratUnitQuery)->where('status_manager', 'approved')->count(),
                 'bulan_ini' => (clone $suratUnitQuery)->whereMonth('tanggal_surat', now()->month)->whereYear('tanggal_surat', now()->year)->count(),
             ];
         }

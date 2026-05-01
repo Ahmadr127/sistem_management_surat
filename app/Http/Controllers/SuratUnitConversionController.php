@@ -56,13 +56,7 @@ class SuratUnitConversionController extends Controller
             ->whereIn('role', $allowedTargetRoles)
             ->get();
 
-        $perusahaans = Perusahaan::where('status', 'aktif')
-            ->orderBy('nama_perusahaan')
-            ->get();
-
-        $userPerusahaan = $suratUnit->perusahaan;
-
-        return view('pages.surat_unit_manager.convert', compact('suratUnit', 'users', 'perusahaans', 'userPerusahaan'));
+        return view('pages.surat_unit_manager.convert', compact('suratUnit', 'users', 'userPerusahaan', 'userRole'));
     }
 
     public function storeConversion(Request $request, $id)

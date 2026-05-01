@@ -199,21 +199,14 @@
                         <div></div>
                     </div>
 
-                    <!-- Perusahaan -->
-                    <div class="space-y-2 perusahaan-container" id="perusahaan-container" style="min-height: 120px; display: none;">
-                        <label class="text-sm font-semibold text-gray-800">Perusahaan</label>
-                        <div class="suggestions-wrapper">
-                            <input type="text" 
-                                id="perusahaan_search" 
-                                name="perusahaan_search"
-                                class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200"
-                                placeholder="Cari atau tambah perusahaan baru..."
-                                autocomplete="off">
-                            <div id="perusahaan-suggestions" class="suggestions-list">
-                                <!-- Suggestions will be populated here -->
-                            </div>
-                        </div>
-                    </div>
+                    {{-- Perusahaan select component handles its own hidden input --}}
+                    <x-perusahaan-select
+                        name="perusahaan"
+                        selected-kode="{{ $userPerusahaan }}"
+                        jenis-surat-selector="#jenis_surat"
+                        :user-role="$userRole"
+                        :required="true"
+                    />
 
                     <!-- Perihal -->
                     <div class="space-y-2">
@@ -423,8 +416,6 @@
         const generateNomorDirutAspBtn = document.getElementById('generateNomorDirutAspBtn');
         const pengirimIdInput = document.getElementById('pengirim_id');
         const perusahaanContainer = document.getElementById('perusahaan-container');
-        const perusahaanHidden = document.getElementById('perusahaan_hidden');
-        const perusahaanSearch = document.getElementById('perusahaan_search');
         const form = document.querySelector('form');
         
         // Cek role pengguna
@@ -440,12 +431,7 @@
                 const generateNomorBtn = document.getElementById('generateNomorBtn');
                 const generateNomorAspBtn = document.getElementById('generateNomorAspBtn');
                 
-                // Set perusahaan otomatis untuk internal
-                if (this.value === 'internal') {
-                    perusahaanHidden.value = 'RSAZRA';
-                } else {
-                    perusahaanHidden.value = '';
-                }
+                // Update nomor surat logic based on jenis_surat...
                 
                 // Untuk role sekretaris (1)
                 if (userRole === 1) {
@@ -523,12 +509,7 @@
                         `;
                     }
                     
-                    // Set perusahaan otomatis untuk ASP
-                    if (this.value === 'internal') {
-                        perusahaanHidden.value = 'ASP';
-                    } else {
-                        perusahaanHidden.value = '';
-                    }
+
                 } else if (userRole === 8) { // Direktur ASP (role 8)
                     // Untuk Direktur ASP: selalu tampilkan Generate Nomor ASP
                     if (generateNomorBtn) {
@@ -553,12 +534,7 @@
                         `;
                     }
                     
-                    // Set perusahaan otomatis untuk ASP
-                    if (this.value === 'internal') {
-                        perusahaanHidden.value = 'ASP';
-                    } else {
-                        perusahaanHidden.value = '';
-                    }
+
                 } else if (userRole === 0 || userRole === 3 || userRole === 4 || userRole === 6 || userRole === 7) { // Staff/unit, Admin, Manager, GM, Manager Keuangan
                     if (this.value === 'internal') {
                         if (generateNomorBtn) {
@@ -618,16 +594,7 @@
             jenisSuratSelect.dispatchEvent(new Event('change'));
             isInitialLoad = false;
             
-            // Set perusahaan otomatis untuk internal saat halaman dimuat
-            if (jenisSuratSelect.value === 'internal') {
-                if (userRole === 5) {
-                    perusahaanHidden.value = 'ASP'; // Untuk Sekretaris ASP
-                } else if (userRole === 8) {
-                    perusahaanHidden.value = 'ASP'; // Untuk Direktur ASP
-                } else {
-                    perusahaanHidden.value = 'RSAZRA'; // Untuk role lain
-                }
-            }
+
             
             // Logic khusus untuk role 5 (Sekretaris ASP)
             if (userRole === 5) {
@@ -1731,93 +1698,7 @@
             }
         }
 
-        // --- FIX: Tampilkan input perusahaan saat eksternal untuk role sekretaris ---
-        function togglePerusahaanInput() {
-            if (jenisSuratSelect && jenisSuratSelect.value === 'eksternal') {
-                perusahaanContainer.style.display = 'block';
-            } else {
-                perusahaanContainer.style.display = 'none';
-                if (perusahaanSearch) perusahaanSearch.value = '';
-            }
-        }
-        if (jenisSuratSelect && perusahaanContainer) {
-            togglePerusahaanInput();
-            jenisSuratSelect.addEventListener('change', togglePerusahaanInput);
-        }
-        // --- Pastikan autocomplete tetap aktif ---
-        if (perusahaanSearch) {
-            perusahaanSearch.addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                const query = this.value.trim();
-                if (query.length < 2) {
-                    suggestionsContainer.style.display = 'none';
-                    return;
-                }
-                searchTimeout = setTimeout(() => {
-                    fetch(`/api/perusahaan/search?query=${encodeURIComponent(query)}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success && data.data.length > 0) {
-                                suggestionsContainer.innerHTML = data.data.map(perusahaan => `
-                                    <div class="suggestion-item p-2 hover:bg-gray-100 cursor-pointer" 
-                                         data-kode="${perusahaan.kode}"
-                                         data-nama="${perusahaan.nama_perusahaan}">${perusahaan.nama_perusahaan}</div>
-                                `).join('');
-                                suggestionsContainer.style.display = 'block';
-                            } else {
-                                suggestionsContainer.innerHTML = `
-                                    <div class="suggestion-item p-2 hover:bg-gray-100 cursor-pointer text-green-600" id="add-new-company"><i class="ri-add-line mr-2"></i>Tambah "${query}" sebagai perusahaan baru</div>
-                                `;
-                                suggestionsContainer.style.display = 'block';
-                            }
-                        })
-                        .catch(error => {
-                            suggestionsContainer.style.display = 'none';
-                        });
-                }, 300);
-            });
-        }
-        // --- Pilih suggestion atau tambah perusahaan baru ---
-        if (suggestionsContainer) {
-            suggestionsContainer.addEventListener('click', function(e) {
-                const target = e.target.closest('.suggestion-item');
-                if (!target) return;
-                if (target.id === 'add-new-company') {
-                    const newCompanyName = perusahaanSearch.value.trim();
-                    if (newCompanyName) {
-                        fetch('/api/perusahaan/quick-store', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: JSON.stringify({ nama_perusahaan: newCompanyName })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                perusahaanSearch.value = data.data.nama_perusahaan;
-                                perusahaanHidden.value = data.data.kode;
-                                suggestionsContainer.style.display = 'none';
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Berhasil',
-                                    text: 'Perusahaan baru berhasil ditambahkan',
-                                    showConfirmButton: false,
-                                    timer: 1500
-                                });
-                            }
-                        });
-                    }
-                } else {
-                    const kode = target.dataset.kode;
-                    const nama = target.dataset.nama;
-                    perusahaanSearch.value = nama;
-                    perusahaanHidden.value = kode;
-                    suggestionsContainer.style.display = 'none';
-                }
-            });
-        }
+
 
         // Validasi frontend sebelum submit
         if (form) {
@@ -1831,12 +1712,7 @@
                 if (!tanggalSuratInput.value.trim()) {
                     errors.push('Silakan pilih tanggal surat.');
                 }
-                // Validasi perusahaan (hanya untuk eksternal)
-                if (jenisSuratSelect && jenisSuratSelect.value === 'eksternal') {
-                    if (!perusahaanHidden.value.trim()) {
-                        errors.push('Perusahaan tujuan surat eksternal belum dipilih. Silakan pilih dari daftar.');
-                    }
-                }
+
                 // Validasi perihal
                 const perihalInput = document.querySelector('textarea[name="perihal"]');
                 if (!perihalInput.value.trim()) {
@@ -2197,47 +2073,5 @@
         color: unset !important;
     }
 
-    /* Styling untuk suggestions container */
-    #perusahaan-suggestions {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 0.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        max-height: 200px;
-        overflow-y: auto;
-        z-index: 99999;
-        margin-top: 4px;
-        display: none;
-    }
 
-    #perusahaan-suggestions div {
-        padding: 8px 12px;
-        cursor: pointer;
-        white-space: nowrap;
-    }
-
-    #perusahaan-suggestions div:hover {
-        background-color: #f3f4f6;
-    }
-
-    .perusahaan-container {
-        position: relative;
-        z-index: 50;
-    }
-
-    .suggestions-wrapper {
-        position: relative;
-    }
-
-    /* Pastikan parent container cukup tinggi */
-    .space-y-6 > div {
-        min-height: 100px; /* Tambahkan minimum height */
-        position: relative;
-    }
-
-    #perusahaan-container { display: none; }
 </style>

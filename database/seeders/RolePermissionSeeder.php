@@ -26,7 +26,11 @@ class RolePermissionSeeder extends Seeder
 
         // Super Admin - Full Access
         if ($superAdmin) {
-            $superAdmin->permissions()->sync(Permission::all());
+            $allPerms = Permission::all();
+            $superAdmin->permissions()->sync($allPerms->pluck('id'));
+            $this->command->info('Assigned ' . $allPerms->count() . ' permissions to super_admin');
+        } else {
+            $this->command->error('Role super_admin NOT FOUND!');
         }
 
         // Staff/Unit (role 0)

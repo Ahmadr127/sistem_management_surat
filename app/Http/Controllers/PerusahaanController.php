@@ -230,4 +230,41 @@ class PerusahaanController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get active companies for the searchable select component.
+     * Supports lazy loading with optional search query and limit.
+     */
+    public function getForSelect(Request $request)
+    {
+        try {
+            $search = $request->get('search', '');
+            $limit  = min((int) $request->get('limit', 50), 200);
+
+            $query = Perusahaan::active()
+                ->select('kode', 'nama_perusahaan')
+                ->orderBy('nama_perusahaan');
+
+            if ($search !== '') {
+                $query->where(function ($q) use ($search) {
+                    $q->whereRaw('LOWER(nama_perusahaan) LIKE ?', ['%' . strtolower($search) . '%'])
+                      ->orWhereRaw('LOWER(kode) LIKE ?', ['%' . strtolower($search) . '%']);
+                });
+            }
+
+            $perusahaans = $query->limit($limit)->get();
+
+            return response()->json([
+                'success' => true,
+                'data'    => $perusahaans,
+                'total'   => $perusahaans->count(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in PerusahaanController@getForSelect: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memuat data perusahaan',
+            ], 500);
+        }
+    }
 }

@@ -363,6 +363,7 @@ Route::middleware(['auth', 'checkRole:0,1,3,5'])->group(function () {
 
 // Routes untuk Perusahaan
 Route::prefix('api/perusahaan')->middleware(['auth'])->group(function () {
+    Route::get('/select', [PerusahaanController::class, 'getForSelect'])->name('api.perusahaan.select');
     Route::get('/', [PerusahaanController::class, 'getForDropdown'])->name('api.perusahaan.dropdown');
     Route::post('/', [PerusahaanController::class, 'store'])->middleware('checkRole:0,1,3,5')->name('api.perusahaan.store');
     Route::put('/{id}', [PerusahaanController::class, 'update'])->middleware('checkRole:0,1,3,5')->name('api.perusahaan.update');

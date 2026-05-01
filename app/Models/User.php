@@ -140,41 +140,22 @@ class User extends Authenticatable
      */
     public function hasPermission($permission)
     {
-        // If using new permission system (has role_id)
+        // 1. Check if user has explicit role_id assigned (New System)
         if ($this->role_id && $this->roleModel) {
             return $this->roleModel->hasPermission($permission);
         }
 
-        // Fallback to legacy role-based permissions
-        return $this->hasLegacyPermission($permission);
-    }
-
-    /**
-     * Legacy permission check based on integer role
-     */
-    private function hasLegacyPermission($permission)
-    {
-        // Map permissions to legacy roles
-        $permissionMap = [
-            'view_dashboard' => [0, 1, 2, 3, 4, 5, 6, 7, 8],
-            'manage_users' => [3],
-            'manage_roles' => [3],
-            'manage_permissions' => [3],
-            'manage_organization_types' => [3],
-            'manage_organization_units' => [3],
-            'manage_perusahaan' => [1, 3, 5],
-            'manage_jabatan' => [3],
-            'manage_surat' => [1, 3, 4, 6, 7, 8],
-            'approve_surat' => [2, 4, 7, 8],
-            'view_laporan' => [1, 2, 3, 4, 5, 6, 7, 8],
-        ];
-
-        if (isset($permissionMap[$permission])) {
-            return in_array($this->role, $permissionMap[$permission]);
+        // 2. Fallback: Find role based on legacy integer 'role' column
+        // We use the Role model that matches the legacy_role_id
+        $legacyRole = Role::where('legacy_role_id', $this->role)->first();
+        if ($legacyRole) {
+            return $legacyRole->hasPermission($permission);
         }
 
         return false;
     }
+
+
 
     /**
      * Get all permissions for this user
@@ -185,6 +166,11 @@ class User extends Authenticatable
             return $this->roleModel->permissions;
         }
 
+        $legacyRole = Role::where('legacy_role_id', $this->role)->first();
+        if ($legacyRole) {
+            return $legacyRole->permissions;
+        }
+
         return collect();
     }
 
@@ -193,24 +179,14 @@ class User extends Authenticatable
      */
     public function getRoleDisplayNameAttribute()
     {
-        // If using new permission system
+        // 1. Try new role system
         if ($this->roleModel) {
             return $this->roleModel->display_name;
         }
         
-        // Fallback for legacy roles
-        $roles = [
-            0 => 'Staff',
-            1 => 'Sekretaris',
-            2 => 'Direktur Utama',
-            3 => 'Admin',
-            4 => 'Manager',
-            5 => 'Sekretaris ASP',
-            6 => 'General Manager',
-            7 => 'Manager Keuangan',
-            8 => 'Direktur ASP'
-        ];
-        return $roles[$this->role] ?? 'User';
+        // 2. Fallback to legacy role mapping via database
+        $legacyRole = Role::where('legacy_role_id', $this->role)->first();
+        return $legacyRole ? $legacyRole->display_name : 'User';
     }
 
     /**
@@ -219,7 +195,7 @@ class User extends Authenticatable
      */
     public function getJabatanNameAttribute()
     {
-        // 1. Get Base Role Name
+        // 1. Get Base Role Name (dynamically from database)
         $roleName = $this->role_display_name;
         
         // 2. Get Organization Name
@@ -228,22 +204,20 @@ class User extends Authenticatable
             $orgName = $this->organizationUnit->name;
             
             // Cleanup common prefixes to make it sound natural
-            // "Departemen IT" -> "IT"
-            // "Unit Support" -> "Support"
             $prefixes = ['Departemen ', 'Unit ', 'Direktorat ', 'PT '];
             $orgName = str_replace($prefixes, '', $orgName);
         }
 
         // 3. Combine Logic
         
-        // Special Cases
-        if ($this->role === 2) return 'Direktur Utama'; // Always Dirut
-        if ($this->role === 1) return 'Sekretaris Perusahaan';
-        if ($this->role === 6) return 'General Manager';
-        if ($this->role === 8) return 'Direktur ASP';
+        // Handle cases where the role name already implies the position fully (e.g. Direktur Utama)
+        $fullyQualifiedRoles = ['Direktur Utama', 'General Manager', 'Direktur ASP', 'Sekretaris Perusahaan'];
+        if (in_array($roleName, $fullyQualifiedRoles)) {
+            return $roleName;
+        }
         
         // General Cases: "Manager IT", "Staff HR", "Admin IT"
-        if ($orgName) {
+        if ($orgName && $roleName !== 'User') {
             return "$roleName $orgName";
         }
         
@@ -262,5 +236,40 @@ class User extends Authenticatable
     public function suratKeluarDituju()
     {
         return $this->hasMany(SuratKeluar::class, 'tujuan');
+    }
+
+    /**
+     * Relasi dengan disposisi yang dibuat oleh user ini
+     */
+    public function disposisiDibuat()
+    {
+        return $this->hasMany(Disposisi::class, 'created_by');
+    }
+
+    /**
+     * Relasi dengan disposisi yang ditujukan ke user ini
+     */
+    public function disposisiDiterima()
+    {
+        return $this->belongsToMany(Disposisi::class, 'tbl_disposisi_user', 'user_id', 'disposisi_id');
+    }
+
+    /**
+     * BLOCKER RELATIONSHIPS (No cascade in DB)
+     */
+
+    public function suratKeluarDibuat()
+    {
+        return $this->hasMany(SuratKeluar::class, 'created_by');
+    }
+
+    public function suratUnitDibuat()
+    {
+        return $this->hasMany(SuratUnitManager::class, 'unit_id');
+    }
+
+    public function suratUnitDimanajeri()
+    {
+        return $this->hasMany(SuratUnitManager::class, 'manager_id');
     }
 }

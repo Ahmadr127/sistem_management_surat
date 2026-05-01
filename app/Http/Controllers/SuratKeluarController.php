@@ -409,16 +409,11 @@ class SuratKeluarController extends Controller
                 $selectedUsers = $suratKeluar->disposisi->tujuan->pluck('id')->toArray();
             }
 
-            // Get perusahaan data for dropdown
-            $perusahaans = Perusahaan::where('status', 'aktif')
-                          ->orderBy('nama_perusahaan')
-                          ->get();
-        
-        return view('pages.surat.surat_keluar.editsuratkeluar', [
-            'surat' => $suratKeluar,
-            'users' => $users,
+            return view('pages.surat.surat_keluar.editsuratkeluar', [
+                'surat' => $suratKeluar,
+                'users' => $users,
                 'selectedUsers' => $selectedUsers,
-                'perusahaans' => $perusahaans
+                'userRole' => auth()->user()->role
             ]);
 
         } catch (\Exception $e) {
@@ -1085,16 +1080,7 @@ class SuratKeluarController extends Controller
                 ->whereIn('role', $allowedTargetRoles)
                 ->get();
 
-            // Get perusahaan data for dropdown
-            $perusahaans = Perusahaan::where('status', 'aktif')
-                          ->orderBy('nama_perusahaan')
-                          ->get();
-                          
-            // Get authenticated user's perusahaan preference
-            $userPerusahaan = null;
-            // Logic perusahaan default dihapus karena kolom jabatan dihapus
-            
-            return view('pages.surat.surat_keluar.suratkeluar', compact('users', 'perusahaans', 'userPerusahaan'));
+            return view('pages.surat.surat_keluar.suratkeluar', compact('users', 'userRole'));
         } catch (\Exception $e) {
             \Log::error('Error in SuratKeluarController@create: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat halaman');
