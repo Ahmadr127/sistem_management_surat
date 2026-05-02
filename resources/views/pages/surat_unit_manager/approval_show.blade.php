@@ -256,6 +256,16 @@
 
 @push('scripts')
 <script>
+    @if(session('success'))
+    Swal.fire({
+        icon: 'success',
+        title: 'SUCCESS',
+        text: "{{ session('success') }}",
+        showConfirmButton: true,
+        confirmButtonText: 'ok'
+    });
+    @endif
+
     function confirmReject() {
         Swal.fire({
             title: 'Apakah Anda yakin?',

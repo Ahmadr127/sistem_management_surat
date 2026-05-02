@@ -151,8 +151,8 @@ class SuratUnitManagerApprovalController extends Controller
 
             DB::commit();
 
-            return redirect()->route('surat-unit-manager.approval.index')
-                             ->with('success', 'Status surat berhasil diperbarui');
+            return redirect()->back()
+                             ->with('success', 'Anda Bisa Meneruskan surat untuk diajukan ke Direktur');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -301,8 +301,7 @@ class SuratUnitManagerApprovalController extends Controller
                 
                 return response()->json([
                     'success' => true,
-                    'message' => "Surat berhasil {$actionText}",
-                    'redirect_url' => route('surat-unit-manager.manager.index')
+                    'message' => "SUCCESS Anda Bisa Meneruskan surat untuk diajukan ke Direktur"
                 ]);
 
             } catch (\Exception $e) {

@@ -333,12 +333,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (data.success) {
                             Swal.fire({
                                 icon: 'success',
-                                title: 'Berhasil!',
+                                title: 'SUCCESS',
                                 text: data.message,
-                                timer: 2000,
-                                showConfirmButton: false
+                                showConfirmButton: true,
+                                confirmButtonText: 'ok'
                             }).then(() => {
-                                window.location.href = data.redirect_url;
+                                window.location.reload();
                             });
                         } else {
                             Swal.fire({

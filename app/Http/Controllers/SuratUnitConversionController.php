@@ -100,8 +100,8 @@ class SuratUnitConversionController extends Controller
             $user = auth()->user();
             $suratKeluar = $this->conversionService->convert($id, $request->all(), $user);
 
-            return redirect()->route('suratkeluar.index')
-                ->with('success', 'Surat Unit berhasil diajukan dan dikonversi menjadi Surat Keluar resmi.');
+            return redirect()->route('surat-unit-manager.approval.show', $id)
+                ->with('success', 'SUCCESS Anda Bisa Meneruskan surat untuk diajukan ke Direktur');
         } catch (\Exception $e) {
             return back()->withInput()->with('error', 'Gagal mengkonversi surat: ' . $e->getMessage());
         }
