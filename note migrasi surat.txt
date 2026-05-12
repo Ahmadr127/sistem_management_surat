@@ -1,0 +1,17 @@
+php artisan migrate
+RoleSeeder
+UpdateAdminPasswordSeeder
+PermissionSeeder
+php artisan db:seed --class=RolePermissionSeeder
+OrganizationTypeSeeder
+OrganizationUnitSeeder
+OrganizationUsersSeeder
+
+# Lihat diagnosa lengkap
+php artisan user:clean-no-disposisi --diagnose
+
+# Preview sebelum hapus
+php artisan user:clean-no-disposisi --dry-run
+
+# Jalankan penghapusan
+php artisan user:clean-no-disposisi
