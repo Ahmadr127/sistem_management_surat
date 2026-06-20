@@ -166,10 +166,15 @@
                 </table>
             </div>
 
-            {{-- Info --}}
-            <div class="mt-4 flex items-center justify-between">
-                <div class="text-sm text-gray-700">
-                    Menampilkan {{ $suratKeluar->count() }} data
+            {{-- Pagination Info & Links --}}
+            <div class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="text-sm text-gray-600">
+                    Menampilkan 
+                    <span class="font-semibold text-gray-900">{{ $suratKeluar->firstItem() }}</span>–<span class="font-semibold text-gray-900">{{ $suratKeluar->lastItem() }}</span>
+                    dari <span class="font-semibold text-gray-900">{{ $suratKeluar->total() }}</span> data
+                </div>
+                <div>
+                    {{ $suratKeluar->links() }}
                 </div>
             </div>
         @else
