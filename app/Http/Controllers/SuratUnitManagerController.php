@@ -801,27 +801,19 @@ class SuratUnitManagerController extends Controller
                 return response()->download(public_path($file->file_path), $file->original_name);
             }
 
-            // Jika ada multiple files, buat zip
-            $zip = new \ZipArchive();
-            $zipName = 'surat_' . $suratUnitManager->id . '_' . time() . '.zip';
-            $zipPath = public_path('uploads/temp/' . $zipName);
-            
-            if (!file_exists(public_path('uploads/temp'))) {
-                mkdir(public_path('uploads/temp'), 0755, true);
-            }
+            // Jika ada multiple files: kembalikan daftar URL ke client, JS (JSZip) yang buat ZIP-nya
+            $fileList = $suratUnitManager->files->map(function ($file) {
+                return [
+                    'url'  => url('/' . ltrim($file->file_path, '/')),
+                    'name' => $file->original_name,
+                ];
+            });
 
-            if ($zip->open($zipPath, \ZipArchive::CREATE) === TRUE) {
-                foreach ($suratUnitManager->files as $file) {
-                    if (file_exists(public_path($file->file_path))) {
-                        $zip->addFile(public_path($file->file_path), $file->original_name);
-                    }
-                }
-                $zip->close();
-                
-                return response()->download($zipPath)->deleteFileAfterSend();
-            }
-
-            return redirect()->back()->with('error', 'Gagal membuat file zip');
+            return response()->json([
+                'zip'      => true,
+                'zip_name' => 'surat-unit-manager-' . $suratUnitManager->id,
+                'files'    => $fileList,
+            ]);
 
         } catch (\Exception $e) {
             Log::error('Error in SuratUnitManagerController@download: ' . $e->getMessage());

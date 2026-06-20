@@ -126,11 +126,12 @@
                     
                     @if($suratUnitManager->files->count() > 1)
                     <div class="mt-4 pt-3 border-t border-gray-200">
-                        <a href="{{ route('surat-unit-manager.download', $suratUnitManager->id) }}" 
-                           class="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium">
+                        <button type="button"
+                            onclick="downloadSuratZip({{ $suratUnitManager->id }}, '{{ $suratUnitManager->nomor_surat }}')"
+                            class="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium">
                             <i class="ri-download-2-line mr-1"></i>
                             Download Semua File (ZIP)
-                        </a>
+                        </button>
                     </div>
                     @endif
                 </div>
@@ -221,13 +222,58 @@
             @endif
             
             @if($suratUnitManager->files->count() > 0)
-            <a href="{{ route('surat-unit-manager.download', $suratUnitManager->id) }}" 
+            @if($suratUnitManager->files->count() > 1)
+            <button type="button"
+                onclick="downloadSuratZip({{ $suratUnitManager->id }}, '{{ $suratUnitManager->nomor_surat }}')"
+                class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 flex items-center gap-2">
+                <i class="ri-download-line"></i>
+                <span>Download ZIP</span>
+            </button>
+            @else
+            <a href="{{ route('surat-unit-manager.download-file', [$suratUnitManager->id, $suratUnitManager->files->first()->id]) }}"
                class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 flex items-center gap-2">
                 <i class="ri-download-line"></i>
-                <span>{{ $suratUnitManager->files->count() > 1 ? 'Download ZIP' : 'Download File' }}</span>
+                <span>Download File</span>
             </a>
+            @endif
             @endif
         </div>
     </div>
 </div>
-@endsection 
+
+{{-- CDN untuk ZIP client-side --}}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="{{ asset('js/export-utils.js') }}"></script>
+<script>
+async function downloadSuratZip(suratId, nomorSurat) {
+    try {
+        Swal.fire({ title: 'Menyiapkan file...', text: 'Mohon tunggu sebentar', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        const resp = await fetch(`/surat-unit-manager/${suratId}/download`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        });
+
+        const data = await resp.json();
+
+        if (data.zip && data.files && data.files.length > 0) {
+            Swal.fire({ title: 'Mengunduh file...', text: 'Sedang membuat arsip ZIP...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            await ExportUtils.downloadFilesAsZip(data.files, data.zip_name || `surat-${suratId}`);
+            Swal.close();
+        } else if (!data.zip) {
+            // Single file — redirect biasa
+            window.location.href = `/surat-unit-manager/${suratId}/download`;
+        } else {
+            Swal.fire({ icon: 'warning', title: 'Tidak ada file', text: 'Tidak ada file yang tersedia untuk diunduh.' });
+        }
+    } catch (err) {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Terjadi kesalahan saat mengunduh file.' });
+    }
+}
+</script>
+@endsection

@@ -9,10 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\LaporanExport;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+
 
 class LaporanController extends Controller
 {
@@ -277,7 +275,6 @@ class LaporanController extends Controller
             
             $perusahaan = $request->input('perusahaan');
             $status = $request->input('status');
-        $format = $request->input('format', 'excel');
             $period_type = $request->input('period_type', 'custom');
             $jabatan = $request->input('jabatan');
             $jenis_surat = $request->input('jenis_surat');
@@ -285,7 +282,6 @@ class LaporanController extends Controller
             \Log::info('Export parameters:', [
                 'perusahaan' => $perusahaan,
                 'status' => $status,
-                'format' => $format,
                 'period_type' => $period_type,
                 'jabatan' => $jabatan,
                 'jenis_surat' => $jenis_surat
@@ -362,58 +358,17 @@ class LaporanController extends Controller
             \Log::info('Data retrieved for export:', [
                 'count' => $data->count()
             ]);
-        
-        if ($format === 'excel') {
-                $useWaktuReviewDirut = true; // Always use waktu_review_dirut, no fallback
-                $disposisiDateLabel = $request->input('disposisi_date_label', 'Tanggal Disposisi');
-                $useDirutStatus = $request->input('use_dirut_status', true);
-                
-                // Include additional configuration
-                $exportConfig = [
-                    'data' => $data,
-                    'jenis' => 'surat_keluar',
-                    'title' => "Laporan Surat Keluar",
-                    'startDate' => $start_date,
-                    'endDate' => $end_date,
-                    'periodType' => $period_type,
-                    'useWaktuReviewDirut' => $useWaktuReviewDirut,
-                    'disposisiDateLabel' => $disposisiDateLabel,
-                    'useDirutStatus' => $useDirutStatus
-                ];
-                
-                \Log::info('Excel export configuration:', $exportConfig);
-                
-                return Excel::download(
-                    new LaporanExport(
-                        $data, 
-                        'surat_keluar', 
-                        "Laporan Surat Keluar", 
-                        $start_date, 
-                        $end_date, 
-                        $period_type, 
-                        $useWaktuReviewDirut, 
-                        $disposisiDateLabel,
-                        $useDirutStatus
-                    ),
-                    "Laporan Surat Keluar.xlsx"
-                );
-        } else {
-            $useWaktuReviewDirut = true; // Always use waktu_review_dirut, no fallback
-            $disposisiDateLabel = $request->input('disposisi_date_label', 'Tanggal Disposisi');
-            
-            $pdf = PDF::loadView('exports.laporan_pdf', [
-                'data' => $data,
-                'jenis' => 'surat_keluar',
-                'title' => "Laporan Surat Keluar",
-                'startDate' => $start_date,
-                'endDate' => $end_date,
-                'periodType' => $period_type,
-                'useWaktuReviewDirut' => $useWaktuReviewDirut,
-                'disposisiDateLabel' => $disposisiDateLabel
+
+            // Selalu kembalikan JSON — pembuatan file Excel/PDF dilakukan oleh JS di browser
+            return response()->json([
+                'data'       => $data,
+                'from_date'  => $start_date,
+                'to_date'    => $end_date,
+                'total'      => $data->count(),
+                'period_type'=> $period_type,
+                'created_by' => $user->name,
             ]);
-                
-            return $pdf->download("Laporan Surat Keluar.pdf");
-        }
+
         } catch (\Exception $e) {
             \Log::error('Error in exportLaporan:', [
                 'message' => $e->getMessage(),
@@ -422,6 +377,7 @@ class LaporanController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
 
     public function getLaporan(Request $request)
     {

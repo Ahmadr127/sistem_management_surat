@@ -308,6 +308,11 @@
 @endsection
 
 @push('scripts')
+    {{-- CDN Libraries untuk export client-side --}}
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="{{ asset('js/export-utils.js') }}"></script>
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('laporanApp', () => ({
@@ -444,69 +449,88 @@
                 },
 
                 exportExcel() {
-                    const params = new URLSearchParams();
-                    params.append('format', 'excel');
-                    params.append('jenis', 'surat_keluar');
-                    params.append('start_date', this.startDate);
-                    params.append('end_date', this.endDate);
-                    params.append('period_type', this.periodType);
-                    params.append('include_disposisi_details', 'true');
-                    params.append('disposisi_date_field', 'waktu_review_dirut');
-                    params.append('with_timestamps', 'true');
-                    params.append('use_only_waktu_review_dirut', 'true');
-                    params.append('disposisi_date_label', 'Tanggal Disposisi');
-                    params.append('use_dirut_status', 'true');
-                    
-                    if (this.filterPerusahaan) {
-                        params.append('perusahaan', this.filterPerusahaan);
+                    if (!this.reportData || this.reportData.length === 0) {
+                        Swal.fire({ icon: 'warning', title: 'Peringatan', text: 'Tidak ada data untuk diekspor. Tampilkan laporan terlebih dahulu.' });
+                        return;
                     }
-                    
-                    if (this.filterJabatan) {
-                        params.append('jabatan', this.filterJabatan);
-                    }
-                    
-                    if (this.statusDisposisi) {
-                        params.append('status', this.statusDisposisi);
-                    }
-                    
-                    if (this.filterJenis) {
-                        params.append('jenis_surat', this.filterJenis);
-                    }
-                    
-                    window.location.href = `/export-laporan?${params.toString()}`;
+
+                    const columns = [
+                        { header: 'No',                 key: '_no' },
+                        { header: 'No. Disposisi',      key: 'disposisi.id' },
+                        { header: 'Tanggal Disposisi',  key: '_tgl_disposisi' },
+                        { header: 'Nomor Surat',        key: 'nomor_surat' },
+                        { header: 'Tanggal Surat',      key: 'tanggal_surat' },
+                        { header: 'Perihal',            key: 'perihal' },
+                        { header: 'Jenis',              key: 'jenis_surat' },
+                        { header: 'Perusahaan',         key: 'perusahaan' },
+                        { header: 'Pembuat',            key: 'creator.name' },
+                        { header: 'Tujuan Disposisi',   key: '_tujuan' },
+                        { header: 'Status Direktur',    key: '_status_dirut' },
+                    ];
+
+                    // Flatten data untuk kolom computed
+                    const flatData = this.reportData.map((item, idx) => ({
+                        ...item,
+                        '_no': idx + 1,
+                        '_tgl_disposisi': item.disposisi?.waktu_review_dirut
+                            ? new Date(item.disposisi.waktu_review_dirut).toLocaleDateString('id-ID')
+                            : '-',
+                        '_tujuan': item.disposisi?.tujuan?.map(t => t.name).join(', ') || '-',
+                        '_status_dirut': item.disposisi ? (item.disposisi.status_dirut || '-') : 'Belum Disposisi',
+                    }));
+
+                    const periodLabel = this.periodType === 'monthly' ? 'Bulanan'
+                                     : this.periodType === 'weekly'  ? 'Mingguan' : 'Kustom';
+                    const filename = `Laporan Surat Keluar - ${periodLabel} (${this.startDate} sd ${this.endDate})`;
+
+                    ExportUtils.exportToExcel(flatData, columns, filename, 'Laporan Surat Keluar');
                 },
 
                 exportPDF() {
-                    const params = new URLSearchParams();
-                    params.append('format', 'pdf');
-                    params.append('jenis', 'surat_keluar');
-                    params.append('start_date', this.startDate);
-                    params.append('end_date', this.endDate);
-                    params.append('period_type', this.periodType);
-                    params.append('include_disposisi_details', 'true');
-                    params.append('disposisi_date_field', 'waktu_review_dirut');
-                    params.append('with_timestamps', 'true');
-                    params.append('use_only_waktu_review_dirut', 'true');
-                    params.append('disposisi_date_label', 'Tanggal Disposisi');
-                    params.append('use_dirut_status', 'true');
-                    
-                    if (this.filterPerusahaan) {
-                        params.append('perusahaan', this.filterPerusahaan);
+                    if (!this.reportData || this.reportData.length === 0) {
+                        Swal.fire({ icon: 'warning', title: 'Peringatan', text: 'Tidak ada data untuk diekspor. Tampilkan laporan terlebih dahulu.' });
+                        return;
                     }
-                    
-                    if (this.filterJabatan) {
-                        params.append('jabatan', this.filterJabatan);
-                    }
-                    
-                    if (this.statusDisposisi) {
-                        params.append('status', this.statusDisposisi);
-                    }
-                    
-                    if (this.filterJenis) {
-                        params.append('jenis_surat', this.filterJenis);
-                    }
-                    
-                    window.location.href = `/export-laporan?${params.toString()}`;
+
+                    const columns = [
+                        { header: 'No',                key: '_no',              width: 8 },
+                        { header: 'No. Disp.',         key: 'disposisi.id',     width: 15 },
+                        { header: 'Tgl. Disp.',        key: '_tgl_disposisi',   width: 20 },
+                        { header: 'Nomor Surat',       key: 'nomor_surat',      width: 35 },
+                        { header: 'Tanggal',           key: 'tanggal_surat',    width: 20 },
+                        { header: 'Perihal',           key: 'perihal' },
+                        { header: 'Perusahaan',        key: 'perusahaan',       width: 22 },
+                        { header: 'Pembuat',           key: 'creator.name',     width: 25 },
+                        { header: 'Tujuan',            key: '_tujuan' },
+                        { header: 'Status Dir.',       key: '_status_dirut',    width: 20 },
+                    ];
+
+                    const flatData = this.reportData.map((item, idx) => ({
+                        ...item,
+                        '_no': idx + 1,
+                        '_tgl_disposisi': item.disposisi?.waktu_review_dirut
+                            ? new Date(item.disposisi.waktu_review_dirut).toLocaleDateString('id-ID')
+                            : '-',
+                        '_tujuan': item.disposisi?.tujuan?.map(t => t.name).join(', ') || '-',
+                        '_status_dirut': item.disposisi ? (item.disposisi.status_dirut || '-') : 'Belum Disposisi',
+                    }));
+
+                    const periodLabel = this.periodType === 'monthly' ? 'Bulanan'
+                                     : this.periodType === 'weekly'  ? 'Mingguan' : 'Kustom';
+                    const filename = `Laporan Surat Keluar - ${periodLabel}`;
+
+                    ExportUtils.exportToPDF(
+                        flatData,
+                        columns,
+                        'Laporan Surat Keluar',
+                        {
+                            startDate: this.startDate,
+                            endDate: this.endDate,
+                            periodType: this.periodType,
+                            createdBy: '{{ auth()->user()->name }}',
+                        },
+                        filename
+                    );
                 },
 
                 updateDateRange() {

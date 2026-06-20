@@ -681,37 +681,21 @@ class SuratKeluarController extends Controller
                 return response()->download($path, $file->original_name);
             }
 
-            // Multiple files: create and download a zip file
-            \Log::info('Multiple files found. Creating zip archive.', ['count' => $files->count()]);
-            $zip = new \ZipArchive();
-            $zipFileName = 'surat-keluar-' . $suratKeluar->id . '-' . time() . '.zip';
-            
-            // Create a temporary directory for the zip file
-            $tempDir = storage_path('app/temp');
-            if (!is_dir($tempDir)) {
-                mkdir($tempDir, 0755, true);
-            }
-            $zipPath = $tempDir . '/' . $zipFileName;
+            // Multiple files: kembalikan daftar URL ke client, JS (JSZip) yang buat ZIP-nya
+            \Log::info('Multiple files found. Returning file URLs for client-side ZIP.', ['count' => $files->count()]);
 
-            if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== TRUE) {
-                \Log::error('Cannot create zip archive.', ['path' => $zipPath]);
-                return redirect()->back()->with('error', 'Gagal membuat arsip ZIP.');
-            }
+            $fileList = $files->map(function ($file) use ($suratKeluar) {
+                return [
+                    'url'  => url('/' . ltrim($file->file_path, '/')),
+                    'name' => $file->original_name,
+                ];
+            });
 
-            foreach ($files as $file) {
-                $filePath = public_path($file->file_path);
-                if (file_exists($filePath)) {
-                    $zip->addFile($filePath, $file->original_name);
-                    \Log::info('Added file to zip.', ['file_path' => $filePath, 'zip_name' => $file->original_name]);
-                } else {
-                    \Log::warning('File skipped (not found).', ['file_path' => $filePath]);
-                }
-            }
-
-            $zip->close();
-            \Log::info('Zip archive created successfully.', ['path' => $zipPath]);
-
-            return response()->download($zipPath)->deleteFileAfterSend(true);
+            return response()->json([
+                'zip'      => true,
+                'zip_name' => 'surat-keluar-' . $suratKeluar->id,
+                'files'    => $fileList,
+            ]);
         } catch (\Exception $e) {
             \Log::error('Error during file download: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return redirect()->back()->with('error', 'Terjadi kesalahan saat mengunduh file.');
