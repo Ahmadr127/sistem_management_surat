@@ -74,7 +74,7 @@ class SuratKeluarController extends Controller
             // Order by newest records first - tanggal_surat desc, then created_at desc
             $suratKeluar = $query->orderBy('tanggal_surat', 'desc')
                                  ->orderBy('created_at', 'desc')
-                                 ->get();
+                                 ->paginate(15)->withQueryString();
             
             $users = User::select('id', 'name', 'email')
                         ->where('role', '!=', 3)
