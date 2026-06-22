@@ -289,11 +289,23 @@
         if (jenis === 'diradm') {
             return `${nomorUrut}/Dir.Adm.Keu/RSAZRA/${bulan}/${tahun}`;
         }
+        if (jenis === 'dirrs') {
+            return `${nomorUrut}/DIRRS/RSAZRA/${bulan}/${tahun}`;
+        }
         return `${nomorUrut}/${kode}/${bulan}/${tahun}`;
     }
-    generateBtn.addEventListener('click', function() {
-        const tanggal = getTodayStr();
-        fetch(`/suratkeluar/get-last-number?kode_jabatan=${encodeURIComponent(kode)}&tanggal_surat=${encodeURIComponent(tanggal)}`)
+    // Bangun URL fetch yang benar sesuai jenis tab
+    function buildLastNumberUrl(tanggal) {
+        const base = `/suratkeluar/get-last-number?kode_jabatan=${encodeURIComponent(kode)}&tanggal_surat=${encodeURIComponent(tanggal)}`;
+        if (jenis === 'umum')   return base + '&is_eksternal_azra=true';
+        if (jenis === 'diradm') return base + '&is_as_manager_keuangan=true';
+        if (jenis === 'dirrs')  return base + '&is_as_dirut=true';
+        if (jenis === 'asp')    return base + '&is_asp=true';
+        return base;
+    }
+
+    function fetchAndShowModal(tanggal) {
+        fetch(buildLastNumberUrl(tanggal))
             .then(res => res.json())
             .then(res => {
                 let nextNomor = '001';
@@ -313,30 +325,15 @@
                 document.getElementById(`next-kode-${jenis}`).textContent = kode;
                 modal.classList.remove('hidden');
             });
+    }
+
+    generateBtn.addEventListener('click', function() {
+        fetchAndShowModal(getTodayStr());
     });
     emptyGenerateBtn.addEventListener('click', function() {
-        const tanggal = getTodayStr();
-        fetch(`/suratkeluar/get-last-number?kode_jabatan=${encodeURIComponent(kode)}&tanggal_surat=${encodeURIComponent(tanggal)}`)
-            .then(res => res.json())
-            .then(res => {
-                let nextNomor = '001';
-                if (res.success && res.last_number !== undefined) {
-                    nextNomor = String(parseInt(res.last_number, 10) + 1).padStart(3, '0');
-                }
-                document.getElementById(`next-nomor-${jenis}`).textContent = nextNomor;
-                document.getElementById(`next-nomor-lengkap-${jenis}`).textContent = buildNomorLengkap(nextNomor, kode, tanggal);
-                document.getElementById(`next-tanggal-${jenis}`).textContent = formatDateIndo(tanggal);
-                document.getElementById(`next-kode-${jenis}`).textContent = kode;
-                modal.classList.remove('hidden');
-            })
-            .catch(() => {
-                document.getElementById(`next-nomor-${jenis}`).textContent = '001';
-                document.getElementById(`next-nomor-lengkap-${jenis}`).textContent = buildNomorLengkap('001', kode, getTodayStr());
-                document.getElementById(`next-tanggal-${jenis}`).textContent = formatDateIndo(getTodayStr());
-                document.getElementById(`next-kode-${jenis}`).textContent = kode;
-                modal.classList.remove('hidden');
-            });
+        fetchAndShowModal(getTodayStr());
     });
+
 
     // Pastikan event listener tombol Tutup pada modal selalu aktif
     cancelBtn.addEventListener('click', function() {

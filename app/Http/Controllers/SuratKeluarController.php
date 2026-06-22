@@ -1365,7 +1365,7 @@ class SuratKeluarController extends Controller
             return response()->json(['success' => false, 'message' => 'Kode format nomor surat wajib diisi'], 400);
         }
         try {
-            $query = SuratKeluar::with(['creator', 'disposisi.tujuan']);
+            $query = SuratKeluar::with(['creator', 'disposisi.tujuan', 'perusahaanData']);
             $driver = \DB::getDriverName();
             $regexpOperator = $driver === 'pgsql' ? '~' : 'REGEXP';
             \Log::info('[getByFormat] DB Driver', ['driver' => $driver, 'regexpOperator' => $regexpOperator]);

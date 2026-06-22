@@ -209,6 +209,10 @@ Route::middleware(['auth', 'checkRole:0,1,2,3,4,5,7,8'])->group(function () {
         Route::get('/create', [SuratKeluarController::class, 'create'])->name('create');
         Route::post('/', [SuratKeluarController::class, 'store'])->name('store');
 
+        // Route get-last-number HARUS di atas wildcard /{suratKeluar}
+        Route::match(['GET', 'POST'], '/get-last-number', [SuratKeluarController::class, 'getLastNumber'])
+            ->name('getLastNumber');
+
         Route::get('/{suratKeluar}/file/{fileId}/view', [SuratKeluarController::class, 'viewFile'])->name('file.view');
         Route::get('/{suratKeluar}/file/{fileId}/download', [SuratKeluarController::class, 'downloadFile'])->name('file.download');
         Route::get('/{suratKeluar}', [SuratKeluarController::class, 'show'])->name('show');
@@ -442,8 +446,8 @@ Route::middleware(['auth', 'checkRole:3'])->prefix('api')->name('api.')->group(f
 Route::put('/api/surat-keluar/{id}', [SuratKeluarController::class, 'update'])->name('surat-keluar.update');
 Route::post('/api/surat-keluar/{id}', [SuratKeluarController::class, 'update'])->name('surat-keluar.update.with-file');
 
-Route::post('/suratkeluar/get-last-number', [SuratKeluarController::class, 'getLastNumber'])
-    ->name('suratkeluar.getLastNumber');
+// Route get-last-number sudah dipindah ke dalam group suratkeluar di atas
+
 
 Route::get('/suratkeluar/create', [SuratKeluarController::class, 'create'])->name('suratkeluar.create');
 
