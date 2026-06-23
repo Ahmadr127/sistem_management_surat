@@ -33,7 +33,6 @@ class AppServiceProvider extends ServiceProvider
         // dan menghindari masalah cache .env.
         if (isset($_SERVER['HTTP_HOST']) && !str_contains($_SERVER['HTTP_HOST'], 'localhost') && !str_contains($_SERVER['HTTP_HOST'], '127.0.0.1')) {
             URL::forceScheme('https');
-            request()->server->set('HTTPS', 'on');
         }
     }
 }
