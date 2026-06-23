@@ -25,20 +25,22 @@ class SuratMasukApiController extends Controller
         // Use existing scope for role-based filtering
         $query->forSuratMasuk($user);
         
-        // Search filter
+        // Search filter — case-insensitive via LOWER() agar tetap bekerja
+        // di semua collation MySQL (termasuk utf8_bin / utf8mb4_bin).
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = strtolower(trim($request->search));
             $query->where(function($q) use ($search) {
-                $q->where('nomor_surat', 'like', "%{$search}%")
-                  ->orWhere('perihal', 'like', "%{$search}%")
+                $q->whereRaw('LOWER(nomor_surat) LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('LOWER(perihal) LIKE ?', ["%{$search}%"])
                   ->orWhereHas('creator', function($subq) use ($search) {
-                      $subq->where('name', 'like', "%{$search}%");
+                      $subq->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
                   })
                   ->orWhereHas('perusahaanData', function($subq) use ($search) {
-                      $subq->where('nama_perusahaan', 'like', "%{$search}%");
+                      $subq->whereRaw('LOWER(nama_perusahaan) LIKE ?', ["%{$search}%"]);
                   });
             });
         }
+
 
         // Status disposisi (sama logika badge di mobile: pakai status_dirut jika terisi, else status_sekretaris)
         $status = $request->get('status');
