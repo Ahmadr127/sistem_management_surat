@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'checkRole' => \App\Http\Middleware\CheckRoleMiddleware::class,
             'sekretarisAsp' => \App\Http\Middleware\SekretarisAspMiddleware::class,
         ]);
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
