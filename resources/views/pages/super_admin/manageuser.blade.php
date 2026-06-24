@@ -346,8 +346,9 @@
 
                 async deleteUser(user) {
                     try {
-                        const response = await fetch(`/api/users/${user.id}`, {
-                            method: 'DELETE',
+                        // Send as POST with method spoofing to bypass Apache DELETE restrictions
+                        const response = await fetch(`/api/users/${user.id}?_method=DELETE`, {
+                            method: 'POST',
                             headers: {
                                 'X-Requested-With': 'XMLHttpRequest',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')

@@ -311,8 +311,9 @@
                     const originalContent = actionCell.innerHTML;
                     actionCell.innerHTML = `<div class="flex justify-center"><i class="ri-loader-4-line animate-spin text-xl text-red-600"></i></div>`;
                     
-                    fetch(`/suratkeluar/${id}/force`, {
-                            method: 'DELETE',
+                    // Send as POST with method spoofing to bypass Apache DELETE restrictions
+                    fetch(`/suratkeluar/${id}/force?_method=DELETE`, {
+                            method: 'POST',
                             headers: {
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                                 'Content-Type': 'application/json',

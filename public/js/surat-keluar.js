@@ -312,8 +312,9 @@ window.deleteFile = async function (suratId, fileId) {
     }
 
     try {
-        const response = await fetch(`/suratkeluar/${suratId}/file/${fileId}`, {
-            method: 'DELETE',
+        // Send delete request as POST with method spoofing to bypass Apache restrictions
+        const response = await fetch(`/suratkeluar/${suratId}/file/${fileId}?_method=DELETE`, {
+            method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                 'Accept': 'application/json'

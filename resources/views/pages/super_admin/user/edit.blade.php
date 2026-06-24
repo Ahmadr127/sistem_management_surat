@@ -210,8 +210,9 @@
                     }
 
                     try {
-                        const response = await fetch("{{ route('api.users.update', $user->id) }}", {
-                            method: 'PUT',
+                        // Send as POST with method spoofing to bypass Apache PUT restrictions
+                        const response = await fetch("{{ route('api.users.update', $user->id) }}?_method=PUT", {
+                            method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'X-Requested-With': 'XMLHttpRequest',

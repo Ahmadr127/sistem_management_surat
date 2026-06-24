@@ -252,13 +252,11 @@
                 try {
                     this.errors = {};
                     const url = this.isEditing 
-                        ? `/api/perusahaan/${this.formData.id}` 
+                        ? `/api/perusahaan/${this.formData.id}?_method=PUT` 
                         : '/api/perusahaan';
                     
-                    const method = this.isEditing ? 'PUT' : 'POST';
-                    
                     const response = await fetch(url, {
-                        method,
+                        method: 'POST', // Use POST with method spoofing for PUT to bypass Apache restrictions
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
@@ -327,8 +325,9 @@
 
             async deletePerusahaan(id) {
                 try {
-                    const response = await fetch(`/api/perusahaan/${id}`, {
-                        method: 'DELETE',
+                    // Send as POST with method spoofing to bypass Apache DELETE restrictions
+                    const response = await fetch(`/api/perusahaan/${id}?_method=DELETE`, {
+                        method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                         }

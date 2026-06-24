@@ -474,9 +474,9 @@
                         }
                     });
 
-                    // Send delete request
-                    fetch(`/suratkeluar/${suratId}/file/${fileId}`, {
-                        method: 'DELETE',
+                    // Send delete request as POST with method spoofing to bypass Apache restrictions
+                    fetch(`/suratkeluar/${suratId}/file/${fileId}?_method=DELETE`, {
+                        method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                             'Accept': 'application/json'
